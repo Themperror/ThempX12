@@ -201,12 +201,14 @@ namespace Themp
 				m_Renderer->BeginDraw();
 				ImGui::Render();
 
+				if(!instance->m_Quitting)
+				{
+					ImGui::UpdatePlatformWindows();
+					ImGui::RenderPlatformWindowsDefault();
+				}
 
 				ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), m_Renderer->GetImguiCmdList().Get());
 
-
-				ImGui::UpdatePlatformWindows();
-				ImGui::RenderPlatformWindowsDefault();
 				m_Renderer->EndDraw();
 				frameTimeAdd += drawTimer.GetDeltaTimeReset();
 
