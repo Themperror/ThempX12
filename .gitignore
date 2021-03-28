@@ -1,0 +1,8 @@
+
+*.obj
+*.recipe
+*.log
+*.tlog
+*.pdb
+.vs
+x64
