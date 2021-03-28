@@ -67,7 +67,7 @@ void Control::BeginDraw()
 	if (ImGui::Begin("Renderer"))
 	{
 		static bool vsyncEnabled = true;
-		//m_Context->EnableVsync(vsyncEnabled);
+		m_Context->EnableVsync(vsyncEnabled);
 
 		ImGui::Checkbox("VSync", &vsyncEnabled);
 		ImGui::Text("Test");
