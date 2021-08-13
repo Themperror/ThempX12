@@ -12,6 +12,7 @@
 #include <sstream>
 #include <chrono>
 #include "util/print.h"
+#include "util/svars.h"
 #include "game.h"
 
 #include "imgui/impl/imgui_impl_win32.h"
@@ -26,6 +27,8 @@ DEVMODE dm = { 0 };
 namespace Themp
 {
 	std::unique_ptr<Themp::Engine> Engine::instance;
+	SVars Engine::s_SVars;
+
 	void Engine::Start()
 	{
 		srand((uint32_t)time(nullptr));
@@ -41,8 +44,8 @@ namespace Themp
 		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 		io.BackendFlags |= ImGuiBackendFlags_PlatformHasViewports;
 		io.BackendFlags |= ImGuiBackendFlags_RendererHasViewports;
-		io.DisplaySize.x = static_cast<float>(GetSVarInt(SVar::SVAR_iWindowWidth));
-		io.DisplaySize.y = static_cast<float>(GetSVarInt(SVar::SVAR_iWindowHeight));
+		io.DisplaySize.x = static_cast<float>(Engine::s_SVars.GetSVarInt(SVar::iWindowWidth));
+		io.DisplaySize.y = static_cast<float>(Engine::s_SVars.GetSVarInt(SVar::iWindowHeight));
 		ImGui_ImplWin32_Init(m_Window);
 
 		Print("Initialising D3D12!");
@@ -231,8 +234,8 @@ namespace Themp
 		}
 
 		GetWindowRect(m_Window, &windowRect);
-		SetSVarInt(SVar::SVAR_iWindowWidth, windowRect.right - windowRect.left);
-		SetSVarInt(SVar::SVAR_iWindowHeight, windowRect.bottom - windowRect.top);
+		Engine::s_SVars.SetSVarInt(SVar::iWindowWidth, windowRect.right - windowRect.left);
+		Engine::s_SVars.SetSVarInt(SVar::iWindowHeight, windowRect.bottom - windowRect.top);
 
 		m_Game->Stop();
 		m_Game = nullptr;
@@ -248,66 +251,6 @@ namespace Themp
 	}
 
 
-	int Engine::GetSVarInt(SVar svar)
-	{
-		auto& var = m_SVars[svar];
-		if (std::holds_alternative<int>(var))
-		{
-			return std::get<int>(var);
-		}
-		Themp::Print("Attempting to get svar: %s as integer!", GetStringSVar(svar));
-		return 0;
-	}
-	
-	float Engine::GetSVarFloat(SVar svar)
-	{
-		auto& var = m_SVars[svar];
-		if (std::holds_alternative<float>(var))
-		{
-			return std::get<float>(var);
-		}
-		Themp::Print("Attempting to get svar: %s as float!", GetStringSVar(svar));
-		return 0.0f;
-	}
-
-	void Engine::SetSVarInt(SVar svar, int val)
-	{
-		auto it = m_SVars.find(svar);
-		if (it != m_SVars.end())
-		{
-			if (std::holds_alternative<int>(it->second))
-			{
-				it->second = val;
-			}
-			else
-			{
-				Themp::Print("Attempting to set svar: %s as int!", GetStringSVar(svar));
-			}
-		}
-		else
-		{
-			m_SVars[svar] = val;
-		}
-	}
-	void Engine::SetSVarFloat(SVar svar, float val)
-	{
-		auto it = m_SVars.find(svar);
-		if (it != m_SVars.end())
-		{
-			if (std::holds_alternative<float>(it->second))
-			{
-				it->second = val;
-			}
-			else
-			{
-				Themp::Print("Attempting to set svar: %s as float!", GetStringSVar(svar));
-			}
-		}
-		else
-		{
-			m_SVars[svar] = val;
-		}
-	}
 }
 
 std::string GetPathName(std::string s)
@@ -346,71 +289,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 	system->m_BaseDir = GetPathName(std::string(szFileName));
 
 	Themp::Util::SetLogFile("log.txt");
-	std::ifstream configFile("config.ini");
-	std::string line;
-	if (configFile.is_open())
-	{
-		while (std::getline(configFile, line))
-		{
-			size_t cIndex = line.find(" ", 0);
-			if (cIndex != std::string::npos)
-			{
-				std::string svarName = line.substr(0, cIndex);
-				for (int i = 0; i < static_cast<size_t>(Engine::SVar::COUNT); i++)
-				{
-					if (system->s_SVarStr[i] == svarName)
-					{
-						if (svarName[0] == 'i')
-						{
-							system->SetSVarInt((Engine::SVar)i, std::stoi(line.substr(cIndex + 1, line.size() - (cIndex + 1))));
-						}
-						else
-						{
-							system->SetSVarFloat((Engine::SVar)i, std::stof(line.substr(cIndex + 1, line.size() - (cIndex + 1))));
-						}
-						break;
-					}
-				}
-			}
-		}
-		configFile.close();
-	}
-	else
-	{
-		Themp::Print("Could not find config.ini, creating");
-		std::ofstream nConfig("config.ini");
-		if (nConfig.is_open())
-		{
-			nConfig << system->GetStringSVar(Engine::SVar::SVAR_iFullScreen) << " 0\n";
-			nConfig << system->GetStringSVar(Engine::SVar::SVAR_iWindowPosX) << " 300\n";
-			nConfig << system->GetStringSVar(Engine::SVar::SVAR_iWindowPosY) << " 200\n";
-			nConfig << system->GetStringSVar(Engine::SVar::SVAR_iWindowWidth) << " 800\n";
-			nConfig << system->GetStringSVar(Engine::SVar::SVAR_iWindowHeight) << " 600\n";
-			nConfig << system->GetStringSVar(Engine::SVar::SVAR_iAnisotropic_Filtering) << " 1\n";
-			nConfig << system->GetStringSVar(Engine::SVar::SVAR_iNumBackBuffers) << " 3\n";
-			nConfig << system->GetStringSVar(Engine::SVar::SVAR_iVSyncEnabled) << " 1\n";
-			nConfig.close();
-		}
-		system->SetSVarInt(Engine::SVar::SVAR_iFullScreen, 0); 
-		system->SetSVarInt(Engine::SVar::SVAR_iWindowPosX, 0); 
-		system->SetSVarInt(Engine::SVar::SVAR_iWindowPosY, 0); 
-		system->SetSVarInt(Engine::SVar::SVAR_iWindowWidth, 800); 
-		system->SetSVarInt(Engine::SVar::SVAR_iWindowHeight, 600); 
-		system->SetSVarInt(Engine::SVar::SVAR_iAnisotropic_Filtering, 1); 
-		system->SetSVarInt(Engine::SVar::SVAR_iNumBackBuffers, 3);
-		system->SetSVarInt(Engine::SVar::SVAR_iVSyncEnabled, 1);
-	}
-	
-	//check whether all values exist: (in case of outdated config.ini)
-	if (system->m_SVars.find(Engine::SVar::SVAR_iFullScreen) == system->m_SVars.end()) { system->SetSVarInt(Engine::SVar::SVAR_iFullScreen, 0); }
-	if (system->m_SVars.find(Engine::SVar::SVAR_iWindowPosX) == system->m_SVars.end()) { system->SetSVarInt(Engine::SVar::SVAR_iWindowPosX, 0); }
-	if (system->m_SVars.find(Engine::SVar::SVAR_iWindowPosY) == system->m_SVars.end()) { system->SetSVarInt(Engine::SVar::SVAR_iWindowPosY, 0); }
-	if (system->m_SVars.find(Engine::SVar::SVAR_iWindowWidth) == system->m_SVars.end()) { system->SetSVarInt(Engine::SVar::SVAR_iWindowWidth, 800); }
-	if (system->m_SVars.find(Engine::SVar::SVAR_iWindowHeight) == system->m_SVars.end()) { system->SetSVarInt(Engine::SVar::SVAR_iWindowHeight, 600); }
-	if (system->m_SVars.find(Engine::SVar::SVAR_iAnisotropic_Filtering) == system->m_SVars.end()) { system->SetSVarInt(Engine::SVar::SVAR_iAnisotropic_Filtering, 1); }
-	if (system->m_SVars.find(Engine::SVar::SVAR_iNumBackBuffers) == system->m_SVars.end()) { system->SetSVarInt(Engine::SVar::SVAR_iNumBackBuffers, 3); }
-	if (system->m_SVars.find(Engine::SVar::SVAR_iVSyncEnabled) == system->m_SVars.end()) { system->SetSVarInt(Engine::SVar::SVAR_iVSyncEnabled, 1); }
-	
+		
 	WNDCLASSEX wc;
 	ZeroMemory(&wc, sizeof(WNDCLASSEX));
 	wc.cbSize = sizeof(WNDCLASSEX);
@@ -422,7 +301,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 
 	RegisterClassEx(&wc);
 
-	if (system->GetSVarInt(Engine::SVar::SVAR_iFullScreen) == 1)
+	if (Engine::s_SVars.GetSVarInt(SVar::iFullScreen) == 1)
 	{
 		HWND desktop = GetDesktopWindow();
 		RECT bSize;
@@ -445,32 +324,25 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 			wc.lpszClassName,
 			"ThempX12",
 			WS_OVERLAPPEDWINDOW,
-			system->GetSVarInt(Engine::SVar::SVAR_iWindowPosX),
-			system->GetSVarInt(Engine::SVar::SVAR_iWindowPosY),
-			system->GetSVarInt(Engine::SVar::SVAR_iWindowWidth),
-			system->GetSVarInt(Engine::SVar::SVAR_iWindowHeight),
+			Engine::s_SVars.GetSVarInt(SVar::iWindowPosX),
+			Engine::s_SVars.GetSVarInt(SVar::iWindowPosY),
+			Engine::s_SVars.GetSVarInt(SVar::iWindowWidth),
+			Engine::s_SVars.GetSVarInt(SVar::iWindowHeight),
 			NULL, NULL, hInstance, NULL);
 	}
 
 
 	ShowWindow(system->m_Window, nShowCmd);
 
-	newWindowSizeX = system->GetSVarInt(Engine::SVar::SVAR_iWindowWidth);
-	newWindowSizeY = system->GetSVarInt(Engine::SVar::SVAR_iWindowHeight);
+	newWindowSizeX = Engine::s_SVars.GetSVarInt(SVar::iWindowWidth);
+	newWindowSizeY = Engine::s_SVars.GetSVarInt(SVar::iWindowHeight);
 
 	system->Start();
 
-	std::ofstream nConfig("config.ini");
-	if (nConfig.is_open())
-	{
-		for (auto& it : system->m_SVars)
-		{
-			nConfig << system->GetStringSVar(it.first) << " " << (system->GetStringSVar(it.first)[0] == 'i' ? system->GetSVarInt(it.first) : system->GetSVarFloat(it.first)) << std::endl;
-		}
-		nConfig.close();
-	}
+	Engine::s_SVars.Store();
+	if(conout != nullptr)
+		fclose(conout);
 
-	fclose(conout);
 	return 0;
 }
 
@@ -486,8 +358,8 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 	{
 		if (wParam == SIZE_MAXIMIZED)
 		{
-			Themp::Engine::instance->SetSVarInt(Engine::SVar::SVAR_iWindowPosX, 0);
-			Themp::Engine::instance->SetSVarInt(Engine::SVar::SVAR_iWindowPosY, 0);
+			Themp::Engine::s_SVars.SetSVarInt(SVar::iWindowPosX, 0);
+			Themp::Engine::s_SVars.SetSVarInt(SVar::iWindowPosY, 0);
 		}
 		if (wParam == SIZE_MAXIMIZED || wParam == SIZE_RESTORED)
 		{
@@ -520,8 +392,8 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		{
 			GetWindowRect(Themp::Engine::instance->m_Window, &windowRect);
 
-			Themp::Engine::instance->SetSVarInt(Engine::SVar::SVAR_iWindowPosX, windowRect.left);
-			Themp::Engine::instance->SetSVarInt(Engine::SVar::SVAR_iWindowPosY, windowRect.top);
+			Themp::Engine::s_SVars.SetSVarInt(SVar::iWindowPosX, windowRect.left);
+			Themp::Engine::s_SVars.SetSVarInt(SVar::iWindowPosY, windowRect.top);
 		}
 		break;
 		case WM_ENTERSIZEMOVE:

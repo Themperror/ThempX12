@@ -2,6 +2,7 @@
 #include "core/engine.h"
 #include "control.h"
 #include "util/print.h"
+#include "util/svars.h"
 #include "texture.h"
 
 using namespace Themp::D3D;
@@ -12,24 +13,23 @@ bool Context::Init(ComPtr<ID3D12Device2> device)
 {
 	ComPtr<ID3D12CommandQueue> cmdQueue = Engine::instance->m_Renderer->GetCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT);
 	m_Device = device;
-	m_NumBackBuffers = Engine::instance->GetSVarInt(Engine::SVar::SVAR_iNumBackBuffers);
+	m_NumBackBuffers = Engine::s_SVars.GetSVarInt(SVar::iNumBackBuffers);
 	m_BackBuffers.resize(m_NumBackBuffers);
 
 	//Will fix this to not contain windows calls later..
-	RECT rect{ 0,0,Engine::instance->GetSVarInt(Engine::SVar::SVAR_iWindowWidth), Engine::instance->GetSVarInt(Engine::SVar::SVAR_iWindowHeight) };
+	RECT rect{ 0,0,Engine::s_SVars.GetSVarInt(SVar::iWindowWidth), Engine::s_SVars.GetSVarInt(SVar::iWindowHeight) };
 	GetClientRect(Engine::instance->m_Window, &rect);
 	m_Swapchain = CreateSwapChain(Engine::instance->m_Window, cmdQueue, rect.right, rect.bottom, m_NumBackBuffers);
 	if (m_Swapchain == nullptr)
 	{
 		return false;
 	}
-	m_BackBufferHeapTracker = &Engine::instance->m_Renderer->GetResourceManager().GetDescriptorHeap(*this, D3D::DESCRIPTOR_HEAP_TYPE::RTV, m_NumBackBuffers);
-	m_BackBufferHeap = m_BackBufferHeapTracker->heap;
+	m_BackBufferHeap = Engine::instance->m_Renderer->GetResourceManager().GetDescriptorHeap(D3D::DESCRIPTOR_HEAP_TYPE::RTV, m_NumBackBuffers);
 	if (m_BackBufferHeap == nullptr)
 	{
 		return false;
 	}
-	UpdateRenderTargetViews();
+	SetupRenderTargetViews();
 
 	return true;
 }
@@ -124,7 +124,7 @@ RTVHeap Context::GetBackBufferHeap() const
 	return m_BackBufferHeap;
 }
 
-void Context::UpdateRenderTargetViews()
+void Context::SetupRenderTargetViews()
 {
 	auto rtvDescriptorSize = m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
@@ -135,7 +135,7 @@ void Context::UpdateRenderTargetViews()
 		ComPtr<ID3D12Resource> backBuffer;
 		if (m_Swapchain->GetBuffer(i, IID_PPV_ARGS(&backBuffer)) == S_OK)
 		{
-			m_BackBuffers[i] = &Engine::instance->m_Renderer->GetResourceManager().GetTextureFromResource(*this, *m_BackBufferHeapTracker, backBuffer.Get(), TEXTURE_TYPE::RTV);
+			m_BackBuffers[i] = &Engine::instance->m_Renderer->GetResourceManager().GetTextureFromResource(m_Device,  backBuffer.Get(), TEXTURE_TYPE::RTV);
 			
 			rtvHandle.ptr += rtvDescriptorSize;
 		}
@@ -225,28 +225,6 @@ ComPtr<IDXGISwapChain4> Context::CreateSwapChain(HWND hWnd, ComPtr<ID3D12Command
 
 
 	return dxgiSwapChain4;
-}
-
-ComPtr<ID3D12DescriptorHeap> Context::CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE type, uint32_t numDescriptors) const
-{
-	ComPtr<ID3D12DescriptorHeap> descriptorHeap;
-
-	D3D12_DESCRIPTOR_HEAP_DESC desc = {};
-
-	desc.NumDescriptors = numDescriptors;
-	desc.Type = type;
-	if (type == D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)
-	{
-		desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-	}
-
-	if (m_Device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&descriptorHeap)) != S_OK)
-	{
-		Themp::Print("Failed to create descriptor heap of type: %i", type);
-		return nullptr;
-	}
-	descriptorHeap->SetName(L"ID3D12DescriptorHeap");
-	return descriptorHeap;
 }
 
 bool CheckTearingSupport()

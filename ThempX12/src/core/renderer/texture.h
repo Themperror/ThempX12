@@ -12,7 +12,6 @@ namespace Themp
 {
 	namespace D3D
 	{
-		class Context;
 		class GPU_Resources;
 		class Texture
 		{
@@ -21,10 +20,10 @@ namespace Themp
 			CD3DX12_CPU_DESCRIPTOR_HANDLE GetCPUHandle() const { return m_CPUHandle;  }
 		private:
 
-			void InitSRVTexture(ComPtr<ID3D12Resource> textureSource, const Context& device, const D3D::DescriptorHeapTracker& heapTracker);
-			void InitDSVTexture(ComPtr<ID3D12Resource> textureSource, const Context& device, const D3D::DescriptorHeapTracker& heapTracker);
-			void InitRTVTexture(ComPtr<ID3D12Resource> textureSource, const Context& device, const D3D::DescriptorHeapTracker& heapTracker);
-			void InitUAVTexture(ComPtr<ID3D12Resource> textureSource, const Context& device, const D3D::DescriptorHeapTracker& heapTracker) {};
+			void InitSRVTexture(ComPtr<ID3D12Resource> textureSource, ComPtr<ID3D12Device2> device, const D3D::DescriptorHeapTracker& heapTracker);
+			void InitDSVTexture(ComPtr<ID3D12Resource> textureSource, ComPtr<ID3D12Device2> device, const D3D::DescriptorHeapTracker& heapTracker);
+			void InitRTVTexture(ComPtr<ID3D12Resource> textureSource, ComPtr<ID3D12Device2> device, const D3D::DescriptorHeapTracker& heapTracker);
+			void InitUAVTexture(ComPtr<ID3D12Resource> textureSource, ComPtr<ID3D12Device2> device, const D3D::DescriptorHeapTracker& heapTracker) {};
 
 			ComPtr<ID3D12Resource> m_SRV;
 			ComPtr<ID3D12Resource> m_UAV;

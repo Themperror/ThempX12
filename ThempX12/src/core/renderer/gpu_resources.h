@@ -13,28 +13,27 @@ namespace Themp
 {
 	namespace D3D
 	{
-		class Context;
+		class Device;
 		class GPU_Resources
 		{
 		public:
-
+			GPU_Resources(const D3D::Device& device, uint32_t maxSRVs, uint32_t maxDSVs, uint32_t maxRTVs, uint32_t maxSamplers);
 		public:
-			DescriptorHeapTracker& GetDescriptorHeap(const D3D::Context& context, DESCRIPTOR_HEAP_TYPE type, uint32_t amount);
-			Texture& GetTextureFromResource(const Context& device, DescriptorHeapTracker& heapTracker, ComPtr<ID3D12Resource> resource, TEXTURE_TYPE type);
+			ComPtr<ID3D12DescriptorHeap> GetDescriptorHeap(DESCRIPTOR_HEAP_TYPE type, uint32_t reservedSlots = 0);
+			Texture& GetTextureFromResource(ComPtr<ID3D12Device2> device,  ComPtr<ID3D12Resource> resource, TEXTURE_TYPE type);
 		private:
 			
-			DescriptorHeapTracker& MakeDescriptorHeapTracker(DESCRIPTOR_HEAP_TYPE type);
 
-			ComPtr<ID3D12DescriptorHeap> MakeDescriptorHeap(const D3D::Context& context, DescriptorHeapTracker& tracker, DESCRIPTOR_HEAP_TYPE type, uint32_t amount);
+			DescriptorHeapTracker CreateDescriptorHeap(const D3D::Device& device, DESCRIPTOR_HEAP_TYPE type, uint32_t amount);
 
 			//Texture& MakeTextureFromResource(const Context& device, DescriptorHeapTracker& heapTracker, ComPtr<ID3D12Resource> resource, TEXTURE_TYPE type);
 			std::unordered_map<std::string, Texture*> m_FileTextures;
 			std::vector< std::unique_ptr<Texture>> m_Textures;
 
-			std::vector<std::unique_ptr<DescriptorHeapTracker>> m_CB_SRV_UAV_Heaps;
-			std::vector<std::unique_ptr<DescriptorHeapTracker>> m_RTV_Heaps;
-			std::vector<std::unique_ptr<DescriptorHeapTracker>> m_DSV_Heaps;
-			std::vector<std::unique_ptr<DescriptorHeapTracker>> m_SAMPLER_Heaps;
+			DescriptorHeapTracker m_CB_SRV_UAV_Heap;
+			DescriptorHeapTracker m_RTV_Heap;
+			DescriptorHeapTracker m_DSV_Heap;
+			DescriptorHeapTracker m_SAMPLER_Heap;
 		};
 	}
 }

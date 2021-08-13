@@ -123,6 +123,9 @@
     <ClInclude Include="src\core\renderer\types.h">
       <Filter>Source Files\core\renderer</Filter>
     </ClInclude>
+    <ClInclude Include="src\core\util\svars.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\core\Functions.cpp">
@@ -196,6 +199,9 @@
     </ClCompile>
     <ClCompile Include="src\lib\imgui\imgui_tables.cpp">
       <Filter>Source Files\lib\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\util\svars.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

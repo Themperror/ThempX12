@@ -151,6 +151,30 @@ ComPtr<IDXGIAdapter4> Device::GetAdapter(D3D_FEATURE_LEVEL requiredFeatureLevel)
 }
 
 
+
+ComPtr<ID3D12DescriptorHeap> Device::CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE type, uint32_t numDescriptors) const
+{
+	ComPtr<ID3D12DescriptorHeap> descriptorHeap;
+
+	D3D12_DESCRIPTOR_HEAP_DESC desc = {};
+
+	desc.NumDescriptors = numDescriptors;
+	desc.Type = type;
+	if (type == D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)
+	{
+		desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	}
+
+	if (m_Device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&descriptorHeap)) != S_OK)
+	{
+		Themp::Print("Failed to create descriptor heap of type: %i", type);
+		return nullptr;
+	}
+	descriptorHeap->SetName(L"ID3D12DescriptorHeap");
+	return descriptorHeap;
+}
+
+
 #if defined(_DEBUG)
 void Device::EnableDebug()
 {

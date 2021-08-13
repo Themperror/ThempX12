@@ -28,6 +28,7 @@
     <ClInclude Include="src\core\Engine.h" />
     <ClInclude Include="src\core\util\break.h" />
     <ClInclude Include="src\core\util\print.h" />
+    <ClInclude Include="src\core\util\svars.h" />
     <ClInclude Include="src\core\util\timer.h" />
     <ClInclude Include="src\game\game.h" />
     <ClInclude Include="src\lib\imgui\imconfig.h" />
@@ -55,6 +56,7 @@
     <ClCompile Include="src\core\Engine.cpp" />
     <ClCompile Include="src\core\util\break.cpp" />
     <ClCompile Include="src\core\util\print.cpp" />
+    <ClCompile Include="src\core\util\svars.cpp" />
     <ClCompile Include="src\core\util\timer.cpp" />
     <ClCompile Include="src\game\game.cpp" />
     <ClCompile Include="src\lib\imgui\imgui.cpp" />

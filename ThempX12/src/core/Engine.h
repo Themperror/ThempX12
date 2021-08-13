@@ -50,54 +50,19 @@ namespace Themp
 		class Manager;
 	}
 	class Resources;
+	class SVars;
 	class Engine
 	{
 	public:
 		static std::unique_ptr<Themp::Engine> instance;
+		static SVars s_SVars;
 		void Start();
-
-		enum class SVar 
-		{ 
-			SVAR_iWindowWidth, 
-			SVAR_iWindowHeight, 
-			SVAR_iFullScreen, 
-			SVAR_iWindowPosX, 
-			SVAR_iWindowPosY, 
-			SVAR_iAnisotropic_Filtering,
-			SVAR_iNumBackBuffers,
-			SVAR_iVSyncEnabled,
-			COUNT,
-		};
-
-		const char* const s_SVarStr[static_cast<size_t>(SVar::COUNT)] =
-		{
-			"iWindowSizeX",
-			"iWindowSizeY",
-			"iFullscreen",
-			"iWindowPosX",
-			"iWindowPosY",
-			"iAnisotropic_Filtering",
-			"iNumBackBuffers",
-			"iVsyncEnabled"
-		};
-		
-		const char* const GetStringSVar(SVar svar) const 
-		{
-			return s_SVarStr[static_cast<size_t>(svar)];
-		}
-
-
-		int GetSVarInt(SVar svar);
-		float GetSVarFloat(SVar svar);
-		void SetSVarInt(SVar svar, int val);
-		void SetSVarFloat(SVar svar, float val);
 
 		std::string m_BaseDir;
 		HWND m_Window = nullptr;
 		HINSTANCE m_HInstance = 0;
 		bool m_Quitting = false;
 		bool m_CursorShown = true;
-		std::map<SVar, std::variant<int,float>> m_SVars;
 		std::unique_ptr<Game::Game> m_Game;
 		std::unique_ptr<D3D::Control> m_Renderer;
 		std::unique_ptr<Resources> m_Resources;

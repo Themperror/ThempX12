@@ -4,6 +4,8 @@
 #include "context.h"
 #include "gpu_resources.h"
 #include <d3dx12.h>
+#include "util/break.h"
+#include "util/print.h"
 #include <assert.h>
 
 namespace Themp
@@ -27,13 +29,16 @@ namespace Themp
 					return m_DSV;
 				}
 			}
+			Themp::Print("Attempted to get a resource type which this texture wasn't initialized with!");
+			Themp::Break();
+			return m_SRV;
 		}
 
-		void Texture::InitSRVTexture(ComPtr<ID3D12Resource> textureSource, const Context& context, const D3D::DescriptorHeapTracker& heapTracker)
+		void Texture::InitSRVTexture(ComPtr<ID3D12Resource> textureSource, ComPtr<ID3D12Device2> device, const D3D::DescriptorHeapTracker& heapTracker)
 		{
 			m_HeapIndex = heapTracker.usedSlots;
 
-			UINT m_descriptorSize = context.GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			UINT m_descriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 			D3D12_CPU_DESCRIPTOR_HANDLE heapStart = heapTracker.heap->GetCPUDescriptorHandleForHeapStart();
 			m_CPUHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(heapStart, m_HeapIndex, m_descriptorSize);
 
@@ -46,14 +51,14 @@ namespace Themp
 			desc.Texture2D.ResourceMinLODClamp = 0;
 
 			m_InittedTypes[static_cast<size_t>(TEXTURE_TYPE::SRV)] = true;
-			context.GetDevice()->CreateShaderResourceView(m_SRV.Get(), &desc, m_CPUHandle);
+			device->CreateShaderResourceView(m_SRV.Get(), &desc, m_CPUHandle);
 		}
 
-		void Texture::InitDSVTexture(ComPtr<ID3D12Resource> textureSource, const Context& context, const D3D::DescriptorHeapTracker& heapTracker)
+		void Texture::InitDSVTexture(ComPtr<ID3D12Resource> textureSource, ComPtr<ID3D12Device2> device, const D3D::DescriptorHeapTracker& heapTracker)
 		{
 			m_HeapIndex = heapTracker.usedSlots;
 
-			UINT m_descriptorSize = context.GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+			UINT m_descriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 			D3D12_CPU_DESCRIPTOR_HANDLE heapStart = heapTracker.heap->GetCPUDescriptorHandleForHeapStart();
 			m_CPUHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(heapStart, m_HeapIndex, m_descriptorSize);
 
@@ -65,14 +70,14 @@ namespace Themp
 			desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
 
 			m_InittedTypes[static_cast<size_t>(TEXTURE_TYPE::DSV)] = true;
-			context.GetDevice()->CreateDepthStencilView(m_DSV.Get(), &desc, m_CPUHandle);
+			device->CreateDepthStencilView(m_DSV.Get(), &desc, m_CPUHandle);
 		}
 
-		void Texture::InitRTVTexture(ComPtr<ID3D12Resource> textureSource, const Context& context, const D3D::DescriptorHeapTracker& heapTracker)
+		void Texture::InitRTVTexture(ComPtr<ID3D12Resource> textureSource, ComPtr<ID3D12Device2>device, const D3D::DescriptorHeapTracker& heapTracker)
 		{
 			m_HeapIndex = heapTracker.usedSlots;
 
-			UINT m_descriptorSize = context.GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+			UINT m_descriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 			D3D12_CPU_DESCRIPTOR_HANDLE heapStart = heapTracker.heap->GetCPUDescriptorHandleForHeapStart();
 			m_CPUHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(heapStart, m_HeapIndex, m_descriptorSize);
 
@@ -84,7 +89,7 @@ namespace Themp
 			desc.ViewDimension = D3D12_RTV_DIMENSION::D3D12_RTV_DIMENSION_TEXTURE2D;
 
 			m_InittedTypes[static_cast<size_t>(TEXTURE_TYPE::RTV)] = true;
-			context.GetDevice()->CreateRenderTargetView(textureSource.Get(), &desc, m_CPUHandle);
+			device->CreateRenderTargetView(textureSource.Get(), &desc, m_CPUHandle);
 			m_RTV = textureSource;
 		}
 	}

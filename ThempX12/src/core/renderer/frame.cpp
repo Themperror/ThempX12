@@ -12,12 +12,6 @@ void Frame::Init(int bufferIndex, RTVHeap heap)
 	const Context& context = Engine::instance->m_Renderer->GetContext();
 	m_FrameBuffer = context.GetBackBufferTexture(bufferIndex);
 
-	m_rtvDescriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = heap->GetCPUDescriptorHandleForHeapStart();
-
-	m_rtvHeapStart = rtvHandle.ptr;
-	m_rtvHeapIndex = bufferIndex;
-
 	m_CommandAllocator = context.CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT);
 	m_CommandList = context.CreateCommandList(m_CommandAllocator, D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT);
 }
@@ -34,11 +28,9 @@ void Frame::Reset()
 	m_CommandList->ResourceBarrier(1, &barrier);
 	FLOAT clearColor[] = { 0.4f, 0.6f, 0.9f, 1.0f };
 
-	D3D12_CPU_DESCRIPTOR_HANDLE handle{ m_rtvHeapStart };
-	CD3DX12_CPU_DESCRIPTOR_HANDLE rtv(handle,
-		m_rtvHeapIndex, m_rtvDescriptorSize);
+	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle = m_FrameBuffer->GetCPUHandle();
 
-	m_CommandList->ClearRenderTargetView(rtv, clearColor, 0, nullptr);
+	m_CommandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 	
 }
 

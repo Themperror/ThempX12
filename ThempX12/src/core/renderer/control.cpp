@@ -1,5 +1,6 @@
 #include "control.h"
 #include "util/print.h"
+#include "util/svars.h"
 #include "engine.h"
 #include "texture.h"
 
@@ -9,7 +10,6 @@ using namespace Themp::D3D;
 
 bool Control::Init()
 {
-	m_GPU_Resources = std::make_unique<GPU_Resources>();
 
 	m_Device = std::make_unique<Device>();
 	if (!m_Device->Init())
@@ -17,14 +17,23 @@ bool Control::Init()
 		return false;
 	}
 
+	int maxNumSRV = Engine::s_SVars.GetSVarInt(SVar::iMaxSRVs);
+	int maxNumRTV = Engine::s_SVars.GetSVarInt(SVar::iMaxRTVs);
+	int maxNumDSV = Engine::s_SVars.GetSVarInt(SVar::iMaxDSVs);
+	int maxNumSamplers = Engine::s_SVars.GetSVarInt(SVar::iMaxSamplers);
+
+	m_GPU_Resources = std::make_unique<GPU_Resources>(*m_Device, maxNumSRV, maxNumDSV, maxNumRTV, maxNumSamplers);
+
+	int maxImGuiSRVs = Engine::s_SVars.GetSVarInt(SVar::iMaxImGuiSRVs);
+	m_ImguiSRVHeap = m_GPU_Resources->GetDescriptorHeap(D3D::DESCRIPTOR_HEAP_TYPE::CB_SRV_UAV);
+
 	m_Context = std::make_unique<Context>();
 	if (!m_Context->Init(m_Device->GetDevice()))
 	{
 		return false;
 	}
 
-
-	int numBackBuffers = Engine::instance->GetSVarInt(Engine::SVar::SVAR_iNumBackBuffers);
+	int numBackBuffers = Engine::s_SVars.GetSVarInt(SVar::iNumBackBuffers);
 	m_Backbuffers.resize(numBackBuffers);
 	for (int i = 0; i < m_Backbuffers.size(); i++)
 	{
@@ -37,10 +46,10 @@ bool Control::Init()
 	m_FenceEvent = m_Context->CreateEventHandle();
 
 
-	m_Context->EnableVsync(Engine::instance->GetSVarInt(Engine::SVar::SVAR_iVSyncEnabled));
-	m_ImguiSRVHeap = m_GPU_Resources->GetDescriptorHeap(*m_Context, D3D::DESCRIPTOR_HEAP_TYPE::CB_SRV_UAV,32).heap;
+	m_Context->EnableVsync(Engine::s_SVars.GetSVarInt(SVar::iVSyncEnabled));
 
-	ImGui_ImplDX12_Init(GetDevice().Get(), Engine::instance->GetSVarInt(Engine::SVar::SVAR_iNumBackBuffers), DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM, m_ImguiSRVHeap.Get(), m_ImguiSRVHeap->GetCPUDescriptorHandleForHeapStart(), m_ImguiSRVHeap->GetGPUDescriptorHandleForHeapStart());
+
+	ImGui_ImplDX12_Init(GetDevice().Get(), Engine::s_SVars.GetSVarInt(SVar::iNumBackBuffers), DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM, m_ImguiSRVHeap.Get(), m_ImguiSRVHeap->GetCPUDescriptorHandleForHeapStart(), m_ImguiSRVHeap->GetGPUDescriptorHandleForHeapStart());
 
 
 

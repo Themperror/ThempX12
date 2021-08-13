@@ -6,6 +6,7 @@
 #include <vector>
 #include <cstdint>
 #include <chrono>
+#include "types.h"
 
 #ifdef min
 #undef min
@@ -22,7 +23,6 @@ namespace Themp
 	{
 		using RTVHeap = ComPtr<ID3D12DescriptorHeap>;
 		class Texture;
-		struct DescriptorHeapTracker;
 		class Context
 		{
 		public:
@@ -35,8 +35,6 @@ namespace Themp
 			void Flush(ComPtr<ID3D12CommandQueue> commandQueue, ComPtr<ID3D12Fence> fence, uint64_t & fenceValue, HANDLE fenceEvent) const;
 			ComPtr<ID3D12CommandAllocator> CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE type) const;
 			ComPtr<ID3D12GraphicsCommandList> CreateCommandList(ComPtr<ID3D12CommandAllocator> commandAllocator, D3D12_COMMAND_LIST_TYPE type) const;
-			ComPtr<ID3D12DescriptorHeap> CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE type, uint32_t numDescriptors) const;
-			void UpdateRenderTargetViews();
 			const Texture* GetBackBufferTexture(int idx)  const;
 
 			RTVHeap GetBackBufferHeap() const;
@@ -48,6 +46,7 @@ namespace Themp
 			ComPtr<ID3D12Device2> GetDevice() const;
 		private:
 			ComPtr<IDXGISwapChain4> CreateSwapChain(HWND hWnd, ComPtr<ID3D12CommandQueue> commandQueue, uint32_t width, uint32_t height, uint32_t bufferCount);
+			void SetupRenderTargetViews();
 
 			ComPtr<IDXGISwapChain4> m_Swapchain;
 			ComPtr<ID3D12Device2> m_Device;
@@ -56,7 +55,7 @@ namespace Themp
 			bool m_SupportsFreeSync = false;
 			int m_NumBackBuffers = 0;
 			std::vector<Texture*> m_BackBuffers;
-			DescriptorHeapTracker* m_BackBufferHeapTracker;
+			DescriptorHeapTracker m_BackBufferHeapTracker;
 			RTVHeap m_BackBufferHeap;
 		};
 	}
