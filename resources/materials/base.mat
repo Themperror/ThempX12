@@ -1,0 +1,6 @@
+MainPass0=shadow
+SubPass0=shadow
+Shader0=shadow
+MainPass1=main
+SubPass1=main
+Shader1=default

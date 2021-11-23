@@ -1,0 +1,14 @@
+##target type (Color/Depth)
+Type=Color
+
+##target format (See DXGI formats)
+Format=R8G8B8A8
+
+##(Fixed/Scaling/Full) (Full = window/screen resolution)
+Resolution=Full
+
+##Scales target if set to "Scaling" by this amount of the full resolution
+##Scale=1.0
+
+##Resolution if set to "Fixed", in pixels
+##FixedResolution=1024x1024
