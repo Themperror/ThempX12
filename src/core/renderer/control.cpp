@@ -136,7 +136,7 @@ const Context&  Control::GetContext() const
 
 MainPassHandle Control::AddMainPass(const std::string& name)
 {
-	MainPass pass(name);
+	Pass pass(name);
 	m_MainPasses.push_back(pass);
 	return static_cast<MainPassHandle>(m_MainPasses.size() - 1);
 }

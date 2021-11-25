@@ -4,7 +4,7 @@
 #include "frame.h"
 #include "device.h"
 #include "gpu_resources.h"
-#include "pass/mainpass.h"
+#include "pass.h"
 
 #include <d3d12.h>
 #include <memory>
@@ -43,7 +43,7 @@ namespace Themp
 
 			ComPtr<ID3D12DescriptorHeap> m_ImguiSRVHeap;
 
-			std::vector<MainPass> m_MainPasses;
+			std::vector<Pass> m_MainPasses;
 		};
 	}
 }

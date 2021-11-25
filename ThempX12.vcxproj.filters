@@ -40,9 +40,6 @@
     <Filter Include="Resource Files\shaders">
       <UniqueIdentifier>{ad417b13-bfce-49ee-af1e-9decc131369a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\core\renderer\pass">
-      <UniqueIdentifier>{ae9db1da-efb4-44a8-b1d9-8e6c3e7223d3}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\core\Camera.h">
@@ -126,20 +123,20 @@
     <ClInclude Include="src\core\renderer\types.h">
       <Filter>Source Files\core\renderer</Filter>
     </ClInclude>
-    <ClInclude Include="src\core\renderer\pass\mainpass.h">
-      <Filter>Source Files\core\renderer\pass</Filter>
-    </ClInclude>
-    <ClInclude Include="src\core\renderer\pass\subpass.h">
-      <Filter>Source Files\core\renderer\pass</Filter>
-    </ClInclude>
-    <ClInclude Include="src\core\renderer\material.h">
-      <Filter>Source Files\core\renderer</Filter>
-    </ClInclude>
     <ClInclude Include="src\core\util\svars.h">
       <Filter>Source Files\core\util</Filter>
     </ClInclude>
     <ClInclude Include="src\core\renderer\mesh.h">
       <Filter>Source Files\core\renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\renderer\shader.h">
+      <Filter>Source Files\core\renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\renderer\pass.h">
+      <Filter>Source Files\core\renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\util\stringUtils.h">
+      <Filter>Source Files\core\util</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -215,20 +212,20 @@
     <ClCompile Include="src\lib\imgui\imgui_tables.cpp">
       <Filter>Source Files\lib\imgui</Filter>
     </ClCompile>
-    <ClCompile Include="src\core\renderer\pass\mainpass.cpp">
-      <Filter>Source Files\core\renderer\pass</Filter>
-    </ClCompile>
-    <ClCompile Include="src\core\renderer\pass\subpass.cpp">
-      <Filter>Source Files\core\renderer\pass</Filter>
-    </ClCompile>
-    <ClCompile Include="src\core\renderer\material.cpp">
-      <Filter>Source Files\core\renderer</Filter>
-    </ClCompile>
     <ClCompile Include="src\core\util\svars.cpp">
       <Filter>Source Files\core\util</Filter>
     </ClCompile>
     <ClCompile Include="src\core\renderer\mesh.cpp">
       <Filter>Source Files\core\renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\renderer\shader.cpp">
+      <Filter>Source Files\core\renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\renderer\pass.cpp">
+      <Filter>Source Files\core\renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\util\stringUtils.cpp">
+      <Filter>Source Files\core\util</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

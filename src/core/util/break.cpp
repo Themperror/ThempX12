@@ -13,6 +13,7 @@
 #define NOKERNEL
 #define NONLS
 #define NOMEMMGR
+#define NOGDI
 #define NOMETAFILE
 #define NOMINMAX
 #define NOOPENFILE
@@ -29,6 +30,7 @@
 #define NODEFERWINDOWPOS
 #define NOMCX
 #include <Windows.h>
+
 
 void Themp::Break()
 {

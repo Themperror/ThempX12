@@ -1,0 +1,22 @@
+##Determines the order of rendering
+Priority=-1
+
+##depth state
+DepthEnable=true
+DepthWrite=true
+DepthFunc=LESS
+
+##raster state
+Wireframe=false
+WindingOrder=CW
+
+##targets
+DepthTarget=depth
+ColorTarget0=main
+#ColorTarget1=
+#ColorTarget2=
+#ColorTarget3=
+#ColorTarget4=
+#ColorTarget5=
+#ColorTarget6=
+#ColorTarget7=

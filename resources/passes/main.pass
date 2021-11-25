@@ -1,3 +1,6 @@
+##Determines the order of rendering
+Priority=0
+
 ##depth state
 DepthEnable=true
 DepthWrite=true

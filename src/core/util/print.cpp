@@ -38,6 +38,7 @@ void Themp::Print(const char* message, ...)
 	if (logFile != stdout)printf("\n");
 	fflush(logFile);
 }
+
 void Themp::Print(const wchar_t* message, ...)
 {
 	timeb t;
@@ -55,6 +56,7 @@ void Themp::Print(const wchar_t* message, ...)
 	if (logFile != stdout)wprintf(L"\n");
 	fflush(logFile);
 }
+
 void Themp::Print(const std::string message, ...)
 {
 	timeb t;
@@ -69,6 +71,25 @@ void Themp::Print(const std::string message, ...)
 	if (logFile != stdout) vprintf(message.c_str(), args);
 	va_end(args);
 	fprintf(logFile, "\n");
+	if (logFile != stdout)printf("\n");
+	fflush(logFile);
+}
+
+
+void Themp::Print(const std::wstring message, ...)
+{
+	timeb t;
+	ftime(&t);
+	auto time = localtime(&t.time);
+	//print time in format: [18:26:02:270]
+	fprintf(logFile, "[%02i:%02i:%02i:%03i]: ", time->tm_hour, time->tm_min, time->tm_sec, t.millitm);
+	if (logFile != stdout)printf("[%02i:%02i:%02i:%03i]: ", time->tm_hour, time->tm_min, time->tm_sec, t.millitm);
+	va_list args;
+	va_start(args, message);
+	vfwprintf(logFile, message.c_str(), args);
+	if (logFile != stdout) vwprintf(message.c_str(), args);
+	va_end(args);
+	fwprintf(logFile, L"\n");
 	if (logFile != stdout)printf("\n");
 	fflush(logFile);
 }
