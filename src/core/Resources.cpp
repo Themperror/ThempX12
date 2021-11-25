@@ -74,6 +74,35 @@ namespace Themp
 		return number_result;
 	}
 
+	bool GetConfigurationLine(std::string& input, std::string_view* prefix, std::string_view* suffix)
+	{
+		auto noWinNewLines = std::remove_if(input.begin(), input.end(), [](char c) { return c == '\r'; });
+		input.erase(noWinNewLines, input.end());
+		if (input.size() > 1)
+		{
+			//comment
+			if (input[0] == '#')
+			{
+				return false;
+			}
+
+			size_t equalsIndex = input.find('=');
+			if (equalsIndex != std::string::npos)
+			{
+				*prefix = std::string_view(input.data(), equalsIndex);
+				*suffix = std::string_view(input.data() + equalsIndex + 1, input.size() - (equalsIndex)-1);
+				return true;
+			}
+			else
+			{
+				Themp::Print("Malformed configuration line: [%s]", input.c_str());
+				Themp::Break();
+			}
+		}
+		return false;
+	}
+
+
 	std::string ReadFileToString(const std::wstring& filePath)
 	{
 		HANDLE file = CreateFileW(filePath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -113,7 +142,7 @@ namespace Themp
 		}
 		std::vector<std::wstring> materials = LoadFilesFromDirectory(MATERIALS_FOLDER);
 
-		std::string materialData(10240, '0');
+		std::string materialData(10240, '\0');
 		for (const std::wstring& path : materials)
 		{
 			Themp::Print("Loading material file: [%S]", path.c_str());
@@ -147,39 +176,22 @@ namespace Themp
 		std::string line(1024, '\0');
 		while (std::getline(stream, line))
 		{
-			auto noWinNewLines = std::remove_if(line.begin(), line.end(), [](char c) { return c == '\r'; });
-			line.erase(noWinNewLines, line.end());
-			if (line.size() > 1)
+			std::string_view prefix;
+			std::string_view suffix;
+			if(GetConfigurationLine(line,&prefix, &suffix))
 			{
-				//comment
-				if (line[0] == '#')
+				if (prefix == Pass::GetPassConfigurationMembersAsString(Pass::PassConfigurationMembers::PRIORITY))
 				{
-					continue;
+					int value = Themp::Util::FromString<int, std::string_view>(suffix);
+					pass.SetPriority(value);
 				}
-
-				size_t equalsIndex = line.find('=');
-				if (equalsIndex != std::string::npos)
+				else if (prefix == Pass::GetPassConfigurationMembersAsString(Pass::PassConfigurationMembers::DEPTHTARGET))
 				{
-					std::string_view prefix = std::string_view(line.data(), equalsIndex);
-					std::string_view suffix = std::string_view(line.data() + equalsIndex + 1, line.size() - (equalsIndex) - 1);
-
-					if (prefix == Pass::GetPassConfigurationMembersAsString(Pass::PassConfigurationMembers::PRIORITY))
-					{
-						int value = Themp::Util::FromString<int, std::string_view>(suffix);
-					}
-					else if (prefix == Pass::GetPassConfigurationMembersAsString(Pass::PassConfigurationMembers::DEPTHTARGET))
-					{
-						//LoadRenderTarget(RenderTarget::DSV, format, resolution_mode, scaler)
-					}
-					else if (auto colorTargetIndex = TryParseSectionNumber(Pass::GetPassConfigurationMembersAsString(Pass::PassConfigurationMembers::COLORTARGET), prefix))
-					{
-						//LoadRenderTarget(RenderTarget::RTV, format, resolution_mode, scaler)
-					}
+					//LoadRenderTarget(RenderTarget::DSV, format, resolution_mode, scaler)
 				}
-				else
+				else if (auto colorTargetIndex = TryParseSectionNumber(Pass::GetPassConfigurationMembersAsString(Pass::PassConfigurationMembers::COLORTARGET), prefix))
 				{
-					Themp::Print("Malformed configuration line: [%s]", line.c_str());
-					Themp::Break();
+					//LoadRenderTarget(RenderTarget::RTV, format, resolution_mode, scaler)
 				}
 			}
 		}
@@ -219,65 +231,47 @@ namespace Themp
 		std::string line(1024, '\0');
 		while (std::getline(stream, line))
 		{
-			auto noWinNewLines = std::remove_if(line.begin(), line.end(), [](char c) { return c == '\r'; });
-			line.erase(noWinNewLines, line.end());
-			if (line.size() > 1)
+			std::string_view prefix;
+			std::string_view suffix;
+			if (GetConfigurationLine(line, &prefix, &suffix))
 			{
-				//comment
-				if (line[0] == '#')
+				if (auto mainpass = TryParseSectionNumber(validEntries[MaterialMembers::PASS], prefix))
 				{
-					continue;
-				}
-
-				size_t equalsIndex = line.find('=');
-				if (equalsIndex != std::string::npos)
-				{
-					std::string_view prefix = std::string_view(line.data(), equalsIndex);
-					std::string_view suffix = std::string_view(line.data() + equalsIndex + 1, line.size() - (equalsIndex) - 1);
-
-					if (auto mainpass = TryParseSectionNumber(validEntries[MaterialMembers::PASS], prefix))
+					bool foundPass = false;
+					Pass pass = LoadPass(suffix);
+					for (int i = 0; i < passData.size(); i++)
 					{
-						bool foundPass = false;
-						Pass pass = LoadPass(suffix);
-						for (int i = 0; i < passData.size(); i++)
+						if (passData[i].second == mainpass)
 						{
-							if (passData[i].second == mainpass)
-							{
-								foundPass = true;
-								passData[i].first = pass;
-								break;
-							}
-						}
-						if (!foundPass)
-						{
-							passData.push_back({ pass, mainpass.value() });
+							foundPass = true;
+							passData[i].first = pass;
+							break;
 						}
 					}
-					else if (auto shader = TryParseSectionNumber(validEntries[MaterialMembers::SHADER], prefix))
+					if (!foundPass)
 					{
-						bool foundPass = false;
-						ShaderHandle shaderHandle = LoadShader(suffix);
-						for (int i = 0; i < passData.size(); i++)
-						{
-							if (passData[i].second == shader)
-							{
-								foundPass = true;
-								passData[i].first.AddRenderable(shaderHandle);
-								break;
-							}
-						}
-						if (!foundPass)
-						{
-							Pass pass{ "" };
-							pass.AddRenderable(shaderHandle);
-							passData.push_back({ pass, shader.value() });
-						}
+						passData.push_back({ pass, mainpass.value() });
 					}
 				}
-				else
+				else if (auto shader = TryParseSectionNumber(validEntries[MaterialMembers::SHADER], prefix))
 				{
-					Themp::Print("Malformed configuration line: [%s]", line.c_str());
-					Themp::Break();
+					bool foundPass = false;
+					ShaderHandle shaderHandle = LoadShader(suffix);
+					for (int i = 0; i < passData.size(); i++)
+					{
+						if (passData[i].second == shader)
+						{
+							foundPass = true;
+							passData[i].first.AddRenderable(shaderHandle);
+							break;
+						}
+					}
+					if (!foundPass)
+					{
+						Pass pass{ "" };
+						pass.AddRenderable(shaderHandle);
+						passData.push_back({ pass, shader.value() });
+					}
 				}
 			}
 		}
