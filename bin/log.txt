@@ -1,0 +1,11 @@
+[19:43:36:284]: Creating Managers!
+[19:43:36:287]: Initialising D3D12!
+[19:43:36:363]: Selecting adapter: [VRAM: 10077MB] [Desc: NVIDIA GeForce RTX 3080]
+[19:43:36:501]: Raytracing Device created!
+[19:43:36:669]: Reading all resource data!
+[19:43:36:669]: Loading material file: [../resources/materials/base.mat]
+[19:43:38:579]: Setting up Game!
+[19:43:38:579]: Starting main loop!
+[19:43:39:595]: Avg FPS:   120  Avg Frametime: 0.00799   Avg Tick Time: 0.00000
+[19:43:40:636]: Avg FPS:   107  Avg Frametime: 0.00783   Avg Tick Time: 0.00000
+[19:43:41:598]: Avg FPS:   117  Avg Frametime: 0.00808   Avg Tick Time: 0.00000

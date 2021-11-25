@@ -21,10 +21,19 @@ namespace Themp
 	#define PASSES_FOLDER RESOURCES_FOLDER"passes/"
 	#define SHADERS_FOLDER RESOURCES_FOLDER"shaders/"
 
+
 	std::vector<std::wstring> LoadFilesFromDirectory(std::wstring dir)
 	{
-		//warning, WIN32 API ahead :)
 		std::vector<std::wstring> files;
+
+		DWORD attributes = GetFileAttributesW(dir.c_str());
+		if (attributes == INVALID_FILE_ATTRIBUTES)
+		{
+			Themp::Print(L"Unable to find folder at " MATERIALS_FOLDER);
+			Themp::Break();
+			return {};
+		}
+
 		WIN32_FIND_DATAW ffd;
 		HANDLE hFind = FindFirstFileW((dir + L"*").c_str(), &ffd);
 		if (hFind == INVALID_HANDLE_VALUE)
@@ -48,6 +57,33 @@ namespace Themp
 		return files;
 	}
 
+	std::string ReadFileToString(const std::wstring& filePath)
+	{
+		HANDLE file = CreateFileW(filePath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+
+		if (file == INVALID_HANDLE_VALUE)
+		{
+			Themp::Print("Was unable to open the file: [%S]", filePath.c_str());
+			Themp::Break();
+			return "";
+		}
+
+		DWORD fileSize = GetFileSize(file, NULL);
+		std::string data(fileSize, '\0');
+		DWORD readBytes = 0;
+		if (!ReadFile(file, data.data(), fileSize, &readBytes, NULL))
+		{
+			Themp::Print("Was unable to read the file: [%S]", filePath.c_str());
+			Themp::Break();
+		}
+		if (readBytes != fileSize)
+		{
+			Themp::Print("Was unable to read the entire file: [%S]", filePath.c_str());
+			Themp::Break();
+		}
+
+		return data;
+	}
 
 	std::optional<int> TryParseSectionNumber(std::string_view name, std::string_view source)
 	{
@@ -100,46 +136,10 @@ namespace Themp
 			}
 		}
 		return false;
-	}
-
-
-	std::string ReadFileToString(const std::wstring& filePath)
-	{
-		HANDLE file = CreateFileW(filePath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-
-		if (file == INVALID_HANDLE_VALUE)
-		{
-			Themp::Print("Was unable to open the file: [%S]", filePath.c_str());
-			Themp::Break();
-			return "";
-		}
-
-		DWORD fileSize = GetFileSize(file, NULL);
-		std::string data(fileSize,'\0');
-		DWORD readBytes = 0;
-		if (!ReadFile(file, data.data(), fileSize, &readBytes, NULL))
-		{
-			Themp::Print("Was unable to read the file: [%S]", filePath.c_str());
-			Themp::Break();
-		}
-		if (readBytes != fileSize)
-		{
-			Themp::Print("Was unable to read the entire file: [%S]", filePath.c_str());
-			Themp::Break();
-		}
-
-		return data;
-	}
+	}	
 
 	void Resources::LoadMaterials()
 	{
-		DWORD attributes = GetFileAttributesW(MATERIALS_FOLDER);
-		if (attributes == INVALID_FILE_ATTRIBUTES)
-		{
-			Themp::Print(L"Unable to find material folder at " MATERIALS_FOLDER);
-			Themp::Break();
-			return;
-		}
 		std::vector<std::wstring> materials = LoadFilesFromDirectory(MATERIALS_FOLDER);
 
 		std::string materialData(10240, '\0');
