@@ -9,10 +9,11 @@ namespace Themp
 {
 	namespace D3D
 	{
+		class Pass;
 		class Pipeline
 		{
 		public:
-			void Init();
+			void Init(const Pass& pass);
 		};
 	}
 }

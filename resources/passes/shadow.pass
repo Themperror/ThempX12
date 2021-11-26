@@ -1,22 +1,58 @@
 ##Determines the order of rendering
-Priority=-1
+Priority = -1
 
-##depth state
-DepthEnable=true
-DepthWrite=true
-DepthFunc=LESS
+##depth state see https://docs.microsoft.com/en-us/windows/win32/api/d3d12/ns-d3d12-d3d12_depth_stencil_desc
+DepthEnable = true
+DepthWriteMask = "ALL"
+DepthFunc = "LESS"
+StencilEnable = false
+StencilReadMask = 0
+StencilWriteMask = 0
 
-##raster state
-Wireframe=false
-WindingOrder=CW
+##stencil (see depth state)
+FrontFaceFailOp = "KEEP"
+FrontFaceDepthFailOp = "KEEP"
+FrontFacePassOp = "KEEP"
+FrontFaceFunc = "ALWAYS"
+BackFaceFailOp = "KEEP"
+BackFaceDepthFailOp = "KEEP"
+BackFacePassOp = "KEEP"
+BackFaceFunc = "ALWAYS"
+
+##raster state see https://docs.microsoft.com/en-us/windows/win32/api/d3d12/ns-d3d12-d3d12_rasterizer_desc
+FrontCounterClockwise = true
+FillMode = "SOLID"
+CullMode = "FRONT"
+DepthBias = 0
+DepthBiasClamp = 0.0
+SlopeScaledDepthBias = 0.0
+DepthClipEnable = true
+MultisampleEnable = false
+AntialiasedLineEnable = false
+ForcedSampleCount = 0
+
+##global blend settings see https://docs.microsoft.com/en-us/windows/win32/api/d3d12/ns-d3d12-d3d12_blend_desc
+AlphaToCoverage = false
+IndependendBlend = false
+SampleMask = 0
+
+##multisampling
+MultisampleCount = 1
+MultisampleQuality = 0
 
 ##targets
-DepthTarget=depth
-ColorTarget0=main
-#ColorTarget1=
-#ColorTarget2=
-#ColorTarget3=
-#ColorTarget4=
-#ColorTarget5=
-#ColorTarget6=
-#ColorTarget7=
+DepthTarget = "shadow"
+
+##per target blend state
+[[BlendTargets]]
+RenderTargetIndex = 0
+BlendEnable = false
+SrcBlend = "ONE"
+DestBlend = "ONE"
+BlendOp = "ADD"
+SrcAlphaBlend = "ZERO"
+DestAlphaBlend = "ZERO"
+BlendAlphaOp = "ADD"
+LogicOpEnable = false
+LogicOp = "CLEAR"
+RenderTargetWriteMask = 0

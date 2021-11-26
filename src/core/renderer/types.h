@@ -11,10 +11,11 @@ using namespace Microsoft::WRL;
 namespace Themp::D3D
 {
 	static constexpr int InvalidHandle = -1;
-	using MainPassHandle = int;
+	using PassHandle = int;
 	using SubPassHandle = int;
 	using MaterialHandle = int;
 	using ShaderHandle = int;
+	using RenderTargetHandle = int;
 	using TextureHandle = int;
 	using ModelHandle = int;
 

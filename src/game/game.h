@@ -11,6 +11,5 @@ namespace Game
 
 	private:
 
-		Themp::D3D::MainPassHandle m_MainPass = Themp::D3D::InvalidHandle;
 	};
 }

@@ -6,7 +6,7 @@ namespace Themp
 {
 	namespace D3D
 	{
-		void Pipeline::Init()
+		void Pipeline::Init(const Pass& pass)
 		{
 			ID3D12PipelineState* pipelineState;
 			D3D12_GRAPHICS_PIPELINE_STATE_DESC desc {};

@@ -22,7 +22,7 @@ namespace Themp
 			void BeginDraw();
 			void EndDraw();
 
-			MainPassHandle AddMainPass(const std::string& name);
+			PassHandle AddMainPass(const std::string& name);
 			ComPtr<ID3D12GraphicsCommandList> GetImguiCmdList();
 			ComPtr<ID3D12Device2> GetDevice() const;
 			ComPtr<ID3D12Device5> GetDeviceRTX() const;

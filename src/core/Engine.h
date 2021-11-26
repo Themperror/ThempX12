@@ -10,8 +10,6 @@
 #define NOATOM
 #define NOCTLMGR
 #define NODRAWTEXT
-#define NOKERNEL
-#define NONLS
 #define NOMEMMGR
 #define NOMETAFILE
 #define NOMINMAX
@@ -28,6 +26,7 @@
 #define NOPROFILER
 #define NODEFERWINDOWPOS
 #define NOMCX
+#define VC_EXTRALEAN
 #include <Windows.h>
 
 #include <map>
