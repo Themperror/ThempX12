@@ -56,7 +56,7 @@ namespace Themp::D3D
 		void Draw(Context& context);
 		void SetPriority(int priority);
 		void SetName(std::string_view name);
-		bool IsValid() { return m_Name.size() > 0 && m_Priority != std::numeric_limits<int>::lowest(); }
+		bool IsValid() const { return m_Name.size() > 0 && m_Priority != std::numeric_limits<int>::lowest(); }
 	private:
 		std::vector<RenderList> m_RenderList;
 		std::string m_Name;

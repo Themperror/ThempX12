@@ -178,18 +178,39 @@ namespace Themp
 		{
 			std::string_view prefix;
 			std::string_view suffix;
+
 			if(GetConfigurationLine(line,&prefix, &suffix))
 			{
-				if (prefix == Pass::GetPassConfigurationMembersAsString(Pass::PassConfigurationMembers::PRIORITY))
+				if (prefix == Pass::GetPassConfigurationMembersAsString(Pass::PassConfigurationMembers::PRIORITY)) //read int
 				{
-					int value = Themp::Util::FromString<int, std::string_view>(suffix);
+					int value = Themp::Util::FromString<int>(suffix);
 					pass.SetPriority(value);
 				}
-				else if (prefix == Pass::GetPassConfigurationMembersAsString(Pass::PassConfigurationMembers::DEPTHTARGET))
+				else if (prefix == Pass::GetPassConfigurationMembersAsString(Pass::PassConfigurationMembers::DEPTH_ENABLE)) //read bool
+				{
+
+				}
+				else if (prefix == Pass::GetPassConfigurationMembersAsString(Pass::PassConfigurationMembers::DEPTH_WRITE)) //read bool
+				{
+
+				}
+				else if (prefix == Pass::GetPassConfigurationMembersAsString(Pass::PassConfigurationMembers::DEPTH_FUNC)) //read enum
+				{
+
+				}
+				else if (prefix == Pass::GetPassConfigurationMembersAsString(Pass::PassConfigurationMembers::WINDINGORDER)) //read enum
+				{
+
+				}
+				else if (prefix == Pass::GetPassConfigurationMembersAsString(Pass::PassConfigurationMembers::WIREFRAME)) //read bool
+				{
+
+				}
+				else if (prefix == Pass::GetPassConfigurationMembersAsString(Pass::PassConfigurationMembers::DEPTHTARGET)) //read string
 				{
 					//LoadRenderTarget(RenderTarget::DSV, format, resolution_mode, scaler)
 				}
-				else if (auto colorTargetIndex = TryParseSectionNumber(Pass::GetPassConfigurationMembersAsString(Pass::PassConfigurationMembers::COLORTARGET), prefix))
+				else if (auto colorTargetIndex = TryParseSectionNumber(Pass::GetPassConfigurationMembersAsString(Pass::PassConfigurationMembers::COLORTARGET), prefix)) //read string + id
 				{
 					//LoadRenderTarget(RenderTarget::RTV, format, resolution_mode, scaler)
 				}
@@ -235,38 +256,29 @@ namespace Themp
 			std::string_view suffix;
 			if (GetConfigurationLine(line, &prefix, &suffix))
 			{
-				if (auto mainpass = TryParseSectionNumber(validEntries[MaterialMembers::PASS], prefix))
+				if (auto passIndex = TryParseSectionNumber(validEntries[MaterialMembers::PASS], prefix))
 				{
-					bool foundPass = false;
 					Pass pass = LoadPass(suffix);
-					for (int i = 0; i < passData.size(); i++)
+
+					auto passIt = std::find_if(passData.begin(), passData.end(), [&](const auto& it) { return it.second == passIndex.value(); });
+					if (passIt != passData.end())
 					{
-						if (passData[i].second == mainpass)
-						{
-							foundPass = true;
-							passData[i].first = pass;
-							break;
-						}
+						passIt->first = pass;
 					}
-					if (!foundPass)
+					else
 					{
-						passData.push_back({ pass, mainpass.value() });
+						passData.push_back({ pass, passIndex.value() });
 					}
 				}
 				else if (auto shader = TryParseSectionNumber(validEntries[MaterialMembers::SHADER], prefix))
 				{
-					bool foundPass = false;
 					ShaderHandle shaderHandle = LoadShader(suffix);
-					for (int i = 0; i < passData.size(); i++)
+					auto passIt = std::find_if(passData.begin(), passData.end(), [&](const auto& it) { return it.second == shader.value(); });
+					if (passIt != passData.end())
 					{
-						if (passData[i].second == shader)
-						{
-							foundPass = true;
-							passData[i].first.AddRenderable(shaderHandle);
-							break;
-						}
+						passIt->first.AddRenderable(shaderHandle);
 					}
-					if (!foundPass)
+					else
 					{
 						Pass pass{ "" };
 						pass.AddRenderable(shaderHandle);
@@ -279,7 +291,8 @@ namespace Themp
 		std::sort(passData.begin(), passData.end(), [](const std::pair<Pass, int>& a, const std::pair<Pass, int>& b) { return a.second < b.second; });
 
 		std::vector<Pass> passes;
-		for (auto& pass : passData)
+
+		for (const auto& pass : passData)
 		{
 			if (!pass.first.IsValid())
 			{
