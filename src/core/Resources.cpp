@@ -1,6 +1,7 @@
 #include "Engine.h"
 #include "Resources.h"
 #include "renderer/control.h"
+#include "renderer/gpu_resources.h"
 #include "util/print.h"
 #include "util/break.h"
 #include "util/stringUtils.h"
@@ -12,6 +13,7 @@
 #include <optional>
 #include <sstream>
 
+#include "util/svars.h"
 
 #define TOML_EXCEPTIONS 0
 #include <toml.hpp>
@@ -24,6 +26,35 @@ namespace Themp
 #define MATERIALS_FOLDER RESOURCES_FOLDER"materials/"
 #define PASSES_FOLDER RESOURCES_FOLDER"passes/"
 #define SHADERS_FOLDER RESOURCES_FOLDER"shaders/"
+#define RENDER_TARGET_FOLDER RESOURCES_FOLDER"rendertargets/"
+
+
+	D3D::Texture& Resources::Get(D3D::RTVHandle handle)
+	{
+		return m_ColorTargets[handle.handle].second;
+	}
+	D3D::Texture& Resources::Get(D3D::DSVHandle handle)
+	{
+		return m_DepthTargets[handle.handle].second;
+	}
+	D3D::Texture& Resources::Get(D3D::SRVHandle handle)
+	{
+		return m_SRVs[handle.handle].second;
+	}
+	D3D::SubPass& Resources::Get(D3D::SubPassHandle handle)
+	{
+		return m_Subpasses[handle.handle];
+	}
+
+	std::wstring GetFilePath(std::wstring_view base, std::wstring_view filename, std::wstring_view extension)
+	{
+		std::wstring path = std::wstring(base);
+		path.reserve(filename.size() + extension.size() + path.size());
+		path.append(filename.begin(), filename.end())
+			.append(extension.begin(), extension.end());
+
+		return path;
+	}
 
 
 	std::vector<std::wstring> LoadFilesFromDirectory(std::wstring dir)
@@ -175,12 +206,12 @@ namespace Themp
 
 		std::string data = Themp::Util::ToLowerCase(ReadFileToString(path));
 
-		Themp::Print("Parsing %S", path.c_str());
 		const toml::parse_result result = toml::parse(data);
 		if (!result)
 		{
 			Themp::Print("%*s at line [%i:%i]", result.error().description().size(), result.error().description().data(), result.error().source().begin.line, result.error().source().begin.column);
 			Themp::Break();
+			return PassHandle::Invalid;
 		}
 
 
@@ -258,6 +289,10 @@ namespace Themp
 		{
 			Themp::Print("CullMode was not of string type or not found");
 		}
+		if (!SetPassMember(result[Pass::GetPassMemberAsString(PassMember::ConservativeRaster)], pass, &Pass::SetConservativeRaster))
+		{
+			Themp::Print("ConservativeRaster was not of string type or not found");
+		}
 		if (!SetPassMember(result[Pass::GetPassMemberAsString(PassMember::DepthBias)], pass, &Pass::SetDepthBias))
 		{
 			Themp::Print("DepthBias was not of int type or not found");
@@ -319,7 +354,7 @@ namespace Themp
 				{
 					if (it.second.is_integer())
 					{
-						pass.SetColorTarget(LoadRenderTarget(it.first), it.second.as_integer()->get());
+						pass.SetColorTarget(it.second.as_integer()->get(), LoadRenderTarget(it.first));
 					}
 					else
 					{
@@ -330,7 +365,7 @@ namespace Themp
 		}
 		else if (colorTargets.is_string()) //allow single target to force slot 0
 		{
-			pass.SetColorTarget(LoadRenderTarget(colorTargets.as_string()->get()), 0);
+			pass.SetColorTarget(0, LoadRenderTarget(colorTargets.as_string()->get()));
 		}
 
 		const auto& depthTarget = result[Pass::GetPassMemberAsString(PassMember::DepthTarget)];
@@ -425,15 +460,176 @@ namespace Themp
 
 	D3D::ShaderHandle Resources::LoadShader(std::string_view filename)
 	{
-		return 0;
+		return D3D::ShaderHandle::Invalid;
 	}
 
 	D3D::RenderTargetHandle Resources::LoadRenderTarget(std::string_view filename)
 	{
-		return 0;
+		D3D::RTVHandle rtvHandle = D3D::RTVHandle::Invalid;
+		D3D::DSVHandle dsvHandle = D3D::DSVHandle::Invalid;
+		D3D::SRVHandle srvHandle = D3D::DSVHandle::Invalid;
+
+
+		for (int i = 0; i < m_ColorTargets.size(); i++)
+		{
+			if (m_ColorTargets[i].first == filename)
+			{
+				rtvHandle = (D3D::RTVHandle)i;
+				break;
+			}
+		}
+
+		for (int i = 0; i < m_DepthTargets.size(); i++)
+		{
+			if (m_DepthTargets[i].first == filename)
+			{
+				dsvHandle = (D3D::DSVHandle)i;
+				break;
+			}
+		}
+
+		for (int i = 0; i < m_SRVs.size(); i++)
+		{
+			if (m_SRVs[i].first == filename)
+			{
+				srvHandle = (D3D::SRVHandle)i;
+				break;
+			}
+		}
+		if (rtvHandle.IsValid() || dsvHandle.IsValid() || srvHandle.IsValid())
+		{
+			Themp::Print("Found Rendertarget: [%*s] in cache!", filename.size(), filename.data());
+			return { rtvHandle, dsvHandle, srvHandle };
+		}
+
+
+
+		std::string data = ReadFileToString(GetFilePath(RENDER_TARGET_FOLDER, std::wstring(filename.begin(),filename.end()), L".target"));
+		const toml::parse_result result = toml::parse(Themp::Util::ToLowerCase(data));
+		if (!result)
+		{
+			Themp::Print("%*s at line [%i:%i]", result.error().description().size(), result.error().description().data(), result.error().source().begin.line, result.error().source().begin.column);
+			Themp::Break();
+			return D3D::RenderTargetHandle::Invalid();
+		}
+
+		D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_NONE;
+		DXGI_FORMAT format = DXGI_FORMAT::DXGI_FORMAT_UNKNOWN;
+		DXGI_SAMPLE_DESC multisample{};
+		int width = 0, height = 0, depth = 0;
+		D3D12_CLEAR_VALUE clearValue{};
+		D3D::TEXTURE_TYPE textureType = D3D::TEXTURE_TYPE::RTV;
+		bool createSRV = false;
+		bool doesScale = true;
+		float scale = 1.0f;
+
+		//past tense
+		const auto& readType = result["type"];
+		if (readType && readType.is_string())
+		{
+			std::string val = readType.as_string()->get();
+			if (val == "color")
+			{
+				flags = D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+			}
+			else if (val == "depth")
+			{
+				flags = D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+			}
+		}
+		if (flags == D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_NONE)
+		{
+			Themp::Print("Type was not of type string or not found!");
+			Themp::Break();
+		}
+
+		const auto& makeSRV = result["createshaderview"];
+		if (makeSRV && makeSRV.is_boolean())
+		{
+			createSRV = makeSRV.as_boolean()->get();
+		}
+
+		const auto& readFormat = result["format"];
+		if (readFormat && readFormat.is_string())
+		{
+			D3D::TextureFormat formatFromStr{};
+			formatFromStr.SetFromString(readFormat.as_string()->get());
+			format = D3D::DxTranslator::GetTextureFormat(formatFromStr);
+			clearValue.Format = format;
+		}
+
+		const auto& readWidth = result["fixedwidth"];
+		if (readWidth && readWidth.is_integer())
+		{
+			width = readWidth.as_integer()->get();
+		}
+
+		const auto& readHeight = result["fixedheight"];
+		if (readHeight && readHeight.is_integer())
+		{
+			height = readHeight.as_integer()->get();
+		}
+
+		const auto& readCount = result["multisamplecount"];
+		if (readCount && readCount.is_integer())
+		{
+			multisample.Count = readCount.as_integer()->get();
+		}
+
+		const auto& readQuality = result["multisamplequality"];
+		if (readQuality && readQuality.is_integer())
+		{
+			multisample.Quality = readQuality.as_integer()->get();
+		}
+
+		const auto& resolution = result["resolution"];
+		if (resolution && resolution.is_string())
+		{
+			doesScale = resolution.as_string()->get() != "fixed";
+		}
+
+		const auto& readScale = result["scale"];
+		if (readScale && readScale.is_floating_point())
+		{
+			scale = readScale.as_floating_point()->get();
+		}
+
+		if (doesScale)
+		{
+			int resX = Engine::s_SVars.GetSVarInt(SVar::iWindowWidth);
+			int resY = Engine::s_SVars.GetSVarInt(SVar::iWindowHeight);
+			width = static_cast<int>(static_cast<float>(resX) * scale);
+			height = static_cast<int>(static_cast<float>(resY) * scale);
+		}
+
+		auto& resourceManager = Engine::instance->m_Renderer->GetResourceManager();
+		auto device = Engine::instance->m_Renderer->GetDevice();
+		auto resource = resourceManager.GetTextureResource(device, std::wstring(filename.begin(),filename.end()), flags, format, 1, multisample, width, height, depth, &clearValue, textureType);
+		auto& tex = resourceManager.GetTextureFromResource(device, resource, textureType);
+
+		switch (textureType)
+		{
+		case D3D::TEXTURE_TYPE::RTV:
+			m_ColorTargets.push_back({ std::string(filename), tex });
+			rtvHandle = m_ColorTargets.size() - 1;
+			break;
+		case D3D::TEXTURE_TYPE::DSV:
+			m_DepthTargets.push_back({ std::string(filename), tex });
+			dsvHandle = m_DepthTargets.size() - 1;
+			break;
+		}
+
+		if (createSRV)
+		{
+			auto& srv = resourceManager.GetTextureFromResource(device, resource, D3D::TEXTURE_TYPE::SRV);
+			m_SRVs.push_back({ std::string(filename), srv });
+			srvHandle = m_SRVs.size() - 1;
+		}
+		
+		return {rtvHandle, dsvHandle, srvHandle};
 	}
 	
-	void Resources::MergePasses(std::vector<Resources::SubPass> passes)
+	void Resources::MergePasses(std::vector<D3D::SubPass> passes)
 	{
 		for (int j = 0; j < passes.size(); j++)
 		{
@@ -452,7 +648,7 @@ namespace Themp
 		}
 	}
 
-	std::vector<Resources::SubPass> Resources::LoadMaterial(const std::string& data)
+	std::vector<D3D::SubPass> Resources::LoadMaterial(const std::string& data)
 	{
 		using namespace Themp::D3D;
 		enum MaterialMembers
@@ -475,7 +671,7 @@ namespace Themp
 			Themp::Break();
 		}
 
-		std::vector<Resources::SubPass> passData;
+		std::vector<D3D::SubPass> passData;
 
 		const auto& passes = result["subpass"];
 		if (passes.is_array_of_tables())

@@ -1,14 +1,14 @@
 #target type (Color/Depth)
-Type = "Color"
+Type = "Depth"
 
 #Whether to create an SRV for this target
 CreateShaderView = false
 
 #target format (See DXGI formats)
-Format = "R8G8B8A8_UNORM"
+Format = "D32_FLOAT"
 
 #(Fixed/Scaling) ([Resolution=Scaling] + [Scale = 1.0] == window/screen resolution)
-Resolution = "Scaling"
+Resolution = "Fixed"
 
 #Scales target if set to "Scaling" by this amount of the full resolution
 Scale = 1.0
@@ -19,4 +19,3 @@ FixedHeight = 1024
 
 MultiSampleCount = 1
 MultiSampleQuality = 0
-

@@ -22,7 +22,6 @@ namespace Themp
 			void BeginDraw();
 			void EndDraw();
 
-			PassHandle AddMainPass(const std::string& name);
 			ComPtr<ID3D12GraphicsCommandList> GetImguiCmdList();
 			ComPtr<ID3D12Device2> GetDevice() const;
 			ComPtr<ID3D12Device5> GetDeviceRTX() const;
@@ -42,8 +41,6 @@ namespace Themp
 			int m_CurrentBackBuffer = 0;
 
 			ComPtr<ID3D12DescriptorHeap> m_ImguiSRVHeap;
-
-			std::vector<Pass> m_MainPasses;
 		};
 	}
 }

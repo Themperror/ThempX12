@@ -134,13 +134,6 @@ const Context&  Control::GetContext() const
 }
 
 
-PassHandle Control::AddMainPass(const std::string& name)
-{
-	Pass pass(name);
-	m_MainPasses.push_back(pass);
-	return static_cast<PassHandle>(m_MainPasses.size() - 1);
-}
-
 ComPtr<ID3D12GraphicsCommandList> Control::GetImguiCmdList()
 {
 	return GetCurrentBackbuffer().GetCmdList();

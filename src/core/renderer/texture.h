@@ -18,6 +18,7 @@ namespace Themp
 		public:
 			ComPtr<ID3D12Resource> GetResource(TEXTURE_TYPE type) const;
 			CD3DX12_CPU_DESCRIPTOR_HANDLE GetCPUHandle() const { return m_CPUHandle;  }
+
 		private:
 
 			void InitSRVTexture(ComPtr<ID3D12Resource> textureSource, ComPtr<ID3D12Device2> device, const D3D::DescriptorHeapTracker& heapTracker);
@@ -31,7 +32,11 @@ namespace Themp
 			ComPtr<ID3D12Resource> m_DSV;
 			std::bitset<4> m_InittedTypes;
 			CD3DX12_CPU_DESCRIPTOR_HANDLE m_CPUHandle;
-			uint32_t m_HeapIndex;
+			uint32_t m_HeapIndex = 0;
+
+			bool m_DoScaleWithRes = false;
+			float m_ScaleValue = 1.0;
+
 			friend class GPU_Resources;
 		};
 	}

@@ -1,0 +1,6 @@
+[[SubPass]]
+Pass = "shadow"
+Shader = "shadow"
+[[SubPass]]
+Pass = "main"
+Shader = "default"

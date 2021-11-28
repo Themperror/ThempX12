@@ -10,254 +10,7 @@ namespace Themp::D3D
 	class Pipeline;
 	class Pass
 	{
-		struct DepthWriteMask
-		{
-			enum Mask
-			{
-				ZERO,
-				ALL,
-				COUNT
-			};
-			constexpr static std::string_view Str[COUNT]
-			{
-				"zero",
-				"all",
-			};
-			Mask mask;
-		};
-		struct ComparisonFunc
-		{
-			enum Func
-			{
-				NEVER,
-				LESS,
-				EQUAL,
-				LESS_EQUAL,
-				GREATER,
-				NOT_EQUAL,
-				GREATER_EQUAL,
-				ALWAYS,
-				COUNT
-			};
-			constexpr static std::string_view Str[COUNT]
-			{
-				"never",
-				"less",
-				"equal",
-				"less_equal",
-				"greater",
-				"not_equal",
-				"greater_equal",
-				"always"
-			};
-			Func func;
-		};
-		struct StencilOp
-		{
-			enum Op
-			{
-				KEEP,
-				ZERO,
-				REPLACE,
-				INCR_SAT,
-				DECR_SAT,
-				INVERT,
-				INCR,
-				DECR,
-				COUNT
-			};
-			constexpr static std::string_view Str[COUNT]
-			{
-				"keep",
-				"zero",
-				"replace",
-				"incr_sat",
-				"decr_sat",
-				"invert",
-				"incr",
-				"decr"
-			};
-			Op op;
-		};
-		struct FillMode
-		{
-			enum Mode
-			{
-				WIREFRAME,
-				SOLID,
-				COUNT
-			};
-			constexpr static std::string_view Str[COUNT]
-			{
-				"wireframe",
-				"solid"
-			};
-			Mode mode;
-		};
-		struct CullMode
-		{
-			enum Mode
-			{
-				NONE,
-				FRONT,
-				BACK,
-				COUNT
-			};
-			constexpr static std::string_view Str[COUNT]
-			{
-				"none",
-				"front",
-				"back"
-			};
-			Mode mode;
-		};
-		public:
-		struct Blend
-		{
-			enum BlendType
-			{
-				ZERO,
-				ONE,
-				SRC_COLOR,
-				INV_SRC_COLOR,
-				SRC_ALPHA,
-				INV_SRC_ALPHA,
-				DEST_ALPHA,
-				INV_DEST_ALPHA,
-				DEST_COLOR,
-				INV_DEST_COLOR,
-				SRC_ALPHA_SAT,
-				BLEND_FACTOR,
-				INV_BLEND_FACTOR,
-				SRC1_COLOR,
-				INV_SRC1_COLOR,
-				SRC1_ALPHA,
-				INV_SRC1_ALPHA,
-				COUNT
-			};
-			constexpr static std::string_view Str[COUNT]
-			{
-				"zero",
-				"one",
-				"src_color",
-				"inv_src_color",
-				"src_alpha",
-				"inv_src_alpha",
-				"dest_alpha",
-				"inv_dest_alpha",
-				"dest_color",
-				"inv_dest_color",
-				"src_alpha_sat",
-				"blend_factor",
-				"inv_blend_factor",
-				"src1_color",
-				"inv_src1_color",
-				"src1_alpha",
-				"inv_src1_alpha"
-			};
-
-			void SetFromString(std::string_view str)
-			{
-				for (int i = 0; i < COUNT; i++)
-				{
-					if (str == Str[i])
-					{
-						type = (BlendType)i;
-						break;
-					}
-				}
-			}
-
-			BlendType type;
-		};
-		struct BlendOp
-		{
-			enum Op
-			{
-				ADD,
-				SUBTRACT,
-				REV_SUBTRACT,
-				MIN,
-				MAX,
-				COUNT
-			};
-			constexpr static std::string_view Str[COUNT]
-			{
-				"add",
-				"substract",
-				"rev_substract",
-				"min",
-				"max",
-			};
-			void SetFromString(std::string_view str)
-			{
-				for (int i = 0; i < COUNT; i++)
-				{
-					if (str == Str[i])
-					{
-						op = (Op)i;
-						break;
-					}
-				}
-			}
-			Op op;
-		};
-		struct LogicOp
-		{
-			enum Op {
-				CLEAR,
-				SET,
-				COPY,
-				COPY_INVERTED,
-				NOOP,
-				INVERT,
-				AND,
-				NAND,
-				OR,
-				NOR,
-				XOR,
-				EQUIV,
-				AND_REVERSE,
-				AND_INVERTED,
-				OR_REVERSE,
-				OR_INVERTED,
-				COUNT
-			};
-
-			constexpr static std::string_view Str[COUNT]
-			{
-				"clear",
-				"set",
-				"copy",
-				"copy_inverted",
-				"noop",
-				"invert",
-				"and",
-				"nand",
-				"or ",
-				"nor",
-				"xor",
-				"equiv",
-				"and_reverse",
-				"and_inverted",
-				"or_reverse",
-				"or_inverted"
-			};
-
-			void SetFromString(std::string_view str)
-			{
-				for (int i = 0; i < COUNT; i++)
-				{
-					if (str == Str[i])
-					{
-						op = (Op)i;
-						break;
-					}
-				}
-			}
-			Op op;
-		};
-
+	public:
 		struct BlendState
 		{
 			bool blendEnable;
@@ -271,11 +24,11 @@ namespace Themp::D3D
 			LogicOp logicOp;
 			uint8_t	renderTargetWriteMask;
 		};
-		private:
 		struct RasterState
 		{
 			FillMode fillMode;
 			CullMode cullMode;
+			ConservativeRaster conservativeRaster;
 			bool frontCounterClockwise;
 			int depthBias;
 			float depthBiasClamp;
@@ -339,6 +92,7 @@ namespace Themp::D3D
 			FrontCounterClockwise,
 			FillMode,
 			CullMode,
+			ConservativeRaster,
 			DepthBias,
 			DepthBiasClamp,
 			SlopeScaledDepthBias,
@@ -393,6 +147,7 @@ namespace Themp::D3D
 			"frontcounterclockwise",
 			"fillmode",
 			"cullmode",
+			"conservativeraster",
 			"depthbias",
 			"depthbiasclamp",
 			"slopescaleddepthbias",
@@ -447,6 +202,7 @@ namespace Themp::D3D
 		void SetFrontCounterClockwise(bool val);
 		void SetFillMode(std::string_view str);
 		void SetCullMode(std::string_view str);
+		void SetConservativeRaster(std::string_view str);
 		void SetDepthBias(int bias);
 		void SetDepthBiasClamp(float clamp);
 		void SetSlopeScaledDepthBias(float bias);
@@ -480,6 +236,8 @@ namespace Themp::D3D
 	protected:
 
 		friend class Control;
+		friend class Pipeline;
+		friend struct DxTranslater;
 	};
 	
 }

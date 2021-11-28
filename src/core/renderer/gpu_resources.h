@@ -19,6 +19,7 @@ namespace Themp::D3D
 	public:
 		ComPtr<ID3D12DescriptorHeap> GetDescriptorHeap(DESCRIPTOR_HEAP_TYPE type, uint32_t reservedSlots = 0);
 		Texture& GetTextureFromResource(ComPtr<ID3D12Device2> device, ComPtr<ID3D12Resource> resource, TEXTURE_TYPE type);
+		ComPtr<ID3D12Resource> GetTextureResource(ComPtr<ID3D12Device2> device, const std::wstring& name, D3D12_RESOURCE_FLAGS flags, DXGI_FORMAT format, int mipCount, DXGI_SAMPLE_DESC multisample, int width, int height, int depth, D3D12_CLEAR_VALUE* optClearValue, D3D::TEXTURE_TYPE& outType);
 
 		MeshData Test_GetAndAddRandomModel();
 
@@ -57,9 +58,9 @@ namespace Themp::D3D
 				DirectX::XMFLOAT3 bitangent;
 			};
 		private:
-			DirectX::XMFLOAT3* posData;
-			NormalData* normalData;
-			DirectX::XMFLOAT2* uvData;
+			DirectX::XMFLOAT3* posData = nullptr;
+			NormalData* normalData = nullptr;
+			DirectX::XMFLOAT2* uvData = nullptr;
 
 		public:
 			ComPtr<ID3D12Resource> positionBuffer;

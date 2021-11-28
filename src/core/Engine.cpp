@@ -305,6 +305,10 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 
 	RegisterClassEx(&wc);
 
+
+	newWindowSizeX = Engine::s_SVars.GetSVarInt(SVar::iWindowWidth);
+	newWindowSizeY = Engine::s_SVars.GetSVarInt(SVar::iWindowHeight);
+
 	if (Engine::s_SVars.GetSVarInt(SVar::iFullScreen) == 1)
 	{
 		HWND desktop = GetDesktopWindow();
@@ -330,16 +334,14 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 			WS_OVERLAPPEDWINDOW,
 			Engine::s_SVars.GetSVarInt(SVar::iWindowPosX),
 			Engine::s_SVars.GetSVarInt(SVar::iWindowPosY),
-			Engine::s_SVars.GetSVarInt(SVar::iWindowWidth),
-			Engine::s_SVars.GetSVarInt(SVar::iWindowHeight),
+			newWindowSizeX,
+			newWindowSizeY,
 			NULL, NULL, hInstance, NULL);
 	}
 
 
 	ShowWindow(system->m_Window, nShowCmd);
 
-	newWindowSizeX = Engine::s_SVars.GetSVarInt(SVar::iWindowWidth);
-	newWindowSizeY = Engine::s_SVars.GetSVarInt(SVar::iWindowHeight);
 
 	system->Start();
 
@@ -375,6 +377,8 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			GetClientRect(Themp::Engine::instance->m_Window, &windowRect);
 			if (Themp::Engine::instance->m_Renderer)
 			{
+				Themp::Engine::s_SVars.SetSVarInt(SVar::iWindowWidth, windowRect.right);
+				Themp::Engine::s_SVars.SetSVarInt(SVar::iWindowHeight, windowRect.bottom);
 				//Themp::Engine::instance->m_Renderer->ResizeWindow(windowRect.right, windowRect.bottom);
 			}
 		}

@@ -257,6 +257,95 @@ namespace Themp::D3D
 	}
 
 
+	ComPtr<ID3D12Resource> GPU_Resources::GetTextureResource(ComPtr<ID3D12Device2> device, const std::wstring& name, D3D12_RESOURCE_FLAGS flags, DXGI_FORMAT format, int mipCount, DXGI_SAMPLE_DESC multisample, int width, int height, int depth, D3D12_CLEAR_VALUE* optClearValue, TEXTURE_TYPE& outType)
+	{
+		outType = flags == D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_NONE ? D3D::TEXTURE_TYPE::SRV :
+			(flags & D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL) ? D3D::TEXTURE_TYPE::DSV :
+			(flags & D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET) ? D3D::TEXTURE_TYPE::RTV : D3D::TEXTURE_TYPE::SRV;
+
+		D3D12_HEAP_PROPERTIES props{};
+		props.Type = D3D12_HEAP_TYPE_DEFAULT;
+
+		/* requires custom heaps 
+		//set unknown for CB/SRV/UAV types, and NA for all others
+		props.CPUPageProperty = outType == D3D::TEXTURE_TYPE::SRV ? D3D12_CPU_PAGE_PROPERTY_UNKNOWN : D3D12_CPU_PAGE_PROPERTY_NOT_AVAILABLE;
+		//RTV/DSV types are never read by CPU, put them in pool L1 (GPU); see: https://docs.microsoft.com/en-us/windows/win32/api/d3d12/ne-d3d12-d3d12_memory_pool
+		props.MemoryPoolPreference = outType == D3D::TEXTURE_TYPE::SRV ? D3D12_MEMORY_POOL_UNKNOWN : D3D12_MEMORY_POOL_L1;
+		*/
+		props.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+		props.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+
+		DescriptorHeapTracker& heapTracker = outType == D3D::TEXTURE_TYPE::SRV ? m_CB_SRV_UAV_Heap :
+			outType == D3D::TEXTURE_TYPE::DSV ? m_DSV_Heap :
+			outType == D3D::TEXTURE_TYPE::RTV ? m_RTV_Heap : m_CB_SRV_UAV_Heap;
+
+		if (heapTracker.usedSlots + 1 >= heapTracker.maxSlots)
+		{
+			Themp::Print("Ran out of space in DescriptorHeap for texture: [%S]", name.c_str());
+			Themp::Break();
+			return nullptr;
+		}
+		heapTracker.usedSlots++;
+
+		D3D12_RESOURCE_DESC desc{};
+		desc.Dimension = depth > 0 ? D3D12_RESOURCE_DIMENSION_TEXTURE3D : height > 0 ? D3D12_RESOURCE_DIMENSION_TEXTURE2D : D3D12_RESOURCE_DIMENSION_TEXTURE1D;
+		desc.Width = 1;
+		desc.Height = 1;
+		desc.DepthOrArraySize = 1;
+		if (depth > 0)
+		{
+			desc.DepthOrArraySize = depth;
+			if (width <= 0 || height <= 0)
+			{
+				Themp::Print("Width and Height needs to be at least > 0 when setting depth");
+				Themp::Break();
+				return nullptr;
+			}
+		}
+		else if (height > 0)
+		{
+			desc.Height = height;
+			if (width <= 0 )
+			{
+				Themp::Print("Width needs to be at least > 0 when setting height");
+				Themp::Break();
+				return nullptr;
+			}
+		}
+		else if (width <= 0)
+		{
+			Themp::Print("Width needs to be at least > 0");
+			Themp::Break();
+			return nullptr;
+		}
+		desc.Width = width;
+
+		desc.MipLevels = mipCount;
+		desc.Format = format;
+		desc.SampleDesc = multisample;
+		if (desc.SampleDesc.Count <= 0)
+		{
+			Themp::Print("SampleDesc.Count (multisample) needs to be at least > 0");
+			Themp::Break();
+			return nullptr;
+		}
+
+		desc.Layout = outType == D3D::TEXTURE_TYPE::SRV ? D3D12_TEXTURE_LAYOUT_ROW_MAJOR : D3D12_TEXTURE_LAYOUT::D3D12_TEXTURE_LAYOUT_UNKNOWN;
+		desc.Flags = flags;
+
+		ComPtr<ID3D12Resource> resource;
+		D3D12_RESOURCE_STATES initialState = outType == D3D::TEXTURE_TYPE::SRV ? D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COMMON : outType == D3D::TEXTURE_TYPE::DSV ? D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_DEPTH_WRITE : D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET;
+
+		D3D12_HEAP_FLAGS heapFlags = D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE;// outType == D3D::TEXTURE_TYPE::SRV ? D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_DENY_RT_DS_TEXTURES : D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_DENY_NON_RT_DS_TEXTURES;
+		if (device->CreateCommittedResource(&props, heapFlags, &desc, initialState, optClearValue, IID_PPV_ARGS(&resource)) < 0)
+		{
+			Themp::Print("Failed to create texture resource!");
+			Themp::Break();
+			return nullptr;
+		}
+		resource->SetName(name.c_str());
+		return resource;
+	}
 	Texture& GPU_Resources::GetTextureFromResource(ComPtr<ID3D12Device2> device, ComPtr<ID3D12Resource> resource, TEXTURE_TYPE type)
 	{
 		auto& tex = m_Textures.emplace_back(std::make_unique<Texture>());

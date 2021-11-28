@@ -18,9 +18,9 @@ Pass::Pass(std::string_view name)
 	}
 	for (int i = 0; i < m_RenderTargets.size(); i++)
 	{
-		m_RenderTargets[i] = InvalidHandle;
+		m_RenderTargets[i] = {};
 	}
-	m_DepthTarget = InvalidHandle;
+	m_DepthTarget = {};
 }
 
 void Pass::SetName(std::string_view name)
@@ -187,6 +187,10 @@ void Pass::SetCullMode(std::string_view str)
 			break;
 		}
 	}
+}
+void Pass::SetConservativeRaster(std::string_view str)
+{
+	m_RasterState.conservativeRaster.SetFromString(str);
 }
 void Pass::SetDepthBias(int bias)
 {
