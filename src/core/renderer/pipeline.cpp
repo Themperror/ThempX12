@@ -81,7 +81,7 @@ namespace Themp
 			if (pass.m_DepthTarget.dsv.IsValid())
 			{
 				Texture& tex = Themp::Engine::instance->m_Resources->Get(pass.m_DepthTarget.dsv);
-				desc.DSVFormat = tex.GetResource(D3D::TEXTURE_TYPE::RTV)->GetDesc().Format;
+				desc.DSVFormat = tex.GetResource(D3D::TEXTURE_TYPE::DSV)->GetDesc().Format;
 			}
 
 			if (Themp::Engine::instance->m_Renderer->GetDevice()->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&m_Pipeline)) != S_OK)
