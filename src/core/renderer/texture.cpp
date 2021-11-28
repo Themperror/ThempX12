@@ -51,7 +51,8 @@ namespace Themp
 			desc.Texture2D.ResourceMinLODClamp = 0;
 
 			m_InittedTypes[static_cast<size_t>(TEXTURE_TYPE::SRV)] = true;
-			device->CreateShaderResourceView(m_SRV.Get(), &desc, m_CPUHandle);
+			device->CreateShaderResourceView(textureSource.Get(), &desc, m_CPUHandle);
+			m_SRV = textureSource;
 		}
 
 		void Texture::InitDSVTexture(ComPtr<ID3D12Resource> textureSource, ComPtr<ID3D12Device2> device, const D3D::DescriptorHeapTracker& heapTracker)
@@ -70,7 +71,8 @@ namespace Themp
 			desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
 
 			m_InittedTypes[static_cast<size_t>(TEXTURE_TYPE::DSV)] = true;
-			device->CreateDepthStencilView(m_DSV.Get(), &desc, m_CPUHandle);
+			device->CreateDepthStencilView(textureSource.Get(), &desc, m_CPUHandle);
+			m_DSV = textureSource;
 		}
 
 		void Texture::InitRTVTexture(ComPtr<ID3D12Resource> textureSource, ComPtr<ID3D12Device2>device, const D3D::DescriptorHeapTracker& heapTracker)
