@@ -4,12 +4,14 @@
 #include "frame.h"
 #include "device.h"
 #include "gpu_resources.h"
-#include "pass.h"
+#include "types.h"
+#include "renderer/pipeline.h"
 
 #include <d3d12.h>
 #include <memory>
 namespace Themp
 {
+	class Resources;
 	namespace D3D
 	{
 		class Device;
@@ -28,6 +30,7 @@ namespace Themp
 			const Context& GetContext() const;
 			ComPtr<ID3D12CommandQueue> GetCommandQueue(D3D12_COMMAND_LIST_TYPE commandListType) const;
 			GPU_Resources& GetResourceManager() const;
+			void CreatePipelines(Themp::Resources& resources, const std::vector<D3D::SubPass>& subPasses);
 		private:
 			Frame& GetCurrentBackbuffer();
 			std::unique_ptr<Device> m_Device;
@@ -36,6 +39,7 @@ namespace Themp
 			ComPtr<ID3D12Fence> m_Fence;
 			std::vector<Frame> m_Backbuffers;
 			std::vector<uint64_t> m_FrameFenceValues;
+			std::vector<Pipeline> m_Pipelines;
 			uint64_t m_FenceValue = 0;
 			HANDLE m_FenceEvent;
 			int m_CurrentBackBuffer = 0;

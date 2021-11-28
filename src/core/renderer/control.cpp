@@ -1,8 +1,9 @@
-#include "control.h"
+#include "renderer/control.h"
 #include "util/print.h"
 #include "util/svars.h"
 #include "engine.h"
-#include "texture.h"
+#include "renderer/texture.h"
+#include "resources.h"
 
 #include <imgui.h>
 #include <imgui/impl/imgui_impl_dx12.h>
@@ -57,10 +58,18 @@ bool Control::Init()
 
 void Control::Stop()
 {
-
 	m_FrameFenceValues[m_CurrentBackBuffer] = m_Context->Signal(m_Device->GetCmdQueue(), m_Fence, m_FenceValue);
 	m_CurrentBackBuffer = m_Context->GetSwapChain()->GetCurrentBackBufferIndex();
 	m_Context->WaitForFenceValue(m_Fence, m_FrameFenceValues[m_CurrentBackBuffer], m_FenceEvent);
+}
+
+void Control::CreatePipelines(Themp::Resources& resources, const std::vector<D3D::SubPass>& subPasses)
+{
+	for(int i = 0; i < subPasses.size(); i++)
+	{
+		auto& pipeline = m_Pipelines.emplace_back();
+		pipeline.Init(subPasses[i]);
+	}
 }
 
 void Control::BeginDraw()

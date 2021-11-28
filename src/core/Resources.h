@@ -15,7 +15,7 @@ namespace Themp
 	class Resources
 	{
 	public:
-		void LoadMaterials();
+		std::vector<D3D::SubPass>& LoadMaterials();
 
 		static std::unique_ptr<Resources> instance;
 
@@ -24,6 +24,7 @@ namespace Themp
 		D3D::Texture& Get(D3D::DSVHandle handle);
 		D3D::Texture& Get(D3D::SRVHandle handle);
 		D3D::SubPass& Get(D3D::SubPassHandle handle);
+		D3D::Pass& Get(D3D::PassHandle handle);
 	private:
 
 		D3D::ShaderHandle LoadShader(std::string_view filename);

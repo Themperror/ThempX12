@@ -3,6 +3,7 @@
 #include "util\timer.h"
 #include "Resources.h"
 #include "renderer\control.h"
+#include "renderer/types.h"
 #include "input\keyboard.h"
 #include "input\manager.h"
 #include <imgui\imgui.h>
@@ -14,6 +15,7 @@
 #include "util/print.h"
 #include "util/svars.h"
 #include "game.h"
+
 
 #include "imgui/impl/imgui_impl_win32.h"
 
@@ -59,7 +61,8 @@ namespace Themp
 
 		
 		Print("Reading all resource data!");
-		m_Resources->LoadMaterials();
+		auto& subpasses = m_Resources->LoadMaterials();
+		m_Renderer->CreatePipelines(*m_Resources, subpasses);
 
 		Print("Setting up Game!");
 		m_Game->Start();

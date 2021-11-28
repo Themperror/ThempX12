@@ -45,6 +45,10 @@ namespace Themp
 	{
 		return m_Subpasses[handle.handle];
 	}
+	D3D::Pass& Resources::Get(D3D::PassHandle handle)
+	{
+		return m_Passes[handle.handle];
+	}
 
 	std::wstring GetFilePath(std::wstring_view base, std::wstring_view filename, std::wstring_view extension)
 	{
@@ -121,7 +125,7 @@ namespace Themp
 		return data;
 	}
 
-	void Resources::LoadMaterials()
+	std::vector<D3D::SubPass>& Resources::LoadMaterials()
 	{
 		std::vector<std::wstring> materials = LoadFilesFromDirectory(MATERIALS_FOLDER);
 
@@ -132,6 +136,8 @@ namespace Themp
 			auto passes = LoadMaterial(ReadFileToString(path));
 			MergePasses(passes);
 		}
+
+		return m_Subpasses;
 	}
 
 

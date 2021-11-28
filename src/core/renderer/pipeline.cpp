@@ -23,8 +23,10 @@ namespace Themp
 			desc.SrcBlendAlpha = DxTranslator::GetBlend(src.srcBlendAlpha);
 		}
 
-		void Pipeline::Init(const Pass& pass)
+		void Pipeline::Init(const SubPass& subpass)
 		{
+			const Pass& pass = Themp::Engine::instance->m_Resources->Get(subpass.pass);
+
 			D3D12_GRAPHICS_PIPELINE_STATE_DESC desc {};
 			
 			desc.BlendState.AlphaToCoverageEnable = pass.m_RasterState.alphaToCoverageEnable;
@@ -66,17 +68,19 @@ namespace Themp
 			desc.SampleDesc.Quality = pass.m_MultisampleQuality;
 			desc.SampleMask = pass.m_SampleMask;
 
-			desc.NumRenderTargets = pass.m_RenderTargets.size();
-
+			int numValidTargets = 0;
 			for (int i = 0; i < pass.m_RenderTargets.size(); i++)
 			{
 				desc.RTVFormats[i] = DXGI_FORMAT_UNKNOWN;
 				if (pass.m_RenderTargets[i].rtv.IsValid())
 				{
 					Texture& tex = Themp::Engine::instance->m_Resources->Get(pass.m_RenderTargets[i].rtv);
-					desc.RTVFormats[i] = tex.GetResource(D3D::TEXTURE_TYPE::RTV)->GetDesc().Format;
+					desc.RTVFormats[numValidTargets] = tex.GetResource(D3D::TEXTURE_TYPE::RTV)->GetDesc().Format;
+					numValidTargets++;
 				}
 			}
+			desc.NumRenderTargets = numValidTargets;
+
 			desc.DSVFormat = DXGI_FORMAT_UNKNOWN;
 			if (pass.m_DepthTarget.dsv.IsValid())
 			{
