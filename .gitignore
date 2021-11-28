@@ -6,3 +6,8 @@
 *.pdb
 .vs
 x64
+bin/imgui.ini
+bin/config.ini
+bin/log.txt
+bin/ThempX12.exe
+*.cso
