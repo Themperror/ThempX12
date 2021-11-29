@@ -31,6 +31,7 @@ MultisampleEnable = false
 AntialiasedLineEnable = false
 ForcedSampleCount = 0
 ConservativeRaster = "OFF"
+Topology = "TRIANGLE_LIST"
 
 ##global blend settings see https://docs.microsoft.com/en-us/windows/win32/api/d3d12/ns-d3d12-d3d12_blend_desc
 AlphaToCoverage = false

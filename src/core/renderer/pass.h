@@ -100,6 +100,7 @@ namespace Themp::D3D
 			MultisampleEnable,
 			AntialiasedLineEnable,
 			ForcedSampleCount,
+			Topology,
 			//global blend settings
 			AlphaToCoverage,
 			IndependendBlend,
@@ -155,6 +156,7 @@ namespace Themp::D3D
 			"multisampleenable",
 			"antialiasedlineenable",
 			"forcedsamplecount",
+			"topology",
 			"alphatocoverage",
 			"independendblend",
 			"samplemask",
@@ -209,6 +211,7 @@ namespace Themp::D3D
 		void SetDepthClipEnable(bool enabled);
 		void SetMultisampleEnable(bool enabled);
 		void SetAntialiasedLineEnable(bool enabled);
+		void SetTopology(std::string_view str);
 		void SetForcedSampleCount(unsigned int count);
 		void SetAlphaToCoverageEnable(bool enabled);
 		void SetIndependendBlendEnable(bool enabled);
@@ -229,6 +232,7 @@ namespace Themp::D3D
 		RasterState m_RasterState;
 		RenderTargetHandle m_DepthTarget;
 		unsigned int m_SampleMask;
+		PrimitiveTopology m_Topology;
 		int m_MultisampleCount;
 		int m_MultisampleQuality;
 		std::array<BlendState, 8> m_BlendStates;

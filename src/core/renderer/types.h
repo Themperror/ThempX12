@@ -185,6 +185,26 @@ namespace Themp::D3D
 		};
 		Mask mask;
 	};
+
+	struct PrimitiveTopology
+	{
+		enum Primitive
+		{
+			POINT,
+			LINE,
+			TRIANGLE,
+			PATCH,
+			COUNT
+		};
+		constexpr static std::string_view Str[COUNT]
+		{
+			"point",
+			"line",
+			"triangle",
+			"patch",
+		};
+		Primitive primitive;
+	};
 	struct ComparisonFunc
 	{
 		enum Func
@@ -867,6 +887,22 @@ namespace Themp::D3D
 			case DepthWriteMask::ZERO:
 				return D3D12_DEPTH_WRITE_MASK::D3D12_DEPTH_WRITE_MASK_ZERO;
 			}
+		}
+		static D3D12_PRIMITIVE_TOPOLOGY_TYPE GetTopology(PrimitiveTopology topology)
+		{
+			switch (topology.primitive)
+			{
+			default:
+			case PrimitiveTopology::POINT:
+				return D3D12_PRIMITIVE_TOPOLOGY_TYPE::D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
+			case PrimitiveTopology::LINE:
+				return D3D12_PRIMITIVE_TOPOLOGY_TYPE::D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
+			case PrimitiveTopology::TRIANGLE:
+				return D3D12_PRIMITIVE_TOPOLOGY_TYPE::D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+			case PrimitiveTopology::PATCH:
+				return D3D12_PRIMITIVE_TOPOLOGY_TYPE::D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+			}
+			return D3D12_PRIMITIVE_TOPOLOGY_TYPE::D3D12_PRIMITIVE_TOPOLOGY_TYPE_UNDEFINED;
 		}
 		static D3D12_CULL_MODE GetCullMode(CullMode mode)
 		{

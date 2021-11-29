@@ -41,6 +41,8 @@ SampleMask = 0
 MultisampleCount = 1
 MultisampleQuality = 0
 
+Topology = "TRIANGLE"
+
 ##targets
 DepthTarget = "maindepth"
 ColorTarget = "main"

@@ -216,6 +216,17 @@ void Pass::SetAntialiasedLineEnable(bool enabled)
 {
 	m_RasterState.antialiasedLineEnable = enabled;
 }
+void Pass::SetTopology(std::string_view str)
+{
+	for (int i = 0; i < PrimitiveTopology::COUNT; i++)
+	{
+		if (str == PrimitiveTopology::Str[i])
+		{
+			m_Topology.primitive = (PrimitiveTopology::Primitive)i;
+			break;
+		}
+	}
+}
 void Pass::SetForcedSampleCount(unsigned int count)
 {
 	m_RasterState.forcedSampleCount = count;

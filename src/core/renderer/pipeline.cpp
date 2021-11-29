@@ -69,6 +69,8 @@ namespace Themp
 			desc.SampleDesc.Quality = pass.m_MultisampleQuality;
 			desc.SampleMask = pass.m_SampleMask;
 
+			desc.PrimitiveTopologyType = DxTranslator::GetTopology(pass.m_Topology);
+
 			int numValidTargets = 0;
 			for (int i = 0; i < pass.m_RenderTargets.size(); i++)
 			{

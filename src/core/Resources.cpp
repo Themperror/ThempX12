@@ -339,6 +339,10 @@ namespace Themp
 		{
 			Themp::Print("AntialiasedLineEnable was not of bool type or not found");
 		}
+		if (!SetPassMember(result[Pass::GetPassMemberAsString(PassMember::Topology)], pass, &Pass::SetTopology))
+		{
+			Themp::Print("Topology was not of string type or not found");
+		}
 		if (!SetPassMember(result[Pass::GetPassMemberAsString(PassMember::ForcedSampleCount)], pass, &Pass::SetForcedSampleCount))
 		{
 			Themp::Print("ForcedSampleCount was not of int type or not found");
