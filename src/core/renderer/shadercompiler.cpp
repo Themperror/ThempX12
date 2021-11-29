@@ -57,7 +57,6 @@ namespace Themp::D3D
 		compileArgs.emplace_back(L"-I");
 		compileArgs.emplace_back(SHADER_RESOURCES_FOLDER);
 
-		compileArgs.emplace_back(target).append(L"_6_0");
 		compileArgs.emplace_back(L"-T");
 		compileArgs.emplace_back(target).append(L"_6_0");
 
@@ -138,7 +137,8 @@ namespace Themp::D3D
 		if (pShader != nullptr && debug)
 		{
 			FILE* fp = NULL;
-
+			CreateDirectoryW(L"../data", NULL);
+			CreateDirectoryW(L"../data/shaders/", NULL);
 			_wfopen_s(&fp, pShaderName->GetStringPointer(), L"wb");
 			fwrite(pShader->GetBufferPointer(), pShader->GetBufferSize(), 1, fp);
 			fclose(fp);
