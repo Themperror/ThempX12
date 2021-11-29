@@ -26,6 +26,7 @@ namespace Themp
 		void Pipeline::Init(const SubPass& subpass)
 		{
 			const Pass& pass = Themp::Engine::instance->m_Resources->Get(subpass.pass);
+			const Shader& shader = Themp::Engine::instance->m_Resources->Get(subpass.shader);
 
 			D3D12_GRAPHICS_PIPELINE_STATE_DESC desc {};
 			
@@ -87,6 +88,40 @@ namespace Themp
 				Texture& tex = Themp::Engine::instance->m_Resources->Get(pass.m_DepthTarget.dsv);
 				desc.DSVFormat = tex.GetResource(D3D::TEXTURE_TYPE::DSV)->GetDesc().Format;
 			}
+
+
+			const auto& shaders = shader.GetShaders();
+			for (int i = 0; i < shaders.size(); i++)
+			{
+				const auto& data = shaders[i].data;
+				if (data != nullptr)
+				{
+					switch (shaders[i].type)
+					{
+					case Shader::ShaderType::Vertex:
+						desc.VS.BytecodeLength = data->GetBufferSize();
+						desc.VS.pShaderBytecode = data->GetBufferPointer();
+						break;
+					case Shader::ShaderType::Pixel:
+						desc.PS.BytecodeLength = data->GetBufferSize();
+						desc.PS.pShaderBytecode = data->GetBufferPointer();
+						break;
+					case Shader::ShaderType::Geometry:
+						desc.GS.BytecodeLength = data->GetBufferSize();
+						desc.GS.pShaderBytecode = data->GetBufferPointer();
+						break;
+					case Shader::ShaderType::Hull:
+						desc.HS.BytecodeLength = data->GetBufferSize();
+						desc.HS.pShaderBytecode = data->GetBufferPointer();
+						break;
+					case Shader::ShaderType::Domain:
+						desc.DS.BytecodeLength = data->GetBufferSize();
+						desc.DS.pShaderBytecode = data->GetBufferPointer();
+						break;
+					}
+				}
+			}
+
 
 			if (Themp::Engine::instance->m_Renderer->GetDevice()->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&m_Pipeline)) != S_OK)
 			{

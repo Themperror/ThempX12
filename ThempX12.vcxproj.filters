@@ -37,9 +37,6 @@
     <Filter Include="Source Files\core\input">
       <UniqueIdentifier>{0dffdaf2-f113-4657-ac0d-9c98238ab7c8}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Resource Files\shaders">
-      <UniqueIdentifier>{ad417b13-bfce-49ee-af1e-9decc131369a}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\core\Camera.h">
@@ -141,6 +138,9 @@
     <ClInclude Include="src\lib\toml.hpp">
       <Filter>Source Files\lib</Filter>
     </ClInclude>
+    <ClInclude Include="src\core\renderer\shadercompiler.h">
+      <Filter>Source Files\core\renderer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\core\Functions.cpp">
@@ -230,13 +230,8 @@
     <ClCompile Include="src\core\util\stringUtils.cpp">
       <Filter>Source Files\core\util</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <FxCompile Include="resources\shaders\default_ps.hlsl">
-      <Filter>Resource Files\shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="resources\shaders\default_vs.hlsl">
-      <Filter>Resource Files\shaders</Filter>
-    </FxCompile>
+    <ClCompile Include="src\core\renderer\shadercompiler.cpp">
+      <Filter>Source Files\core\renderer</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

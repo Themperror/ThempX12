@@ -4,6 +4,7 @@
 #include "engine.h"
 #include "renderer/texture.h"
 #include "resources.h"
+#include "shadercompiler.h"
 
 #include <imgui.h>
 #include <imgui/impl/imgui_impl_dx12.h>
@@ -11,6 +12,8 @@ using namespace Themp::D3D;
 
 
 MeshData testMesh;
+
+Themp::D3D::ShaderCompiler s_ShaderCompiler;
 
 bool Control::Init()
 {
@@ -50,12 +53,13 @@ bool Control::Init()
 
 	ImGui_ImplDX12_Init(GetDevice().Get(), Engine::s_SVars.GetSVarInt(SVar::iNumBackBuffers), DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM, m_ImguiSRVHeap.Get(), m_ImguiSRVHeap->GetCPUDescriptorHandleForHeapStart(), m_ImguiSRVHeap->GetGPUDescriptorHandleForHeapStart());
 
+	s_ShaderCompiler.Init();
+
 
 	testMesh = m_GPU_Resources->Test_GetAndAddRandomModel();
 
 	return true;
 }
-
 void Control::Stop()
 {
 	m_FrameFenceValues[m_CurrentBackBuffer] = m_Context->Signal(m_Device->GetCmdQueue(), m_Fence, m_FenceValue);
@@ -146,6 +150,11 @@ const Context&  Control::GetContext() const
 ComPtr<ID3D12GraphicsCommandList> Control::GetImguiCmdList()
 {
 	return GetCurrentBackbuffer().GetCmdList();
+}
+
+const Themp::D3D::ShaderCompiler& Control::GetShaderCompiler()
+{
+	return s_ShaderCompiler;
 }
 
 GPU_Resources& Control::GetResourceManager() const

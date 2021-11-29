@@ -15,6 +15,7 @@ namespace Themp
 		"iAnisotropic_Filtering",
 		"iNumBackBuffers",
 		"iVsyncEnabled",
+		"iDebugShaders",
 		"iMaxSRVs",
 		"iMaxDSVs",
 		"iMaxRTVs",

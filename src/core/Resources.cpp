@@ -2,6 +2,7 @@
 #include "Resources.h"
 #include "renderer/control.h"
 #include "renderer/gpu_resources.h"
+#include "renderer/shadercompiler.h"
 #include "util/print.h"
 #include "util/break.h"
 #include "util/stringUtils.h"
@@ -29,6 +30,11 @@ namespace Themp
 #define RENDER_TARGET_FOLDER RESOURCES_FOLDER"rendertargets/"
 
 
+	// TODO fix string conversions
+	//I'd like to start off mentioning I know that conversion from string -> wstring is done wrongly,
+	//my first priority is getting it all up and running in a regular ascii environment, 
+	//so handling utf8 and wchar conversions is atm out of my scope.
+
 	D3D::Texture& Resources::Get(D3D::RTVHandle handle)
 	{
 		return m_ColorTargets[handle.handle].second;
@@ -48,6 +54,10 @@ namespace Themp
 	D3D::Pass& Resources::Get(D3D::PassHandle handle)
 	{
 		return m_Passes[handle.handle];
+	}
+	D3D::Shader& Resources::Get(D3D::ShaderHandle handle)
+	{
+		return m_Shaders[handle.handle];
 	}
 
 	std::wstring GetFilePath(std::wstring_view base, std::wstring_view filename, std::wstring_view extension)
@@ -128,13 +138,19 @@ namespace Themp
 	std::vector<D3D::SubPass>& Resources::LoadMaterials()
 	{
 		std::vector<std::wstring> materials = LoadFilesFromDirectory(MATERIALS_FOLDER);
-
+		std::vector<std::wstring> shaderFiles = LoadFilesFromDirectory(SHADERS_FOLDER);
 		std::string materialData(10240, '\0');
 		for (const std::wstring& path : materials)
 		{
 			Themp::Print("Loading material file: [%S]", path.c_str());
-			auto passes = LoadMaterial(ReadFileToString(path));
+			auto passes = LoadMaterial(ReadFileToString(path), shaderFiles);
 			MergePasses(passes);
+		}
+
+		const D3D::ShaderCompiler& compiler = Themp::Engine::instance->m_Renderer->GetShaderCompiler();
+		for (int i = 0; i < m_Shaders.size(); i++)
+		{
+			compiler.Compile(m_Shaders[i]);
 		}
 
 		return m_Subpasses;
@@ -464,8 +480,85 @@ namespace Themp
 		return m_Passes.size()-1;
 	}
 
-	D3D::ShaderHandle Resources::LoadShader(std::string_view filename)
+	D3D::ShaderHandle Resources::LoadShader(std::string_view filename, std::vector<std::wstring>& shaderFiles)
 	{
+		for (int i = 0; i < m_Shaders.size(); i++)
+		{
+			if (m_Shaders[i].GetName() == filename)
+			{
+				Themp::Print("Found Shader: [%*s] in cache!", filename.size(), filename.data());
+				return i;
+			}
+		}
+
+		std::wstring name = std::wstring(filename.begin(), filename.end());
+
+		static const std::unordered_map<std::wstring_view, D3D::Shader::ShaderType> TargetToType =
+		{
+			{L"_vs", D3D::Shader::ShaderType::Vertex},
+			{L"_ps", D3D::Shader::ShaderType::Pixel},
+			{L"_gs", D3D::Shader::ShaderType::Geometry},
+			{L"_ds", D3D::Shader::ShaderType::Domain},
+			{L"_hs", D3D::Shader::ShaderType::Hull},
+			{L"_cs", D3D::Shader::ShaderType::Compute},
+			{L"_ms", D3D::Shader::ShaderType::Mesh},
+			{L"_as", D3D::Shader::ShaderType::Amplify},
+			{L"_rh", D3D::Shader::ShaderType::RayHit},
+			{L"_rm", D3D::Shader::ShaderType::RayMiss},
+		};
+
+		D3D::Shader shader{};
+		shader.Init(std::string(filename));
+
+		for (int i = 0; i < shaderFiles.size(); i++)
+		{
+			std::wstring_view fileExt;
+			const auto& lastBackSlash = shaderFiles[i].find_last_of(L'\\');
+			const auto& lastForwardSlash = shaderFiles[i].find_last_of(L'/');
+			if (lastBackSlash != std::wstring::npos)
+			{
+				fileExt = std::wstring_view(shaderFiles[i].data() + lastBackSlash + 1);
+			} 
+			else if (lastForwardSlash != std::wstring::npos)
+			{
+				fileExt = std::wstring_view(shaderFiles[i].data() + lastForwardSlash + 1);
+			}
+			else
+			{
+				continue;
+			}
+
+
+			const auto& period = fileExt.find_last_of(L'.');
+			const auto& underscore = fileExt.find_last_of(L'_');
+
+			//not great, there's still some edge cases but it'll do if we just all keep to conventions :P
+			if (underscore == std::wstring::npos || period == std::wstring::npos || underscore > period)
+			{
+				continue;
+			}
+
+			std::wstring_view target = std::wstring_view(fileExt.data() + underscore, period - underscore);
+			std::wstring_view fileNoExt = std::wstring_view(fileExt.data(), underscore);
+
+			if (name.size() == fileNoExt.size() && fileNoExt == name)
+			{
+				const auto& targetIt = TargetToType.find(target);
+				if (targetIt != TargetToType.end())
+				{
+					shader.AddShaderSource(name, targetIt->second);
+				}
+			}		
+		}
+		if (shader.IsValid())
+		{
+			m_Shaders.push_back(shader);
+			return m_Shaders.size() - 1;
+		}
+
+		Themp::Print("No shaders with leading name: [%*s] were found!", filename.size(), filename.data());
+		Themp::Break();
+
 		return D3D::ShaderHandle::Invalid;
 	}
 
@@ -654,7 +747,7 @@ namespace Themp
 		}
 	}
 
-	std::vector<D3D::SubPass> Resources::LoadMaterial(const std::string& data)
+	std::vector<D3D::SubPass> Resources::LoadMaterial(const std::string& data, std::vector<std::wstring>& shaderFiles)
 	{
 		using namespace Themp::D3D;
 		enum MaterialMembers
@@ -691,7 +784,8 @@ namespace Themp
 				if (pass && shader)
 				{
 					PassHandle passHandle = LoadPass(pass.as_string()->get());
-					ShaderHandle shaderHandle = LoadShader(shader.as_string()->get());
+					ShaderHandle shaderHandle = LoadShader(shader.as_string()->get(), shaderFiles);
+
 					passData.push_back({ passHandle , shaderHandle });
 				}
 			}

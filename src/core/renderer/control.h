@@ -14,6 +14,7 @@ namespace Themp
 	class Resources;
 	namespace D3D
 	{
+		class ShaderCompiler;
 		class Device;
 		class Control
 		{
@@ -31,6 +32,7 @@ namespace Themp
 			ComPtr<ID3D12CommandQueue> GetCommandQueue(D3D12_COMMAND_LIST_TYPE commandListType) const;
 			GPU_Resources& GetResourceManager() const;
 			void CreatePipelines(Themp::Resources& resources, const std::vector<D3D::SubPass>& subPasses);
+			const ShaderCompiler& GetShaderCompiler();
 		private:
 			Frame& GetCurrentBackbuffer();
 			std::unique_ptr<Device> m_Device;
