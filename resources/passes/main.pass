@@ -2,9 +2,9 @@
 Priority = 0
 
 ##depth state see https://docs.microsoft.com/en-us/windows/win32/api/d3d12/ns-d3d12-d3d12_depth_stencil_desc
-DepthEnable = true
+DepthEnable = false
 DepthWriteMask = "ALL"
-DepthFunc = "LESS"
+DepthFunc = "ALWAYS"
 StencilEnable = false
 StencilReadMask = 0
 StencilWriteMask = 0
@@ -20,13 +20,13 @@ BackFacePassOp = "KEEP"
 BackFaceFunc = "ALWAYS"
 
 ##raster state see https://docs.microsoft.com/en-us/windows/win32/api/d3d12/ns-d3d12-d3d12_rasterizer_desc
-FrontCounterClockwise = true
+FrontCounterClockwise = false
 FillMode = "SOLID"
 CullMode = "BACK"
 DepthBias = 0
 DepthBiasClamp = 0.0
 SlopeScaledDepthBias = 0.0
-DepthClipEnable = true
+DepthClipEnable = false
 MultisampleEnable = false
 AntialiasedLineEnable = false
 ForcedSampleCount = 0
@@ -35,7 +35,7 @@ ConservativeRaster = "OFF"
 ##global blend settings see https://docs.microsoft.com/en-us/windows/win32/api/d3d12/ns-d3d12-d3d12_blend_desc
 AlphaToCoverage = false
 IndependendBlend = false
-SampleMask = 0
+SampleMask = 0xFFFFFFFF
 
 ##multisampling
 MultisampleCount = 1

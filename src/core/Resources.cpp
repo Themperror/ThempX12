@@ -756,6 +756,9 @@ namespace Themp
 		using namespace Themp::D3D;
 		enum MaterialMembers
 		{
+			POSITIONINFO,
+			UVINFO,
+			NORMALINFO,
 			PASS,
 			SHADER,
 			COUNT
@@ -763,6 +766,9 @@ namespace Themp
 
 		const std::string_view validEntries[MaterialMembers::COUNT]
 		{
+			"positioninfo",
+			"uvinfo",
+			"normalinfo",
 			"pass",
 			"shader",
 		};
@@ -785,12 +791,34 @@ namespace Themp
 				const auto& table = *it.as_table();
 				const auto& pass = table[validEntries[PASS]];
 				const auto& shader = table[validEntries[SHADER]];
-				if (pass && shader)
+				const auto& pos = table[validEntries[POSITIONINFO]];
+				const auto& uv = table[validEntries[UVINFO]];
+				const auto& normal = table[validEntries[NORMALINFO]];
+				if (pass && pass.is_string() && shader && shader.is_string())
 				{
 					PassHandle passHandle = LoadPass(pass.as_string()->get());
 					ShaderHandle shaderHandle = LoadShader(shader.as_string()->get(), shaderFiles);
-
-					passData.push_back({ passHandle , shaderHandle });
+					bool hasPos = false;
+					bool hasUv = false;
+					bool hasNormal = false;
+					if (pos && pos.is_boolean())
+					{
+						hasPos = pos.as_boolean()->get();
+					}
+					if (uv && uv.is_boolean())
+					{
+						hasUv = uv.as_boolean()->get();
+					}
+					if (normal && normal.is_boolean())
+					{
+						hasNormal = normal.as_boolean()->get();
+					}
+					passData.push_back({hasPos, hasNormal, hasUv, passHandle , shaderHandle });
+				}
+				else
+				{
+					Themp::Print("Pass and/or Shader were not of type string or found");
+					Themp::Break();
 				}
 			}
 		}

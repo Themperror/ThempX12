@@ -102,6 +102,9 @@ namespace Themp::D3D
 
 	struct SubPass
 	{
+		bool NeedsPositionInfo;
+		bool NeedsNormalInfo;
+		bool NeedsUVInfo;
 		PassHandle pass = PassHandle::Invalid;
 		ShaderHandle shader = ShaderHandle::Invalid;
 	};
@@ -146,23 +149,6 @@ namespace Themp::D3D
 		uint32_t vertexCount;
 		uint32_t indexIndex;
 		uint32_t indexCount;
-
-
-		void UpdateIndexBufferView(ComPtr<ID3D12Resource> indexBuffer)
-		{
-			indexBufferView.BufferLocation = indexBuffer->GetGPUVirtualAddress();
-			indexBufferView.Format = DXGI_FORMAT::DXGI_FORMAT_R32_UINT;
-			indexBufferView.SizeInBytes = indexCount * sizeof(uint32_t);
-		}
-
-		const D3D12_INDEX_BUFFER_VIEW& GetIndexBufferView() const
-		{
-			return indexBufferView;
-		}
-
-
-	private:
-		D3D12_INDEX_BUFFER_VIEW indexBufferView;
 	};
 
 	struct ModelData

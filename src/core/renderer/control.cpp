@@ -57,7 +57,6 @@ bool Control::Init()
 
 
 	testMesh = m_GPU_Resources->Test_GetAndAddRandomModel();
-
 	return true;
 }
 void Control::Stop()
@@ -93,11 +92,18 @@ void Control::BeginDraw()
 	}
 	ImGui::End();
 
+	const Pipeline& pipeline = m_Pipelines[0];
+	frame.GetCmdList()->SetPipelineState(pipeline.m_Pipeline.Get());
+	frame.GetCmdList()->SetGraphicsRootSignature(pipeline.m_RootSignature.Get());
+	frame.GetCmdList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	frame.GetCmdList()->OMSetRenderTargets(1, &CPUHandle, true, &pipeline.m_DepthTarget);
+
+	const auto& vertexBufferViews = m_GPU_Resources->GetVertexBufferViews();
+	frame.GetCmdList()->IASetVertexBuffers(0, vertexBufferViews.size(), vertexBufferViews.data());
+	frame.GetCmdList()->IASetIndexBuffer(&m_GPU_Resources->GetIndexBufferView());
+	frame.GetCmdList()->DrawIndexedInstanced(testMesh.indexCount, 1, testMesh.indexIndex, testMesh.vertexIndex, 0);
 	//frame.GetCmdList().Get()->SetDescriptorHeaps(1, m_ImguiSRVHeap.GetAddressOf());
 
-	frame.GetCmdList()->IASetIndexBuffer(&testMesh.GetIndexBufferView());
-
-	//frame.GetCmdList().Get()->DrawIndexedInstanced(testMesh.indexCount, 1, testMesh.indexIndex, testMesh.vertexIndex, 0);
 }
 
 void Control::EndDraw()

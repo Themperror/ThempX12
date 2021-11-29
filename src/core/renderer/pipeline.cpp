@@ -80,6 +80,7 @@ namespace Themp
 					Texture& tex = Themp::Engine::instance->m_Resources->Get(pass.m_RenderTargets[i].rtv);
 					desc.RTVFormats[numValidTargets] = tex.GetResource(D3D::TEXTURE_TYPE::RTV)->GetDesc().Format;
 					numValidTargets++;
+					m_RenderTargets.push_back(tex.GetCPUHandle());
 				}
 			}
 			desc.NumRenderTargets = numValidTargets;
@@ -89,8 +90,42 @@ namespace Themp
 			{
 				Texture& tex = Themp::Engine::instance->m_Resources->Get(pass.m_DepthTarget.dsv);
 				desc.DSVFormat = tex.GetResource(D3D::TEXTURE_TYPE::DSV)->GetDesc().Format;
+				m_DepthTarget = tex.GetCPUHandle();
 			}
 
+			std::vector<D3D12_INPUT_ELEMENT_DESC> iaLayouts;
+			int byteOffSet = 0;
+			int currentSlot = 0;
+			if (subpass.NeedsPositionInfo)
+			{
+				D3D12_INPUT_ELEMENT_DESC& iaDesc = iaLayouts.emplace_back();
+				iaDesc.AlignedByteOffset = 0;
+				iaDesc.Format = DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT;
+				iaDesc.InputSlot = 0;
+				iaDesc.InputSlotClass = D3D12_INPUT_CLASSIFICATION::D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+				iaDesc.SemanticName = "POSITION";
+			}
+			if (subpass.NeedsNormalInfo)
+			{
+				D3D12_INPUT_ELEMENT_DESC& iaDesc = iaLayouts.emplace_back();
+				iaDesc.AlignedByteOffset = 12;
+				iaDesc.Format = DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT;
+				iaDesc.InputSlot = 1;
+				iaDesc.InputSlotClass = D3D12_INPUT_CLASSIFICATION::D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+				iaDesc.SemanticName = "NORMAL";
+			}
+			if (subpass.NeedsUVInfo)
+			{
+				D3D12_INPUT_ELEMENT_DESC& iaDesc = iaLayouts.emplace_back();
+				iaDesc.AlignedByteOffset = 24;
+				iaDesc.Format = DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT;
+				iaDesc.InputSlot = 2;
+				iaDesc.InputSlotClass = D3D12_INPUT_CLASSIFICATION::D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+				iaDesc.SemanticName = "UV";
+			}
+
+			desc.InputLayout.NumElements = iaLayouts.size();
+			desc.InputLayout.pInputElementDescs = iaLayouts.data();
 
 			const auto& shaders = shader.GetShaders();
 			for (int i = 0; i < shaders.size(); i++)
@@ -123,7 +158,21 @@ namespace Themp
 					}
 				}
 			}
-
+			if (shaders.size() > 0)
+			{
+				ComPtr<ID3D12RootSignatureDeserializer> rootSignatureDeserializer;
+				D3D12CreateRootSignatureDeserializer(shaders[0].data->GetBufferPointer(), shaders[0].data->GetBufferSize(), IID_PPV_ARGS(&rootSignatureDeserializer));
+				if (rootSignatureDeserializer)
+				{
+					auto rootDesc = rootSignatureDeserializer->GetRootSignatureDesc();
+					ComPtr<ID3DBlob> signature;
+					ComPtr<ID3DBlob> error;
+					D3D12SerializeRootSignature(rootDesc, D3D_ROOT_SIGNATURE_VERSION_1_0, &signature, &error);
+					
+					Themp::Engine::instance->m_Renderer->GetDevice()->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_RootSignature));
+					desc.pRootSignature = m_RootSignature.Get();
+				}
+			}
 
 			if (Themp::Engine::instance->m_Renderer->GetDevice()->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&m_Pipeline)) != S_OK)
 			{

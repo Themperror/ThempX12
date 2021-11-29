@@ -25,10 +25,13 @@ namespace Themp::D3D
 
 		void UploadMeshStagingBuffers();
 
-		ComPtr<ID3D12Resource> GetPositionVertexBuffer();
-		ComPtr<ID3D12Resource> GetNormalVertexBuffer();
-		ComPtr<ID3D12Resource> GetUVVertexBuffer();
-		ComPtr<ID3D12Resource> GetIndexBuffer();
+		ComPtr<ID3D12Resource> GetPositionVertexBuffer() const;
+		ComPtr<ID3D12Resource> GetNormalVertexBuffer() const;
+		ComPtr<ID3D12Resource> GetUVVertexBuffer() const;
+		ComPtr<ID3D12Resource> GetIndexBuffer() const;
+
+		const D3D12_INDEX_BUFFER_VIEW& GetIndexBufferView() const;
+		const std::vector<D3D12_VERTEX_BUFFER_VIEW>& GetVertexBufferViews() const;
 
 	private:
 		struct MeshDataStage
@@ -41,6 +44,7 @@ namespace Themp::D3D
 		DescriptorHeapTracker CreateDescriptorHeap(const D3D::Device& device, DESCRIPTOR_HEAP_TYPE type, uint32_t amount);
 		void CreateVertexBuffer(const D3D::Device& device);
 		void CreateIndexBuffer(const D3D::Device& device);
+		void UpdateIndexBufferView(const MeshData& tracker);
 
 
 
@@ -66,6 +70,7 @@ namespace Themp::D3D
 			ComPtr<ID3D12Resource> positionBuffer;
 			ComPtr<ID3D12Resource> normalBuffer;
 			ComPtr<ID3D12Resource> uvBuffer;
+			std::vector<D3D12_VERTEX_BUFFER_VIEW> m_VertexBufferViews;
 
 
 		public:
@@ -75,6 +80,7 @@ namespace Themp::D3D
 				positionBuffer = pos;
 				normalBuffer = normal;
 				uvBuffer = uv;
+				m_VertexBufferViews.resize(3);
 			}
 
 			void Map()
@@ -96,6 +102,21 @@ namespace Themp::D3D
 				uvData = nullptr;
 			}
 
+			void UpdateVertexBufferViews(const MeshData& tracker)
+			{
+				m_VertexBufferViews[0].BufferLocation = positionBuffer->GetGPUVirtualAddress();
+				m_VertexBufferViews[1].BufferLocation = normalBuffer->GetGPUVirtualAddress();
+				m_VertexBufferViews[2].BufferLocation = uvBuffer->GetGPUVirtualAddress();
+
+				m_VertexBufferViews[0].SizeInBytes = tracker.vertexCount * sizeof(DirectX::XMFLOAT3);
+				m_VertexBufferViews[1].SizeInBytes = tracker.vertexCount * sizeof(NormalData);
+				m_VertexBufferViews[2].SizeInBytes = tracker.vertexCount * sizeof(DirectX::XMFLOAT2);
+
+				m_VertexBufferViews[0].StrideInBytes = sizeof(DirectX::XMFLOAT3);
+				m_VertexBufferViews[1].StrideInBytes = sizeof(NormalData);
+				m_VertexBufferViews[2].StrideInBytes = sizeof(DirectX::XMFLOAT2);
+			}
+
 			void SetVertex(int index, const Vertex& vertex)
 			{
 				posData[index] = vertex.position;
@@ -108,6 +129,7 @@ namespace Themp::D3D
 
 		VertexCollectionBuffer m_MainVertexBuffers;
 		ComPtr<ID3D12Resource> m_MainIndexBuffer;
+		D3D12_INDEX_BUFFER_VIEW m_IndexBufferView;
 		MeshData m_MeshBufferStageTracker;
 		MeshData m_MeshBufferTracker;
 		MeshDataStage m_MeshDataStage;

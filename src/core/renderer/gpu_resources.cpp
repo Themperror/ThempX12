@@ -119,15 +119,21 @@ namespace Themp::D3D
 		std::vector<Vertex> vertices;
 		std::vector<uint32_t> indices;
 
-		vertices.push_back(Vertex{ {-0.5f,  0.5f,0}, {0,0,1}, {0,0,0}, {0,0,0}, {0,0} });
-		vertices.push_back(Vertex{ { 0.5f,  0.5f,0}, {0,0,1}, {0,0,0}, {0,0,0}, {1,0} });
-		vertices.push_back(Vertex{ {-0.5f, -0.5f,0}, {0,0,1}, {0,0,0}, {0,0,0}, {0,1} });
-		vertices.push_back(Vertex{ { 0.5f, -0.5f,0}, {0,0,1}, {0,0,0}, {0,0,0}, {1,1} });
+
+		//0   1
+
+        //2   3
+		vertices.push_back(Vertex{ {-0.5f,  0.5f, 0.2f}, {0,0,1}, {0,0,0}, {0,0,0}, {0,0} });
+		vertices.push_back(Vertex{ { 0.5f,  0.5f, 0.2f}, {0,0,1}, {0,0,0}, {0,0,0}, {1,0} });
+		vertices.push_back(Vertex{ {-0.5f, -0.5f, 0.2f}, {0,0,1}, {0,0,0}, {0,0,0}, {0,1} });
+		vertices.push_back(Vertex{ { 0.5f, -0.5f, 0.2f}, {0,0,1}, {0,0,0}, {0,0,0}, {1,1} });
 
 		indices.push_back(0);
 		indices.push_back(1);
 		indices.push_back(2);
+		indices.push_back(1);
 		indices.push_back(3);
+		indices.push_back(2);
 
 		return AppendMeshToStagingBuffers(vertices, indices);
 
@@ -184,6 +190,8 @@ namespace Themp::D3D
 			}
 			m_MainIndexBuffer->Unmap(0, &writeRange);
 
+			UpdateIndexBufferView(m_MeshBufferTracker);
+
 			assert(m_MeshBufferTracker.indexCount == m_MeshBufferStageTracker.indexCount && m_MeshBufferTracker.indexIndex == m_MeshBufferStageTracker.indexIndex);
 			m_MeshDataStage.indexData.clear();
 		}
@@ -210,30 +218,51 @@ namespace Themp::D3D
 			}
 			m_MainVertexBuffers.Unmap(writeRange);
 
+			m_MainVertexBuffers.UpdateVertexBufferViews(m_MeshBufferTracker);
+
 			assert(m_MeshBufferTracker.vertexCount == m_MeshBufferStageTracker.vertexCount && m_MeshBufferTracker.vertexIndex == m_MeshBufferStageTracker.vertexIndex);
 			m_MeshDataStage.vertexData.clear();
 		}
 	}
 
-	ComPtr<ID3D12Resource> GPU_Resources::GetPositionVertexBuffer()
+	ComPtr<ID3D12Resource> GPU_Resources::GetPositionVertexBuffer() const
 	{
 		return m_MainVertexBuffers.positionBuffer;
 	}
 
-	ComPtr<ID3D12Resource> GPU_Resources::GetNormalVertexBuffer()
+	ComPtr<ID3D12Resource> GPU_Resources::GetNormalVertexBuffer() const
 	{
 		return m_MainVertexBuffers.normalBuffer;
 	}
 
-	ComPtr<ID3D12Resource> GPU_Resources::GetUVVertexBuffer()
+	ComPtr<ID3D12Resource> GPU_Resources::GetUVVertexBuffer() const
 	{
 		return m_MainVertexBuffers.uvBuffer;
 	}
 
-	ComPtr<ID3D12Resource> GPU_Resources::GetIndexBuffer()
+	ComPtr<ID3D12Resource> GPU_Resources::GetIndexBuffer() const
 	{
 		return m_MainIndexBuffer;
 	}
+
+	void GPU_Resources::UpdateIndexBufferView(const MeshData& tracker)
+	{
+		m_IndexBufferView.BufferLocation = m_MainIndexBuffer->GetGPUVirtualAddress();
+		m_IndexBufferView.Format = DXGI_FORMAT::DXGI_FORMAT_R32_UINT;
+		m_IndexBufferView.SizeInBytes = tracker.indexCount * sizeof(uint32_t);
+	}
+
+	const D3D12_INDEX_BUFFER_VIEW& GPU_Resources::GetIndexBufferView() const
+	{
+		return m_IndexBufferView;
+	}
+
+	const std::vector<D3D12_VERTEX_BUFFER_VIEW>& GPU_Resources::GetVertexBufferViews() const
+	{
+		return m_MainVertexBuffers.m_VertexBufferViews;
+	}
+
+
 
 	D3D12_DESCRIPTOR_HEAP_TYPE GetDescriptorHeapType(DESCRIPTOR_HEAP_TYPE type)
 	{

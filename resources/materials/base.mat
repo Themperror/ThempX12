@@ -1,6 +1,6 @@
 [[SubPass]]
-Pass = "shadow"
-Shader = "shadow"
-[[SubPass]]
+PositionInfo = true
+UVInfo = true
+NormalInfo = true
 Pass = "main"
 Shader = "default"
