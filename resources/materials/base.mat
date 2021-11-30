@@ -1,5 +1,11 @@
 [[SubPass]]
 PositionInfo = true
+UVInfo = false
+NormalInfo = false
+Pass = "shadow"
+Shader = "shadow"
+[[SubPass]]
+PositionInfo = true
 UVInfo = true
 NormalInfo = true
 Pass = "main"

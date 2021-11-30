@@ -79,8 +79,6 @@ void Control::BeginDraw()
 {
 	Frame& frame = GetCurrentBackbuffer();
 	frame.Reset();
-	auto CPUHandle = frame.GetFrameBuffer().GetCPUHandle();
-	frame.GetCmdList()->OMSetRenderTargets(1, &CPUHandle, true, nullptr);
 
 	if (ImGui::Begin("Renderer"))
 	{
@@ -92,17 +90,20 @@ void Control::BeginDraw()
 	}
 	ImGui::End();
 
-	const Pipeline& pipeline = m_Pipelines[0];
-	frame.GetCmdList()->SetPipelineState(pipeline.m_Pipeline.Get());
-	frame.GetCmdList()->SetGraphicsRootSignature(pipeline.m_RootSignature.Get());
-	frame.GetCmdList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	frame.GetCmdList()->OMSetRenderTargets(1, &CPUHandle, true, &pipeline.m_DepthTarget);
-
 	const auto& vertexBufferViews = m_GPU_Resources->GetVertexBufferViews();
 	frame.GetCmdList()->IASetVertexBuffers(0, vertexBufferViews.size(), vertexBufferViews.data());
 	frame.GetCmdList()->IASetIndexBuffer(&m_GPU_Resources->GetIndexBufferView());
-	frame.GetCmdList()->DrawIndexedInstanced(testMesh.indexCount, 1, testMesh.indexIndex, testMesh.vertexIndex, 0);
+	for (int i = 0; i < m_Pipelines.size(); i++)
+	{
+		m_Pipelines[i].SetTo(frame.GetCmdList());
+		frame.GetCmdList()->DrawIndexedInstanced(testMesh.indexCount, 1, testMesh.indexIndex, testMesh.vertexIndex, 0);
+	}
+
 	//frame.GetCmdList().Get()->SetDescriptorHeaps(1, m_ImguiSRVHeap.GetAddressOf());
+
+
+	auto CPUHandle = frame.GetFrameBuffer().GetCPUHandle();
+	frame.GetCmdList()->OMSetRenderTargets(1, &CPUHandle, true, nullptr);
 
 }
 

@@ -2,9 +2,9 @@
 Priority = 0
 
 ##depth state see https://docs.microsoft.com/en-us/windows/win32/api/d3d12/ns-d3d12-d3d12_depth_stencil_desc
-DepthEnable = false
+DepthEnable = true
 DepthWriteMask = "ALL"
-DepthFunc = "ALWAYS"
+DepthFunc = "GREATER"
 StencilEnable = false
 StencilReadMask = 0
 StencilWriteMask = 0
@@ -45,7 +45,7 @@ Topology = "TRIANGLE"
 
 ##targets
 DepthTarget = "maindepth"
-ColorTarget = "main"
+ColorTarget = [{"main" = 0}]
 
 ##per target blend state
 ############# Blend 0
@@ -60,4 +60,4 @@ DestAlphaBlend = "ZERO"
 BlendAlphaOp = "ADD"
 LogicOpEnable = false
 LogicOp = "CLEAR"
-RenderTargetWriteMask = 0
+RenderTargetWriteMask = 0xF

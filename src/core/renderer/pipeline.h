@@ -21,6 +21,8 @@ namespace Themp
 			ComPtr<ID3D12RootSignature> m_RootSignature;
 			std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> m_RenderTargets;
 			D3D12_CPU_DESCRIPTOR_HANDLE m_DepthTarget;
+
+			void SetTo(ComPtr<ID3D12GraphicsCommandList> cmdList);
 		};
 	}
 }

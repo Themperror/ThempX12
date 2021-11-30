@@ -2,6 +2,8 @@
 #include "renderer/control.h"
 #include "renderer/device.h"
 #include "engine.h"
+
+#include "util/svars.h"
 #include "resources.h"
 #include "util/print.h"
 #include "util/break.h"
@@ -179,6 +181,32 @@ namespace Themp
 				Themp::Print("Failed to create pipeline state!");
 				Themp::Break();
 			}
+			m_Pipeline->SetName(std::wstring(pass.m_Name.begin(), pass.m_Name.end()).c_str());
+		}
+
+
+		void Pipeline::SetTo(ComPtr<ID3D12GraphicsCommandList> cmdList)
+		{
+			cmdList->SetPipelineState(m_Pipeline.Get());
+			cmdList->SetGraphicsRootSignature(m_RootSignature.Get());
+			cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			cmdList->OMSetRenderTargets(m_RenderTargets.size(), m_RenderTargets.data(), false, &m_DepthTarget);
+
+
+			D3D12_VIEWPORT viewport{};
+			D3D12_RECT scissor{};
+			viewport.MinDepth = 0;
+			viewport.MaxDepth = 1;
+			viewport.Height = Engine::s_SVars.GetSVarInt(SVar::iWindowHeight);
+			viewport.Width = Engine::s_SVars.GetSVarInt(SVar::iWindowWidth);
+			viewport.TopLeftX = 0;
+			viewport.TopLeftY = 0;
+			scissor.left = 0;
+			scissor.right = viewport.Width;
+			scissor.top = 0;
+			scissor.bottom = viewport.Height;
+			cmdList->RSSetViewports(1, &viewport);
+			cmdList->RSSetScissorRects(1, &scissor);
 		}
 	}
 }

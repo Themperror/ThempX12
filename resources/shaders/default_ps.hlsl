@@ -1,6 +1,18 @@
 #include "default_root.h"
-[RootSignature(ROOT)]
-float4 main(float4 pos : SV_POSITION) : SV_TARGET0
+
+struct PSOut
 {
-	return 1.0f.xxxx;
+	float4 color : SV_Target0;
+	float depth : SV_Depth;
+};
+
+[RootSignature(ROOT)]
+PSOut main(float4 pos : SV_Position)
+{
+	PSOut psOut;
+	psOut.color = float4(pos.xyz,0.33);
+	psOut.color.x /= 800.0;
+	psOut.color.y /= 600.0;
+	psOut.depth = psOut.color.x;
+	return psOut;
 }
