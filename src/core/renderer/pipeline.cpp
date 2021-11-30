@@ -95,6 +95,10 @@ namespace Themp
 				desc.DSVFormat = tex.GetResource(D3D::TEXTURE_TYPE::DSV)->GetDesc().Format;
 				m_DepthTarget = tex.GetCPUHandle();
 			}
+			else
+			{
+				m_DepthTarget = {};
+			}
 
 			int height = Engine::s_SVars.GetSVarInt(SVar::iWindowHeight);
 			int width = Engine::s_SVars.GetSVarInt(SVar::iWindowWidth);
@@ -128,7 +132,6 @@ namespace Themp
 					m_Scissors[i].right = width * pass.m_Scissors[i].scaler;
 				}
 			}
-
 
 			std::vector<D3D12_INPUT_ELEMENT_DESC> iaLayouts;
 			int byteOffSet = 0;
@@ -224,10 +227,28 @@ namespace Themp
 		{
 			const Pass& pass = Themp::Engine::instance->m_Resources->Get(m_PassHandle);
 
+			for (int i = 0; i < m_RenderTargets.size(); i++)
+			{
+				const auto& tex = Themp::Engine::instance->m_Resources->Get(pass.m_RenderTargets[i].rtv);
+				cmdList->ClearRenderTargetView(m_RenderTargets[i], tex.GetClearValue().Color, 0, nullptr);
+			}
+
+			if (pass.m_DepthTarget.dsv.IsValid())
+			{
+				const auto& tex = Themp::Engine::instance->m_Resources->Get(pass.m_DepthTarget.dsv);
+				D3D12_CLEAR_FLAGS flags = D3D12_CLEAR_FLAGS::D3D12_CLEAR_FLAG_DEPTH;
+				if (tex.GetResource(TEXTURE_TYPE::DSV)->GetDesc().Format == DXGI_FORMAT::DXGI_FORMAT_D24_UNORM_S8_UINT)
+				{
+					flags |= D3D12_CLEAR_FLAGS::D3D12_CLEAR_FLAG_STENCIL;
+				}
+				cmdList->ClearDepthStencilView(m_DepthTarget, flags, tex.GetClearValue().DepthStencil.Depth, tex.GetClearValue().DepthStencil.Stencil, 0, nullptr);
+			}
+			
+
 			cmdList->SetPipelineState(m_Pipeline.Get());
 			cmdList->SetGraphicsRootSignature(m_RootSignature.Get());
 			cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-			cmdList->OMSetRenderTargets(m_RenderTargets.size(), m_RenderTargets.data(), false, &m_DepthTarget);
+			cmdList->OMSetRenderTargets(m_RenderTargets.size(), m_RenderTargets.data(), false, m_DepthTarget.ptr != 0 ? &m_DepthTarget : nullptr);
 
 			int height = Engine::s_SVars.GetSVarInt(SVar::iWindowHeight);
 			int width = Engine::s_SVars.GetSVarInt(SVar::iWindowWidth);

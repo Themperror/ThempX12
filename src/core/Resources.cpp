@@ -803,6 +803,7 @@ namespace Themp
 		bool doesScale = true;
 		float scale = 1.0f;
 
+		bool isDepthTarget = false;
 		//past tense
 		const auto& readType = result["type"];
 		if (readType && readType.is_string())
@@ -814,6 +815,7 @@ namespace Themp
 			}
 			else if (val == "depth")
 			{
+				isDepthTarget = true;
 				flags = D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 			}
 		}
@@ -828,6 +830,10 @@ namespace Themp
 		{
 			createSRV = makeSRV.as_boolean()->get();
 		}
+		else
+		{
+			Themp::Print("createshaderview was not of type bool or not found!");
+		}
 
 		const auto& readFormat = result["format"];
 		if (readFormat && readFormat.is_string())
@@ -837,11 +843,19 @@ namespace Themp
 			format = D3D::DxTranslator::GetTextureFormat(formatFromStr);
 			clearValue.Format = format;
 		}
+		else
+		{
+			Themp::Print("format was not of type string or not found!");
+		}
 
 		const auto& readWidth = result["fixedwidth"];
 		if (readWidth && readWidth.is_integer())
 		{
 			width = readWidth.as_integer()->get();
+		}
+		else
+		{
+			Themp::Print("fixedwidth was not of type integer or not found!");
 		}
 
 		const auto& readHeight = result["fixedheight"];
@@ -849,11 +863,19 @@ namespace Themp
 		{
 			height = readHeight.as_integer()->get();
 		}
+		else
+		{
+			Themp::Print("fixedheight was not of type integer or not found!");
+		}
 
 		const auto& readCount = result["multisamplecount"];
 		if (readCount && readCount.is_integer())
 		{
 			multisample.Count = readCount.as_integer()->get();
+		}
+		else
+		{
+			Themp::Print("multisamplecount was not of type integer or not found!");
 		}
 
 		const auto& readQuality = result["multisamplequality"];
@@ -861,17 +883,79 @@ namespace Themp
 		{
 			multisample.Quality = readQuality.as_integer()->get();
 		}
+		else
+		{
+			Themp::Print("multisamplequality was not of type integer or not found!");
+		}
 
 		const auto& resolution = result["resolution"];
 		if (resolution && resolution.is_string())
 		{
 			doesScale = resolution.as_string()->get() != "fixed";
 		}
+		else
+		{
+			Themp::Print("resolution was not of type string or not found!");
+		}
 
 		const auto& readScale = result["scale"];
 		if (readScale && readScale.is_floating_point())
 		{
 			scale = readScale.as_floating_point()->get();
+		}
+		else
+		{
+			Themp::Print("scale was not of type float or not found!");
+		}
+
+		const auto& clearValues = result["clearvalue"];
+		if (clearValues && clearValues.is_array())
+		{
+			const auto& values = *clearValues.as_array();
+			if (isDepthTarget)
+			{
+				if (values.size() > 0)
+				{
+					if (values[0].is_floating_point())
+					{
+						clearValue.DepthStencil.Depth = values[0].as_floating_point()->get();
+					}
+					else
+					{
+						Themp::Print("is_integer: %i", values[0].is_integer());
+						Themp::Print("is_array: %i", values[0].is_array());
+						Themp::Print("is_table: %i", values[0].is_table());
+						Themp::Print("is_number: %i", values[0].is_number());
+						Themp::Print("is_boolean: %i", values[0].is_boolean());
+					}
+				}
+				else
+				{
+					Themp::Print("clearvalue's first argument needs to be a float (depth) for a depth target!");
+				}
+				if (values.size() > 1)
+				{
+					clearValue.DepthStencil.Stencil = values[1].as_integer()->get();
+				}
+				else if(format == DXGI_FORMAT::DXGI_FORMAT_D24_UNORM_S8_UINT)
+				{
+					Themp::Print("clearvalue's second argument needs to be a integer (stencil) for a depth target!");
+				}
+			}
+			else
+			{
+				if (values.size() == 4)
+				{
+					clearValue.Color[0] = values[0].as_floating_point()->get();
+					clearValue.Color[1] = values[1].as_floating_point()->get();
+					clearValue.Color[2] = values[2].as_floating_point()->get();
+					clearValue.Color[3] = values[3].as_floating_point()->get();
+				}
+				else
+				{
+					Themp::Print("clearvalue needs 4 floats for a color target!");
+				}
+			}
 		}
 
 		if (doesScale)
@@ -886,6 +970,8 @@ namespace Themp
 		auto device = Engine::instance->m_Renderer->GetDevice();
 		auto resource = resourceManager.GetTextureResource(device, std::wstring(filename.begin(),filename.end()), flags, format, 1, multisample, width, height, depth, &clearValue, textureType);
 		auto& tex = resourceManager.GetTextureFromResource(device, resource, textureType);
+
+		tex.m_ClearValue = clearValue;
 
 		switch (textureType)
 		{

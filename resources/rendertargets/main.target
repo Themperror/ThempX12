@@ -20,3 +20,4 @@ FixedHeight = 1024
 MultiSampleCount = 1
 MultiSampleQuality = 0
 
+ClearValue = [0.0, 0.0, 0.0, 0.0]
