@@ -20,7 +20,7 @@ BackFacePassOp = "KEEP"
 BackFaceFunc = "ALWAYS"
 
 ##raster state see https://docs.microsoft.com/en-us/windows/win32/api/d3d12/ns-d3d12-d3d12_rasterizer_desc
-FrontCounterClockwise = true
+FrontCounterClockwise = false
 FillMode = "SOLID"
 CullMode = "BACK"
 DepthBias = 0
@@ -61,20 +61,20 @@ RenderTargetWriteMask = 0xF
 
 [[Viewports]]
 RenderTargetIndex = 0
-FixedResolution = false
+FixedResolution = true
 Scaler = 1.0
 TopLeftX = 0.0
 TopLeftY = 0.0
-Width = 0.0
-Height = 0.0
+Width = 1024.0
+Height = 1024.0
 MinDepth = 0.0
 MaxDepth = 1.0
 
 [[Scissors]]
 RenderTargetIndex = 0
-FixedResolution = false
+FixedResolution = true
 Scaler = 1.0
 Left = 0
 Top = 0
-Right = 0
-Bottom = 0
+Right = 1024
+Bottom = 1024

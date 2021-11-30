@@ -123,10 +123,10 @@ namespace Themp::D3D
 		//0   1
 
         //2   3
-		vertices.push_back(Vertex{ {-0.5f,  0.5f, 0.2f}, {0,0,1}, {0,0,0}, {0,0,0}, {0,0} });
-		vertices.push_back(Vertex{ { 0.5f,  0.5f, 0.2f}, {0,0,1}, {0,0,0}, {0,0,0}, {1,0} });
-		vertices.push_back(Vertex{ {-0.5f, -0.5f, 0.2f}, {0,0,1}, {0,0,0}, {0,0,0}, {0,1} });
-		vertices.push_back(Vertex{ { 0.5f, -0.5f, 0.2f}, {0,0,1}, {0,0,0}, {0,0,0}, {1,1} });
+		vertices.push_back(Vertex{ {-0.33f,  0.33f, 1.0f}, {0,0,1}, {0,0,0}, {0,0,0}, {0,0} });
+		vertices.push_back(Vertex{ { 0.33f,  0.33f, 1.0f}, {0,0,1}, {0,0,0}, {0,0,0}, {1,0} });
+		vertices.push_back(Vertex{ {-0.33f, -0.33f, 1.0f}, {0,0,1}, {0,0,0}, {0,0,0}, {0,1} });
+		vertices.push_back(Vertex{ { 0.33f, -0.33f, 1.0f}, {0,0,1}, {0,0,0}, {0,0,0}, {1,1} });
 
 		indices.push_back(0);
 		indices.push_back(1);

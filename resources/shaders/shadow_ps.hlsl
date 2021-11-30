@@ -2,5 +2,5 @@
 [RootSignature(ROOT)]
 float main(float4 pos : SV_POSITION) : SV_Depth
 {
-	return 1.0f;
+	return pos.y / 600.0f;
 }
