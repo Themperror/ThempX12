@@ -30,6 +30,7 @@ namespace Themp
 			const Pass& pass = Themp::Engine::instance->m_Resources->Get(subpass.pass);
 			const Shader& shader = Themp::Engine::instance->m_Resources->Get(subpass.shader);
 
+			m_PassHandle = subpass.pass;
 			D3D12_GRAPHICS_PIPELINE_STATE_DESC desc {};
 			
 			desc.BlendState.AlphaToCoverageEnable = pass.m_RasterState.alphaToCoverageEnable;
@@ -94,6 +95,40 @@ namespace Themp
 				desc.DSVFormat = tex.GetResource(D3D::TEXTURE_TYPE::DSV)->GetDesc().Format;
 				m_DepthTarget = tex.GetCPUHandle();
 			}
+
+			int height = Engine::s_SVars.GetSVarInt(SVar::iWindowHeight);
+			int width = Engine::s_SVars.GetSVarInt(SVar::iWindowWidth);
+
+
+			for (int i = 0; i < m_Viewports.size(); i++)
+			{
+				m_Viewports[i].Height = pass.m_Viewports[i].height;
+				m_Viewports[i].Width = pass.m_Viewports[i].width;
+				m_Viewports[i].MaxDepth = pass.m_Viewports[i].maxDepth;
+				m_Viewports[i].MinDepth = pass.m_Viewports[i].minDepth;
+				m_Viewports[i].TopLeftX = pass.m_Viewports[i].topLeftX;
+				m_Viewports[i].TopLeftY = pass.m_Viewports[i].topLeftY;
+
+				if (!pass.m_Viewports[i].fixedResolution)
+				{
+					m_Viewports[i].Height = height * pass.m_Viewports[i].scaler;
+					m_Viewports[i].Width = width * pass.m_Viewports[i].scaler;
+				}
+			}
+			for (int i = 0; i < m_Scissors.size(); i++)
+			{
+				m_Scissors[i].bottom = pass.m_Scissors[i].bottom;
+				m_Scissors[i].right = pass.m_Scissors[i].right;
+				m_Scissors[i].left = pass.m_Scissors[i].left;
+				m_Scissors[i].top = pass.m_Scissors[i].top;
+
+				if (!pass.m_Scissors[i].fixedResolution)
+				{
+					m_Scissors[i].bottom = height * pass.m_Scissors[i].scaler;
+					m_Scissors[i].right = width * pass.m_Scissors[i].scaler;
+				}
+			}
+
 
 			std::vector<D3D12_INPUT_ELEMENT_DESC> iaLayouts;
 			int byteOffSet = 0;
@@ -187,26 +222,36 @@ namespace Themp
 
 		void Pipeline::SetTo(ComPtr<ID3D12GraphicsCommandList> cmdList)
 		{
+			const Pass& pass = Themp::Engine::instance->m_Resources->Get(m_PassHandle);
+
 			cmdList->SetPipelineState(m_Pipeline.Get());
 			cmdList->SetGraphicsRootSignature(m_RootSignature.Get());
 			cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 			cmdList->OMSetRenderTargets(m_RenderTargets.size(), m_RenderTargets.data(), false, &m_DepthTarget);
 
+			int height = Engine::s_SVars.GetSVarInt(SVar::iWindowHeight);
+			int width = Engine::s_SVars.GetSVarInt(SVar::iWindowWidth);
 
-			D3D12_VIEWPORT viewport{};
-			D3D12_RECT scissor{};
-			viewport.MinDepth = 0;
-			viewport.MaxDepth = 1;
-			viewport.Height = Engine::s_SVars.GetSVarInt(SVar::iWindowHeight);
-			viewport.Width = Engine::s_SVars.GetSVarInt(SVar::iWindowWidth);
-			viewport.TopLeftX = 0;
-			viewport.TopLeftY = 0;
-			scissor.left = 0;
-			scissor.right = viewport.Width;
-			scissor.top = 0;
-			scissor.bottom = viewport.Height;
-			cmdList->RSSetViewports(1, &viewport);
-			cmdList->RSSetScissorRects(1, &scissor);
+
+			for (int i = 0; i < m_Viewports.size(); i++)
+			{
+				if (!pass.m_Viewports[i].fixedResolution)
+				{
+					m_Viewports[i].Height = height * pass.m_Viewports[i].scaler;
+					m_Viewports[i].Width = width * pass.m_Viewports[i].scaler;
+				}
+			}
+			for (int i = 0; i < m_Scissors.size(); i++)
+			{
+				if (!pass.m_Scissors[i].fixedResolution)
+				{
+					m_Scissors[i].bottom = height * pass.m_Scissors[i].scaler;
+					m_Scissors[i].right = width * pass.m_Scissors[i].scaler;
+				}
+			}
+
+			cmdList->RSSetViewports(m_Viewports.size(), m_Viewports.data());
+			cmdList->RSSetScissorRects(m_Scissors.size(), m_Scissors.data());
 		}
 	}
 }

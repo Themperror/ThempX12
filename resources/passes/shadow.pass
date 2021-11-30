@@ -58,3 +58,23 @@ BlendAlphaOp = "ADD"
 LogicOpEnable = false
 LogicOp = "CLEAR"
 RenderTargetWriteMask = 0xF
+
+[[Viewports]]
+RenderTargetIndex = 0
+FixedResolution = false
+Scaler = 1.0
+TopLeftX = 0.0
+TopLeftY = 0.0
+Width = 0.0
+Height = 0.0
+MinDepth = 0.0
+MaxDepth = 1.0
+
+[[Scissors]]
+RenderTargetIndex = 0
+FixedResolution = false
+Scaler = 1.0
+Left = 0
+Top = 0
+Right = 0
+Bottom = 0

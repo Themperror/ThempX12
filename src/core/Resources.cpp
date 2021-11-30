@@ -369,6 +369,7 @@ namespace Themp
 		}
 
 
+
 		const auto& colorTargets = result[Pass::GetPassMemberAsString(PassMember::ColorTarget)];
 		if (colorTargets.is_array()) //array of targets with specific index
 		{
@@ -479,6 +480,182 @@ namespace Themp
 			}
 		}
 		
+
+		const auto& viewports = result[Pass::GetPassMemberAsString(PassMember::Viewports)];
+		if (viewports.is_array()) //array of targets with specific index
+		{
+			const auto& arr = viewports.as_array();
+			for (const auto& it : *arr)
+			{
+				const auto& viewportTable = *it.as_table();
+				Pass::Viewport viewport{};
+				const auto& rti = viewportTable[Pass::GetPassMemberAsString(PassMember::RenderTargetIndex)];
+				int index = 0;
+				if (rti && rti.is_integer())
+				{
+					index = rti.as_integer()->get();
+				}
+				else
+				{
+					Themp::Print("No RenderTargetIndex supplied (or not integer) for viewport!");
+				}
+
+				const auto& fixedRes = viewportTable[Pass::GetPassMemberAsString(PassMember::FixedResolution)];
+				if (fixedRes && fixedRes.is_boolean())
+				{
+					viewport.fixedResolution = fixedRes.as_boolean()->get();
+				}
+				else
+				{
+					Themp::Print("No FixedResolution (or not bool) supplied for viewport!");
+				}
+				const auto& scaler = viewportTable[Pass::GetPassMemberAsString(PassMember::Scaler)];
+				if (scaler && scaler.is_floating_point())
+				{
+					viewport.scaler = scaler.as_floating_point()->get();
+				}
+				else
+				{
+					Themp::Print("No Scaler supplied (or not float) for viewport!");
+				}
+				const auto& topLeftX = viewportTable[Pass::GetPassMemberAsString(PassMember::VP_TopLeftX)];
+				if (topLeftX && topLeftX.is_floating_point())
+				{
+					viewport.topLeftX = topLeftX.as_floating_point()->get();
+				}
+				else
+				{
+					Themp::Print("No TopLeftX supplied (or not float) for viewport!");
+				}
+				const auto& topLeftY = viewportTable[Pass::GetPassMemberAsString(PassMember::VP_TopLeftY)];
+				if (topLeftY && topLeftY.is_floating_point())
+				{
+					viewport.topLeftY = topLeftY.as_floating_point()->get();
+				}
+				else
+				{
+					Themp::Print("No TopLeftY supplied (or not float) for viewport!");
+				}
+				const auto& width = viewportTable[Pass::GetPassMemberAsString(PassMember::VP_Width)];
+				if (width && width.is_floating_point())
+				{
+					viewport.width = width.as_floating_point()->get();
+				}
+				else
+				{
+					Themp::Print("No Width supplied (or not float) for viewport!");
+				}
+				const auto& height = viewportTable[Pass::GetPassMemberAsString(PassMember::VP_Height)];
+				if (height && height.is_floating_point())
+				{
+					viewport.height = height.as_floating_point()->get();
+				}
+				else
+				{
+					Themp::Print("No Height supplied (or not float) for viewport!");
+				}
+				const auto& minDepth = viewportTable[Pass::GetPassMemberAsString(PassMember::VP_MinDepth)];
+				if (minDepth && minDepth.is_floating_point())
+				{
+					viewport.minDepth = minDepth.as_floating_point()->get();
+				}
+				else
+				{
+					Themp::Print("No MinDepth supplied (or not float) for viewport!");
+				}
+				const auto& maxDepth = viewportTable[Pass::GetPassMemberAsString(PassMember::VP_MaxDepth)];
+				if (maxDepth && maxDepth.is_floating_point())
+				{
+					viewport.maxDepth = maxDepth.as_floating_point()->get();
+				}
+				else
+				{
+					Themp::Print("No MaxDepth supplied (or not float) for viewport!");
+				}
+
+				pass.SetViewport(index, viewport);
+			}
+		}
+		const auto& scissors = result[Pass::GetPassMemberAsString(PassMember::Scissors)];
+		if (scissors.is_array()) //array of targets with specific index
+		{
+			const auto& arr = scissors.as_array();
+			for (const auto& it : *arr)
+			{
+				const auto& scissorTable = *it.as_table();
+				Pass::Scissor scissor{};
+				const auto& rti = scissorTable[Pass::GetPassMemberAsString(PassMember::RenderTargetIndex)];
+				int index = 0;
+				if (rti && rti.is_integer())
+				{
+					index = rti.as_integer()->get();
+				}
+				else
+				{
+					Themp::Print("No RenderTargetIndex supplied (or not integer) for scissor!");
+				}
+
+				const auto& fixedRes = scissorTable[Pass::GetPassMemberAsString(PassMember::FixedResolution)];
+				if (fixedRes && fixedRes.is_boolean())
+				{
+					scissor.fixedResolution = fixedRes.as_boolean()->get();
+				}
+				else
+				{
+					Themp::Print("No FixedResolution supplied (or not bool) for scissor!");
+				}
+				const auto& scaler = scissorTable[Pass::GetPassMemberAsString(PassMember::Scaler)];
+				if (scaler && scaler.is_floating_point())
+				{
+					scissor.scaler = scaler.as_floating_point()->get();
+				}
+				else
+				{
+					Themp::Print("No Scaler supplied (or not integer) for scissor!");
+				}
+				const auto& left = scissorTable[Pass::GetPassMemberAsString(PassMember::Scissor_Left)];
+				if (left && left.is_integer())
+				{
+					scissor.left = left.as_integer()->get();
+				}
+				else
+				{
+					Themp::Print("No Left supplied (or not integer) for scissor!");
+				}
+				const auto& right = scissorTable[Pass::GetPassMemberAsString(PassMember::Scissor_Right)];
+				if (right && right.is_integer())
+				{
+					scissor.right = right.as_integer()->get();
+				}
+				else
+				{
+					Themp::Print("No Right supplied (or not integer) for scissor!");
+				}
+				const auto& top = scissorTable[Pass::GetPassMemberAsString(PassMember::Scissor_Top)];
+				if (top && top.is_integer())
+				{
+					scissor.top = top.as_integer()->get();
+				}
+				else
+				{
+					Themp::Print("No Top supplied (or not integer) for scissor!");
+				}
+				const auto& bottom = scissorTable[Pass::GetPassMemberAsString(PassMember::Scissor_Bottom)];
+				if (bottom && bottom.is_integer())
+				{
+					scissor.bottom = bottom.as_integer()->get();
+				}
+				else
+				{
+					Themp::Print("No Bottom supplied (or not integer) for scissor!");
+				}
+
+				pass.SetScissor(index, scissor);
+			}
+		}
+
+
+
 		m_Passes.push_back(pass);
 
 		return m_Passes.size()-1;

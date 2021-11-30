@@ -20,6 +20,14 @@ Pass::Pass(std::string_view name)
 	{
 		m_RenderTargets[i] = {};
 	}
+	for (int i = 0; i < m_Scissors.size(); i++)
+	{
+		m_Scissors[i] = {};
+	}
+	for (int i = 0; i < m_Viewports.size(); i++)
+	{
+		m_Viewports[i] = {};
+	}
 	m_DepthTarget = {};
 }
 
@@ -274,6 +282,28 @@ void Pass::SetBlendTarget(int index, const BlendState& state)
 		return;
 	}
 	m_BlendStates[index] = state;
+}
+
+void Pass::SetViewport(int index, const Pass::Viewport& viewport)
+{
+	if (index < 0 || index >= 8)
+	{
+		Themp::Print("Slot %i is out of range for viewport [0,7]!", index);
+		Themp::Break();
+		return;
+	}
+	m_Viewports[index] = viewport;
+}
+
+void Pass::SetScissor(int index, const Pass::Scissor& scissor)
+{
+	if (index < 0 || index >= 8)
+	{
+		Themp::Print("Slot %i is out of range for scissor [0,7]!", index);
+		Themp::Break();
+		return;
+	}
+	m_Scissors[index] = scissor;
 }
 
 bool Pass::IsValid() const 

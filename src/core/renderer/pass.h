@@ -11,6 +11,26 @@ namespace Themp::D3D
 	class Pass
 	{
 	public:
+		struct Viewport
+		{
+			bool fixedResolution;
+			float scaler;
+			float topLeftX;
+			float topLeftY;
+			float width;
+			float height;
+			float minDepth;
+			float maxDepth;
+		};
+		struct Scissor
+		{
+			bool fixedResolution;
+			float scaler;
+			uint32_t left;
+			uint32_t top;
+			uint32_t bottom;
+			uint32_t right;
+		};
 		struct BlendState
 		{
 			bool blendEnable;
@@ -124,6 +144,20 @@ namespace Themp::D3D
 			DepthTarget, //string
 			ColorTarget, //string
 			BlendTargets, //string
+			Viewports,
+			VP_TopLeftX,
+			VP_TopLeftY,
+			VP_Width,
+			VP_Height,
+			VP_MinDepth,
+			VP_MaxDepth,
+			Scissors,
+			Scissor_Left,
+			Scissor_Top,
+			Scissor_Right,
+			Scissor_Bottom,
+			FixedResolution,
+			Scaler,
 			COUNT
 		};
 
@@ -176,6 +210,20 @@ namespace Themp::D3D
 			"depthtarget",
 			"colortarget",
 			"blendtargets",
+			"viewports",
+			"topleftx",
+			"toplefty",
+			"width",
+			"height",
+			"mindepth",
+			"maxdepth",
+			"scissors",
+			"left",
+			"top",
+			"right",
+			"bottom",
+			"fixedresolution",
+			"scaler",
 		};
 
 	public:
@@ -221,7 +269,8 @@ namespace Themp::D3D
 		void SetDepthTarget(RenderTargetHandle handle);
 		void SetColorTarget(int index, RenderTargetHandle handle);
 		void SetBlendTarget(int index, const BlendState& state);
-
+		void SetViewport(int index, const Viewport& viewport);
+		void SetScissor(int index, const Scissor& scissor);
 
 		void SetName(std::string_view name);
 		bool IsValid() const;
@@ -237,6 +286,8 @@ namespace Themp::D3D
 		int m_MultisampleQuality;
 		std::array<BlendState, 8> m_BlendStates;
 		std::array<RenderTargetHandle, 8> m_RenderTargets;
+		std::array<Viewport, 8> m_Viewports;
+		std::array<Scissor, 8> m_Scissors;
 	protected:
 
 		friend class Control;
