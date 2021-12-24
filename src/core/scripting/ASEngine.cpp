@@ -35,27 +35,6 @@ namespace Themp::Scripting
 		Themp::Print(msg);
 	}
 
-	static void ASSleep(AngelScript::asUINT milliSeconds)
-	{
-		// Get a pointer to the context that is currently being executed
-		AngelScript::asIScriptContext* ctx = AngelScript::asGetActiveContext();
-		//if (ctx)
-		//{
-		//	// Get the context manager from the user data
-		//	CContextMgr* ctxMgr = reinterpret_cast<CContextMgr*>(ctx->GetUserData(CONTEXT_MGR));
-		//	if (ctxMgr)
-		//	{
-		//		// Suspend its execution. The VM will continue until the current
-		//		// statement is finished and then return from the Execute() method
-		//		ctx->Suspend();
-		//
-		//		// Tell the context manager when the context is to continue execution
-		//		ctxMgr->SetSleeping(ctx, milliSeconds);
-		//	}
-		//}
-	}
-
-
 	static void ASYield()
 	{
 		// Get a pointer to the context that is currently being executed
@@ -239,35 +218,6 @@ namespace Themp::Scripting
 			script.context->SetUserData(&script, UserDataID);
 		}
 	}
-
-	//void ASEngine::CreateCoroutine(std::string& func)
-	//{
-	//	AngelScript::asIScriptContext* context = AngelScript::asGetActiveContext();
-	//	if (context)
-	//	{
-	//		AngelScript::asIScriptEngine* engine = context->GetEngine();
-	//		std::string mod = context->GetFunction()->GetModuleName();
-	//
-	//		// We need to find the function that will be created as the co-routine
-	//		std::string decl;
-	//		decl.reserve(256);
-	//		decl.append("void ").append(func).append("()");
-	//		AngelScript::asIScriptFunction* funcPtr = engine->GetModule(mod.c_str())->GetFunctionByDecl(decl.c_str());
-	//		if (funcPtr == 0)
-	//		{
-	//			// No function could be found, raise an exception
-	//			context->SetException(("Function '" + decl + "' doesn't exist").c_str());
-	//			return;
-	//		}
-	//
-	//		// Create a new context for the co-routine
-	//		AngelScript::asIScriptContext* coctx = engine->CreateContext();
-	//		coctx->Prepare(funcPtr);
-	//
-	//		// Add the new co-routine context to the array of co-routines
-	//		coroutines.push_back(coctx);
-	//	}
-	//}
 
 	void ASEngine::Update()
 	{
