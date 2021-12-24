@@ -227,50 +227,48 @@ namespace Themp::Scripting
 			if (state == AngelScript::asEContextState::asEXECUTION_PREPARED || state == AngelScript::asEContextState::asEXECUTION_SUSPENDED)
 			{
 				int ret = script.context->Execute();
-
-				if (ret == AngelScript::asEContextState::asEXECUTION_SUSPENDED || ret == AngelScript::asEContextState::asEXECUTION_FINISHED) // we encountered a yield or we finished
+				if (ret == AngelScript::asEContextState::asEXECUTION_EXCEPTION)
 				{
-					for (int i = 0; i < script.coroutines.size(); i++)
+					Themp::Print("Script %s has run into an exception!", script.scriptName.c_str());
+					Themp::Break();
+				}
+				
+			}
+
+			if (state == AngelScript::asEContextState::asEXECUTION_SUSPENDED || state == AngelScript::asEContextState::asEXECUTION_FINISHED)
+			{
+				for (int i = 0; i < script.coroutines.size(); i++)
+				{
+					AngelScript::asIScriptContext* coroutine = script.coroutines[i];
+					if (coroutine->GetState() == AngelScript::asEContextState::asEXECUTION_SUSPENDED)
 					{
-						AngelScript::asIScriptContext* coroutine = script.coroutines[i];
-						if (coroutine->GetState() == AngelScript::asEContextState::asEXECUTION_SUSPENDED)
+						int ret = coroutine->Execute();
+						if (ret != AngelScript::asEXECUTION_FINISHED)
 						{
-							ret = coroutine->Execute();
-							if (ret != AngelScript::asEXECUTION_FINISHED)
+							if (ret == AngelScript::asEContextState::asEXECUTION_EXCEPTION)
 							{
-								if (ret == AngelScript::asEContextState::asEXECUTION_EXCEPTION)
-								{
-									Themp::Print("coroutine in script %s has run into an exception!", script.scriptName.c_str());
-									Themp::Break();
-								}
-							}
-							else
-							{
-								m_CoroutinesToRemove.push_back(coroutine);
+								Themp::Print("Coroutine in script %s has run into an exception!", script.scriptName.c_str());
+								Themp::Break();
 							}
 						}
-					}
-
-					for (auto& coroutineToRemove : m_CoroutinesToRemove)
-					{
-						for (int i = script.coroutines.size() - 1; i >= 0; i--)
+						else
 						{
-							if (coroutineToRemove == script.coroutines[i])
-							{
-								script.coroutines.erase(script.coroutines.begin() + i);
-							}
+							m_CoroutinesToRemove.push_back(coroutine);
 						}
 					}
-					m_CoroutinesToRemove.clear();
 				}
-				else
+
+				for (auto& coroutineToRemove : m_CoroutinesToRemove)
 				{
-					if (ret == AngelScript::asEContextState::asEXECUTION_EXCEPTION)
+					for (int i = script.coroutines.size() - 1; i >= 0; i--)
 					{
-						Themp::Print("Script %s has run into an exception!", script.scriptName.c_str());
-						Themp::Break();
+						if (coroutineToRemove == script.coroutines[i])
+						{
+							script.coroutines.erase(script.coroutines.begin() + i);
+						}
 					}
 				}
+				m_CoroutinesToRemove.clear();
 			}
 		}
 	}
