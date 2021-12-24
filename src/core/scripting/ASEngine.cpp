@@ -34,6 +34,20 @@ namespace Themp::Scripting
 	{
 		Themp::Print(msg);
 	}
+	void ASPrintIP0(const std::string& msg, int param0)
+	{
+		Themp::Print(msg, param0);
+	}
+
+	void ASPrintFP0(const std::string& msg, float param0)
+	{
+		Themp::Print(msg, param0);
+	}
+
+	void ASPrintSP0(const std::string& msg, std::string& param0)
+	{
+		Themp::Print(msg, param0.c_str());
+	}
 
 	static void ASYield()
 	{
@@ -144,6 +158,25 @@ namespace Themp::Scripting
 			Themp::Print("Failed to register print function to ASEngine");
 			Themp::Break();
 		}
+		
+		result = m_ScriptingEngine->RegisterGlobalFunction("void print(const string &in, int param0)", AngelScript::asFUNCTION(ASPrintIP0), AngelScript::asCALL_CDECL);
+		if (result < 0)
+		{
+			Themp::Print("Failed to register print function to ASEngine");
+			Themp::Break();
+		}
+		result = m_ScriptingEngine->RegisterGlobalFunction("void print(const string &in, float param0)", AngelScript::asFUNCTION(ASPrintFP0), AngelScript::asCALL_CDECL);
+		if (result < 0)
+		{
+			Themp::Print("Failed to register print function to ASEngine");
+			Themp::Break();
+		}
+		result = m_ScriptingEngine->RegisterGlobalFunction("void print(const string &in, string param0)", AngelScript::asFUNCTION(ASPrintSP0), AngelScript::asCALL_CDECL);
+		if (result < 0)
+		{
+			Themp::Print("Failed to register print function to ASEngine");
+			Themp::Break();
+		}
 
 		AngelScript::RegisterScriptArray(m_ScriptingEngine, true);
 		AngelScript::RegisterScriptDictionary(m_ScriptingEngine);
@@ -193,7 +226,7 @@ namespace Themp::Scripting
 				AngelScript::asIScriptFunction* entryPoint = mod->GetFunctionByName("main");
 				if (entryPoint == nullptr)
 				{
-					Themp::Print("no function named `main` was found in script: %s, please add the entry point and try again!", pair.first.c_str());
+					Themp::Print("No function named `main` was found in script: %s, please add the entry point and try again!", pair.first.c_str());
 				}
 				else
 				{
@@ -206,7 +239,7 @@ namespace Themp::Scripting
 					r = script.context->Prepare(entryPoint);
 					if (r < 0)
 					{
-						Themp::Print("failed to prepare script: %s!", pair.first.c_str());
+						Themp::Print("Failed to prepare script: %s!", pair.first.c_str());
 					}
 					m_Scripts.push_back(script);
 				}
