@@ -1,23 +1,25 @@
 ﻿#include "engine.h"
 
-#include "util\timer.h"
-#include "Resources.h"
-#include "renderer\control.h"
-#include "renderer/types.h"
-#include "input\keyboard.h"
-#include "input\manager.h"
-#include <imgui\imgui.h>
-#include <imgui\impl\imgui_impl_dx12.h>
+#include "core/util/timer.h"
+#include "core/Resources.h"
+#include "core/renderer/control.h"
+#include "core/renderer/types.h"
+#include "core/input/keyboard.h"
+#include "core/input/manager.h"
+#include "core/util/print.h"
+#include "core/util/svars.h"
+#include "game/game.h"
+
+
 #include <iostream>
 #include <fstream>
 #include <sstream>
 #include <chrono>
-#include "util/print.h"
-#include "util/svars.h"
-#include "game.h"
 
 
-#include "imgui/impl/imgui_impl_win32.h"
+#include <lib/imgui/imgui.h>
+#include <lib/imgui/impl/imgui_impl_dx12.h>
+#include <lib/imgui/impl/imgui_impl_win32.h>
 
 
 using namespace Themp;

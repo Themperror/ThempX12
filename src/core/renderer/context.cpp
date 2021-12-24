@@ -1,9 +1,9 @@
-#include "context.h"
+#include "core/renderer/context.h"
 #include "core/engine.h"
-#include "control.h"
-#include "util/print.h"
-#include "util/svars.h"
-#include "texture.h"
+#include "core/renderer/control.h"
+#include "core/util/print.h"
+#include "core/util/svars.h"
+#include "core/renderer/texture.h"
 
 using namespace Themp::D3D;
 

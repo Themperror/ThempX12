@@ -15,7 +15,7 @@
 // Read online: https://github.com/ocornut/imgui/tree/master/docs
 
 #pragma once
-#include "imgui.h"      // IMGUI_IMPL_API
+#include "lib/imgui/imgui.h"      // IMGUI_IMPL_API
 
 #ifdef _MSC_VER
 #pragma warning (push)

@@ -1,9 +1,9 @@
-#include "game.h"
+#include "game/game.h"
 
-#include <imgui.h>
-#include "renderer/gpu_resources.h"
-#include "renderer/control.h"
-#include "engine.h"
+#include <lib/imgui/imgui.h>
+#include "core/renderer/gpu_resources.h"
+#include "core/renderer/control.h"
+#include "core/engine.h"
 
 void Game::Game::Start()
 {

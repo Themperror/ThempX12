@@ -1,11 +1,12 @@
-#include "shadercompiler.h"
-#include "Engine.h"
+#include "core/renderer/shadercompiler.h"
+#include "core/engine.h"
+#include "core/util/print.h"
+#include "core/util/break.h"
+#include "core/util/svars.h"
+
 #include <unordered_map>
-#include "util/svars.h"
 #include <string>
 #include <vector>
-#include "util/print.h"
-#include "util/break.h"
 
 #define SHADER_DATA_FOLDER L"../data/shaders/"
 #define SHADER_RESOURCES_FOLDER L"../resources/shaders/"
@@ -100,7 +101,7 @@ namespace Themp::D3D
 		pCompiler->Compile(
 			&Source,                // Source buffer.
 			args.data(),                // Array of pointers to arguments.
-			args.size(),      // Number of arguments.
+			static_cast<UINT32>(args.size()),      // Number of arguments.
 			pIncludeHandler.Get(),        // User-provided interface to handle #include directives (optional).
 			IID_PPV_ARGS(&pResults) // Compiler output status, buffer, and errors.
 		);

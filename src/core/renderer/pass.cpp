@@ -1,6 +1,6 @@
-#include "pass.h"
-#include "util/print.h"
-#include "util/break.h"
+#include "core/renderer/pass.h"
+#include "core/util/print.h"
+#include "core/util/break.h"
 using namespace Themp::D3D;
 
 Pass::Pass(std::string_view name)

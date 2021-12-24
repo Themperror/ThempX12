@@ -1,12 +1,12 @@
-#include "gpu_resources.h"
-#include "engine.h"
-#include "context.h"
-#include "control.h"
-#include "device.h"
-#include "texture.h"
-#include "util/print.h"
-#include "util/break.h"
-#include "util/svars.h"
+#include "core/renderer/gpu_resources.h"
+#include "core/engine.h"
+#include "core/renderer/context.h"
+#include "core/renderer/control.h"
+#include "core/renderer/device.h"
+#include "core/renderer/texture.h"
+#include "core/util/print.h"
+#include "core/util/break.h"
+#include "core/util/svars.h"
 
 #include <assert.h>
 namespace Themp::D3D

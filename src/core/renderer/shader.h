@@ -3,7 +3,7 @@
 #include <vector>
 #include <string>
 #include "types.h"
-#include <lib/dxcapi.h>
+#include <src/lib/dxcapi.h>
 namespace Themp::D3D
 {
 	class Shader

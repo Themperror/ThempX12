@@ -33,7 +33,7 @@ namespace Themp
 			ComPtr<IDXGIAdapter4> m_Adapter;
 			ComPtr<ID3D12Device2> m_Device;
 			ComPtr<ID3D12CommandQueue> m_CmdQueues[D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_VIDEO_PROCESS + 1]{}; //last value in the enum;
-			D3D_FEATURE_LEVEL m_CurrentFeatureLevel;
+			D3D_FEATURE_LEVEL m_CurrentFeatureLevel{};
 			bool m_RaytracingSupport = false;
 
 		};

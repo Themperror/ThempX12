@@ -1,13 +1,13 @@
-#include "renderer/control.h"
-#include "util/print.h"
-#include "util/svars.h"
-#include "engine.h"
-#include "renderer/texture.h"
-#include "resources.h"
-#include "shadercompiler.h"
+#include "core/renderer/control.h"
+#include "core/util/print.h"
+#include "core/util/svars.h"
+#include "core/engine.h"
+#include "core/renderer/texture.h"
+#include "core/resources.h"
+#include "core/renderer/shadercompiler.h"
 
-#include <imgui.h>
-#include <imgui/impl/imgui_impl_dx12.h>
+#include <lib/imgui/imgui.h>
+#include <lib/imgui/impl/imgui_impl_dx12.h>
 using namespace Themp::D3D;
 
 
@@ -91,7 +91,7 @@ void Control::BeginDraw()
 	ImGui::End();
 
 	const auto& vertexBufferViews = m_GPU_Resources->GetVertexBufferViews();
-	frame.GetCmdList()->IASetVertexBuffers(0, vertexBufferViews.size(), vertexBufferViews.data());
+	frame.GetCmdList()->IASetVertexBuffers(0u, static_cast<UINT>(vertexBufferViews.size()), vertexBufferViews.data());
 	frame.GetCmdList()->IASetIndexBuffer(&m_GPU_Resources->GetIndexBufferView());
 	for (int i = 0; i < m_Pipelines.size(); i++)
 	{

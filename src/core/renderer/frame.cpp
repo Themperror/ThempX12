@@ -1,8 +1,8 @@
-#include "frame.h"
-#include "engine.h"
-#include "control.h"
-#include <d3dx12.h>
-#include "util/print.h"
+#include "core/renderer/frame.h"
+#include "core/engine.h"
+#include "core/renderer/control.h"
+#include <lib/d3dx12.h>
+#include "core/util/print.h"
 using namespace Themp::D3D;
 
 void Frame::Init(int bufferIndex, RTVHeap heap)

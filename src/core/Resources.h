@@ -7,12 +7,6 @@
 
 namespace Themp
 {
-	//struct Vertex;
-	//struct Texture;
-	//class Object3D;
-	//class Mesh;
-	//class Material;
-
 	class Resources
 	{
 	public:
@@ -27,6 +21,8 @@ namespace Themp
 		D3D::SubPass& Get(D3D::SubPassHandle handle);
 		D3D::Pass& Get(D3D::PassHandle handle);
 		D3D::Shader& Get(D3D::ShaderHandle handle);
+
+		std::vector<std::pair<std::string, std::string>> GetScriptFiles();
 
 	private:
 

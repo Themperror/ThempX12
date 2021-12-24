@@ -5,7 +5,7 @@
 #include "device.h"
 #include "gpu_resources.h"
 #include "types.h"
-#include "renderer/pipeline.h"
+#include "core/renderer/pipeline.h"
 
 #include <d3d12.h>
 #include <memory>

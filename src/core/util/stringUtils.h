@@ -1,9 +1,9 @@
 #pragma once
 
-#include <string>
-#include <util/print.h>
-#include <util/break.h>
+#include <core/util/print.h>
+#include <core/util/break.h>
 #include <charconv>
+#include <string>
 namespace Themp::Util
 {
 	std::string ToLowerCase(const std::string& string);

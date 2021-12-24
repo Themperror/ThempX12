@@ -48,6 +48,10 @@ namespace Themp
 	{
 		class Manager;
 	}
+	namespace Scripting
+	{
+		class ASEngine;
+	}
 	class Resources;
 	class SVars;
 	class Engine
@@ -63,6 +67,7 @@ namespace Themp
 		bool m_Quitting = false;
 		bool m_CursorShown = true;
 		std::unique_ptr<Game::Game> m_Game;
+		std::unique_ptr<Scripting::ASEngine> m_Scripting;
 		std::unique_ptr<D3D::Control> m_Renderer;
 		std::unique_ptr<Resources> m_Resources;
 		std::unique_ptr<Input::Manager> m_Input;

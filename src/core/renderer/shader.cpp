@@ -1,6 +1,6 @@
-#include "renderer/shader.h"
-#include "Engine.h"
-#include "util/svars.h"
+#include "core/renderer/shader.h"
+#include "core/engine.h"
+#include "core/util/svars.h"
 
 
 namespace Themp::D3D

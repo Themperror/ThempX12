@@ -20,13 +20,13 @@ namespace Themp
 			ComPtr<ID3D12PipelineState> m_Pipeline;
 			ComPtr<ID3D12RootSignature> m_RootSignature;
 			std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> m_RenderTargets;
-			D3D12_CPU_DESCRIPTOR_HANDLE m_DepthTarget;
+			D3D12_CPU_DESCRIPTOR_HANDLE m_DepthTarget{};
 			std::array<D3D12_VIEWPORT, 8> m_Viewports;
 			std::array<D3D12_RECT, 8> m_Scissors;
 
 			void SetTo(ComPtr<ID3D12GraphicsCommandList> cmdList);
 		private:
-			PassHandle m_PassHandle;
+			PassHandle m_PassHandle = PassHandle::Invalid;
 		};
 	}
 }

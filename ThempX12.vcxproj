@@ -111,14 +111,14 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(ProjectDir)src\core;$(ProjectDir)src\lib;$(ProjectDir)src\core;$(ProjectDir)src\game;$(ProjectDir)include;$(ProjectDir);$(ProjectDir)src;$(ProjectDir)src\lib\imgui;</IncludePath>
-    <LibraryPath>$(ProjectDir)lib;$(ProjectDir)lib\x64\Debug;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64;</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(ProjectDir);$(ProjectDir)src</IncludePath>
+    <LibraryPath>$(ProjectDir)lib\x64;$(ProjectDir)lib\x64\Debug;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
     <OutDir>$(SolutionDir)bin\</OutDir>
     <TargetName>$(ProjectName)_debug</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(ProjectDir)src\core;$(ProjectDir)src\lib;$(ProjectDir)src\core;$(ProjectDir)src\game;$(ProjectDir)include;$(ProjectDir);$(ProjectDir)src;$(ProjectDir)src\lib\imgui;</IncludePath>
-    <LibraryPath>$(ProjectDir)lib;$(ProjectDir)lib\x64\Release;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64;</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(ProjectDir);$(ProjectDir)src</IncludePath>
+    <LibraryPath>$(ProjectDir)lib\x64;$(ProjectDir)lib\x64\Release;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
     <OutDir>$(SolutionDir)bin\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

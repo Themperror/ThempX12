@@ -1,5 +1,5 @@
-#include "input\manager.h"
-#include "input\keyboard.h"
+#include "core/input/manager.h"
+#include "core/input/keyboard.h"
 
 using namespace Themp::Input;
 

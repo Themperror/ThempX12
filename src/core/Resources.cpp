@@ -17,7 +17,7 @@
 #include "util/svars.h"
 
 #define TOML_EXCEPTIONS 0
-#include <toml.hpp>
+#include <lib/toml.hpp>
 
 namespace Themp
 {
@@ -381,7 +381,7 @@ namespace Themp
 				{
 					if (it.second.is_integer())
 					{
-						pass.SetColorTarget(it.second.as_integer()->get(), LoadRenderTarget(it.first));
+						pass.SetColorTarget(static_cast<int>(it.second.as_integer()->get()), LoadRenderTarget(it.first));
 					}
 					else
 					{
@@ -413,7 +413,7 @@ namespace Themp
 				int index = 0;
 				if (rti && rti.is_integer())
 				{
-					index = rti.as_integer()->get();
+					index = static_cast<int>(rti.as_integer()->get());
 				}
 				else
 				{
@@ -473,7 +473,12 @@ namespace Themp
 				const auto& renderTargetWriteMask = blendState[Pass::GetPassMemberAsString(PassMember::RenderTargetWriteMask)];
 				if (renderTargetWriteMask && renderTargetWriteMask.is_integer())
 				{
-					state.renderTargetWriteMask = renderTargetWriteMask.as_integer()->get();
+					int64_t val = renderTargetWriteMask.as_integer()->get();
+					if (val > 255 || val < 0)
+					{
+						Themp::Print("RenderTargetWriteMask expected an UINT8, not %lli!", val);
+					}
+					state.renderTargetWriteMask = static_cast<uint8_t>(val);
 				}
 				
 				pass.SetBlendTarget(index, state);
@@ -493,7 +498,7 @@ namespace Themp
 				int index = 0;
 				if (rti && rti.is_integer())
 				{
-					index = rti.as_integer()->get();
+					index = static_cast<int>(rti.as_integer()->get());
 				}
 				else
 				{
@@ -512,7 +517,7 @@ namespace Themp
 				const auto& scaler = viewportTable[Pass::GetPassMemberAsString(PassMember::Scaler)];
 				if (scaler && scaler.is_floating_point())
 				{
-					viewport.scaler = scaler.as_floating_point()->get();
+					viewport.scaler = static_cast<float>(scaler.as_floating_point()->get());
 				}
 				else
 				{
@@ -521,7 +526,7 @@ namespace Themp
 				const auto& topLeftX = viewportTable[Pass::GetPassMemberAsString(PassMember::VP_TopLeftX)];
 				if (topLeftX && topLeftX.is_floating_point())
 				{
-					viewport.topLeftX = topLeftX.as_floating_point()->get();
+					viewport.topLeftX = static_cast<float>(topLeftX.as_floating_point()->get());
 				}
 				else
 				{
@@ -530,7 +535,7 @@ namespace Themp
 				const auto& topLeftY = viewportTable[Pass::GetPassMemberAsString(PassMember::VP_TopLeftY)];
 				if (topLeftY && topLeftY.is_floating_point())
 				{
-					viewport.topLeftY = topLeftY.as_floating_point()->get();
+					viewport.topLeftY = static_cast<float>(topLeftY.as_floating_point()->get());
 				}
 				else
 				{
@@ -539,7 +544,7 @@ namespace Themp
 				const auto& width = viewportTable[Pass::GetPassMemberAsString(PassMember::VP_Width)];
 				if (width && width.is_floating_point())
 				{
-					viewport.width = width.as_floating_point()->get();
+					viewport.width = static_cast<float>(width.as_floating_point()->get());
 				}
 				else
 				{
@@ -548,7 +553,7 @@ namespace Themp
 				const auto& height = viewportTable[Pass::GetPassMemberAsString(PassMember::VP_Height)];
 				if (height && height.is_floating_point())
 				{
-					viewport.height = height.as_floating_point()->get();
+					viewport.height = static_cast<float>(height.as_floating_point()->get());
 				}
 				else
 				{
@@ -557,7 +562,7 @@ namespace Themp
 				const auto& minDepth = viewportTable[Pass::GetPassMemberAsString(PassMember::VP_MinDepth)];
 				if (minDepth && minDepth.is_floating_point())
 				{
-					viewport.minDepth = minDepth.as_floating_point()->get();
+					viewport.minDepth = static_cast<float>(minDepth.as_floating_point()->get());
 				}
 				else
 				{
@@ -566,7 +571,7 @@ namespace Themp
 				const auto& maxDepth = viewportTable[Pass::GetPassMemberAsString(PassMember::VP_MaxDepth)];
 				if (maxDepth && maxDepth.is_floating_point())
 				{
-					viewport.maxDepth = maxDepth.as_floating_point()->get();
+					viewport.maxDepth = static_cast<float>(maxDepth.as_floating_point()->get());
 				}
 				else
 				{
@@ -588,7 +593,7 @@ namespace Themp
 				int index = 0;
 				if (rti && rti.is_integer())
 				{
-					index = rti.as_integer()->get();
+					index = static_cast<int>(rti.as_integer()->get());
 				}
 				else
 				{
@@ -607,7 +612,7 @@ namespace Themp
 				const auto& scaler = scissorTable[Pass::GetPassMemberAsString(PassMember::Scaler)];
 				if (scaler && scaler.is_floating_point())
 				{
-					scissor.scaler = scaler.as_floating_point()->get();
+					scissor.scaler = static_cast<float>(scaler.as_floating_point()->get());
 				}
 				else
 				{
@@ -616,7 +621,7 @@ namespace Themp
 				const auto& left = scissorTable[Pass::GetPassMemberAsString(PassMember::Scissor_Left)];
 				if (left && left.is_integer())
 				{
-					scissor.left = left.as_integer()->get();
+					scissor.left = static_cast<uint32_t>(left.as_integer()->get());
 				}
 				else
 				{
@@ -625,7 +630,7 @@ namespace Themp
 				const auto& right = scissorTable[Pass::GetPassMemberAsString(PassMember::Scissor_Right)];
 				if (right && right.is_integer())
 				{
-					scissor.right = right.as_integer()->get();
+					scissor.right = static_cast<uint32_t>(right.as_integer()->get());
 				}
 				else
 				{
@@ -634,7 +639,7 @@ namespace Themp
 				const auto& top = scissorTable[Pass::GetPassMemberAsString(PassMember::Scissor_Top)];
 				if (top && top.is_integer())
 				{
-					scissor.top = top.as_integer()->get();
+					scissor.top = static_cast<uint32_t>(top.as_integer()->get());
 				}
 				else
 				{
@@ -643,7 +648,7 @@ namespace Themp
 				const auto& bottom = scissorTable[Pass::GetPassMemberAsString(PassMember::Scissor_Bottom)];
 				if (bottom && bottom.is_integer())
 				{
-					scissor.bottom = bottom.as_integer()->get();
+					scissor.bottom = static_cast<uint32_t>(bottom.as_integer()->get());
 				}
 				else
 				{
@@ -851,7 +856,7 @@ namespace Themp
 		const auto& readWidth = result["fixedwidth"];
 		if (readWidth && readWidth.is_integer())
 		{
-			width = readWidth.as_integer()->get();
+			width = static_cast<int>(readWidth.as_integer()->get());
 		}
 		else
 		{
@@ -861,7 +866,7 @@ namespace Themp
 		const auto& readHeight = result["fixedheight"];
 		if (readHeight && readHeight.is_integer())
 		{
-			height = readHeight.as_integer()->get();
+			height = static_cast<int>(readHeight.as_integer()->get());
 		}
 		else
 		{
@@ -871,7 +876,7 @@ namespace Themp
 		const auto& readCount = result["multisamplecount"];
 		if (readCount && readCount.is_integer())
 		{
-			multisample.Count = readCount.as_integer()->get();
+			multisample.Count = static_cast<UINT>(readCount.as_integer()->get());
 		}
 		else
 		{
@@ -881,7 +886,7 @@ namespace Themp
 		const auto& readQuality = result["multisamplequality"];
 		if (readQuality && readQuality.is_integer())
 		{
-			multisample.Quality = readQuality.as_integer()->get();
+			multisample.Quality = static_cast<UINT>(readQuality.as_integer()->get());
 		}
 		else
 		{
@@ -901,7 +906,7 @@ namespace Themp
 		const auto& readScale = result["scale"];
 		if (readScale && readScale.is_floating_point())
 		{
-			scale = readScale.as_floating_point()->get();
+			scale = static_cast<float>(readScale.as_floating_point()->get());
 		}
 		else
 		{
@@ -918,7 +923,7 @@ namespace Themp
 				{
 					if (values[0].is_floating_point())
 					{
-						clearValue.DepthStencil.Depth = values[0].as_floating_point()->get();
+						clearValue.DepthStencil.Depth = static_cast<float>(values[0].as_floating_point()->get());
 					}
 					else
 					{
@@ -935,7 +940,12 @@ namespace Themp
 				}
 				if (values.size() > 1)
 				{
-					clearValue.DepthStencil.Stencil = values[1].as_integer()->get();
+					int64_t val = values[1].as_integer()->get();
+					if (val > 255 || val < 0)
+					{
+						Themp::Print("Depth Stencil Clearvalue expected an UINT8, not: %lli", val);
+					}
+					clearValue.DepthStencil.Stencil = static_cast<UINT8>(val);
 				}
 				else if(format == DXGI_FORMAT::DXGI_FORMAT_D24_UNORM_S8_UINT)
 				{
@@ -946,10 +956,10 @@ namespace Themp
 			{
 				if (values.size() == 4)
 				{
-					clearValue.Color[0] = values[0].as_floating_point()->get();
-					clearValue.Color[1] = values[1].as_floating_point()->get();
-					clearValue.Color[2] = values[2].as_floating_point()->get();
-					clearValue.Color[3] = values[3].as_floating_point()->get();
+					clearValue.Color[0] = static_cast<float>(values[0].as_floating_point()->get());
+					clearValue.Color[1] = static_cast<float>(values[1].as_floating_point()->get());
+					clearValue.Color[2] = static_cast<float>(values[2].as_floating_point()->get());
+					clearValue.Color[3] = static_cast<float>(values[3].as_floating_point()->get());
 				}
 				else
 				{

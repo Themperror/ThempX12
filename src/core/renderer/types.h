@@ -6,7 +6,7 @@
 #include <DirectXMath.h>
 #include <vector>
 #include <unordered_map>
-#include "util/print.h"
+#include "core/util/print.h"
 #include <cstdint>
 #include <limits>
 using namespace Microsoft::WRL;

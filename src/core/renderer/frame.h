@@ -21,10 +21,10 @@ namespace Themp::D3D
 	private:
 		ComPtr<ID3D12GraphicsCommandList> m_CommandList;
 		ComPtr<ID3D12CommandAllocator> m_CommandAllocator;
-		const Texture* m_FrameBuffer;
+		const Texture* m_FrameBuffer = nullptr;
 
-		size_t m_rtvHeapStart;
-		int m_rtvHeapIndex;
-		int m_rtvDescriptorSize;
+		size_t m_rtvHeapStart = 0;
+		int m_rtvHeapIndex = 0;
+		int m_rtvDescriptorSize = 0;
 	};
 }

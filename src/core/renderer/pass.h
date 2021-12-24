@@ -2,7 +2,7 @@
 
 #include <vector>
 #include <array>
-#include "renderer/types.h"
+#include "core/renderer/types.h"
 #include <string>
 
 namespace Themp::D3D

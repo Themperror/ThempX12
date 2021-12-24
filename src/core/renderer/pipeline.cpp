@@ -1,12 +1,12 @@
-#include "renderer/pipeline.h"
-#include "renderer/control.h"
-#include "renderer/device.h"
-#include "engine.h"
+#include "core/renderer/pipeline.h"
+#include "core/renderer/control.h"
+#include "core/renderer/device.h"
+#include "core/engine.h"
 
-#include "util/svars.h"
-#include "resources.h"
-#include "util/print.h"
-#include "util/break.h"
+#include "core/util/svars.h"
+#include "core/resources.h"
+#include "core/util/print.h"
+#include "core/util/break.h"
 namespace Themp
 {
 	namespace D3D
@@ -128,8 +128,8 @@ namespace Themp
 
 				if (!pass.m_Scissors[i].fixedResolution)
 				{
-					m_Scissors[i].bottom = height * pass.m_Scissors[i].scaler;
-					m_Scissors[i].right = width * pass.m_Scissors[i].scaler;
+					m_Scissors[i].bottom = static_cast<LONG>(height * pass.m_Scissors[i].scaler);
+					m_Scissors[i].right = static_cast<LONG>(width * pass.m_Scissors[i].scaler);
 				}
 			}
 
@@ -164,7 +164,7 @@ namespace Themp
 				iaDesc.SemanticName = "UV";
 			}
 
-			desc.InputLayout.NumElements = iaLayouts.size();
+			desc.InputLayout.NumElements = static_cast<UINT>(iaLayouts.size());
 			desc.InputLayout.pInputElementDescs = iaLayouts.data();
 
 			const auto& shaders = shader.GetShaders();
@@ -248,7 +248,7 @@ namespace Themp
 			cmdList->SetPipelineState(m_Pipeline.Get());
 			cmdList->SetGraphicsRootSignature(m_RootSignature.Get());
 			cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-			cmdList->OMSetRenderTargets(m_RenderTargets.size(), m_RenderTargets.data(), false, m_DepthTarget.ptr != 0 ? &m_DepthTarget : nullptr);
+			cmdList->OMSetRenderTargets(static_cast<UINT>(m_RenderTargets.size()), m_RenderTargets.data(), false, m_DepthTarget.ptr != 0 ? &m_DepthTarget : nullptr);
 
 			int height = Engine::s_SVars.GetSVarInt(SVar::iWindowHeight);
 			int width = Engine::s_SVars.GetSVarInt(SVar::iWindowWidth);
@@ -266,13 +266,13 @@ namespace Themp
 			{
 				if (!pass.m_Scissors[i].fixedResolution)
 				{
-					m_Scissors[i].bottom = height * pass.m_Scissors[i].scaler;
-					m_Scissors[i].right = width * pass.m_Scissors[i].scaler;
+					m_Scissors[i].bottom = static_cast<LONG>(height * pass.m_Scissors[i].scaler);
+					m_Scissors[i].right  = static_cast<LONG>(width * pass.m_Scissors[i].scaler);
 				}
 			}
 
-			cmdList->RSSetViewports(m_Viewports.size(), m_Viewports.data());
-			cmdList->RSSetScissorRects(m_Scissors.size(), m_Scissors.data());
+			cmdList->RSSetViewports(static_cast<UINT>(m_Viewports.size()), m_Viewports.data());
+			cmdList->RSSetScissorRects(static_cast<UINT>(m_Scissors.size()), m_Scissors.data());
 		}
 	}
 }

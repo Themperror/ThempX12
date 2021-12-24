@@ -1,5 +1,5 @@
 #pragma once
-#include "renderer/types.h"
+#include "core/renderer/types.h"
 namespace Game
 {
 	class Game

@@ -2,9 +2,9 @@
 
 #include <dxgi1_6.h>
 #include <wrl.h>
-#include <lib/d3d12shader.h>
-#include <lib/dxcapi.h>
-#include "shader.h"
+#include <src/lib/d3d12shader.h>
+#include <src/lib/dxcapi.h>
+#include "src/core/renderer/shader.h"
 
 using namespace Microsoft::WRL;
 namespace Themp::D3D

@@ -1,11 +1,11 @@
-#include "texture.h"
-#include "engine.h"
-#include "control.h"
-#include "context.h"
-#include "gpu_resources.h"
-#include <d3dx12.h>
-#include "util/break.h"
-#include "util/print.h"
+#include "core/renderer/texture.h"
+#include "core/engine.h"
+#include "core/renderer/control.h"
+#include "core/renderer/context.h"
+#include "core/renderer/gpu_resources.h"
+#include "core/util/break.h"
+#include "core/util/print.h"
+#include <lib/d3dx12.h>
 #include <assert.h>
 
 namespace Themp
