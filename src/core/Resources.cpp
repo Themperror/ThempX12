@@ -133,7 +133,7 @@ namespace Themp
 				std::string file_path;
 				file_path.reserve(2048);
 				file_path = dir + ffd.cFileName;
-				std::transform(file_path.begin(), file_path.end(), file_path.begin(), ::towlower);
+				std::transform(file_path.begin(), file_path.end(), file_path.begin(), ::tolower);
 				files.push_back(file_path);
 			}
 		}
