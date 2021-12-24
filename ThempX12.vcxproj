@@ -30,12 +30,32 @@
     <ClInclude Include="src\core\renderer\types.h" />
     <ClInclude Include="src\core\Resources.h" />
     <ClInclude Include="src\core\Engine.h" />
+    <ClInclude Include="src\core\scripting\ASEngine.h" />
     <ClInclude Include="src\core\util\break.h" />
     <ClInclude Include="src\core\util\print.h" />
     <ClInclude Include="src\core\util\stringUtils.h" />
     <ClInclude Include="src\core\util\svars.h" />
     <ClInclude Include="src\core\util\timer.h" />
     <ClInclude Include="src\game\game.h" />
+    <ClInclude Include="src\lib\angelscript\add_on\autowrapper\aswrappedcall.h" />
+    <ClInclude Include="src\lib\angelscript\add_on\contextmgr\contextmgr.h" />
+    <ClInclude Include="src\lib\angelscript\add_on\datetime\datetime.h" />
+    <ClInclude Include="src\lib\angelscript\add_on\debugger\debugger.h" />
+    <ClInclude Include="src\lib\angelscript\add_on\scriptany\scriptany.h" />
+    <ClInclude Include="src\lib\angelscript\add_on\scriptarray\scriptarray.h" />
+    <ClInclude Include="src\lib\angelscript\add_on\scriptbuilder\scriptbuilder.h" />
+    <ClInclude Include="src\lib\angelscript\add_on\scriptdictionary\scriptdictionary.h" />
+    <ClInclude Include="src\lib\angelscript\add_on\scriptfile\scriptfile.h" />
+    <ClInclude Include="src\lib\angelscript\add_on\scriptfile\scriptfilesystem.h" />
+    <ClInclude Include="src\lib\angelscript\add_on\scriptgrid\scriptgrid.h" />
+    <ClInclude Include="src\lib\angelscript\add_on\scripthandle\scripthandle.h" />
+    <ClInclude Include="src\lib\angelscript\add_on\scripthelper\scripthelper.h" />
+    <ClInclude Include="src\lib\angelscript\add_on\scriptmath\scriptmath.h" />
+    <ClInclude Include="src\lib\angelscript\add_on\scriptmath\scriptmathcomplex.h" />
+    <ClInclude Include="src\lib\angelscript\add_on\scriptstdstring\scriptstdstring.h" />
+    <ClInclude Include="src\lib\angelscript\add_on\serializer\serializer.h" />
+    <ClInclude Include="src\lib\angelscript\add_on\weakref\weakref.h" />
+    <ClInclude Include="src\lib\angelscript\angelscript.h" />
     <ClInclude Include="src\lib\imgui\imconfig.h" />
     <ClInclude Include="src\lib\imgui\imgui.h" />
     <ClInclude Include="src\lib\imgui\imgui_internal.h" />
@@ -64,12 +84,32 @@
     <ClCompile Include="src\core\renderer\texture.cpp" />
     <ClCompile Include="src\core\Resources.cpp" />
     <ClCompile Include="src\core\Engine.cpp" />
+    <ClCompile Include="src\core\scripting\ASEngine.cpp" />
     <ClCompile Include="src\core\util\break.cpp" />
     <ClCompile Include="src\core\util\print.cpp" />
     <ClCompile Include="src\core\util\stringUtils.cpp" />
     <ClCompile Include="src\core\util\svars.cpp" />
     <ClCompile Include="src\core\util\timer.cpp" />
     <ClCompile Include="src\game\game.cpp" />
+    <ClCompile Include="src\lib\angelscript\add_on\autowrapper\generator\generateheader.cpp" />
+    <ClCompile Include="src\lib\angelscript\add_on\contextmgr\contextmgr.cpp" />
+    <ClCompile Include="src\lib\angelscript\add_on\datetime\datetime.cpp" />
+    <ClCompile Include="src\lib\angelscript\add_on\debugger\debugger.cpp" />
+    <ClCompile Include="src\lib\angelscript\add_on\scriptany\scriptany.cpp" />
+    <ClCompile Include="src\lib\angelscript\add_on\scriptarray\scriptarray.cpp" />
+    <ClCompile Include="src\lib\angelscript\add_on\scriptbuilder\scriptbuilder.cpp" />
+    <ClCompile Include="src\lib\angelscript\add_on\scriptdictionary\scriptdictionary.cpp" />
+    <ClCompile Include="src\lib\angelscript\add_on\scriptfile\scriptfile.cpp" />
+    <ClCompile Include="src\lib\angelscript\add_on\scriptfile\scriptfilesystem.cpp" />
+    <ClCompile Include="src\lib\angelscript\add_on\scriptgrid\scriptgrid.cpp" />
+    <ClCompile Include="src\lib\angelscript\add_on\scripthandle\scripthandle.cpp" />
+    <ClCompile Include="src\lib\angelscript\add_on\scripthelper\scripthelper.cpp" />
+    <ClCompile Include="src\lib\angelscript\add_on\scriptmath\scriptmath.cpp" />
+    <ClCompile Include="src\lib\angelscript\add_on\scriptmath\scriptmathcomplex.cpp" />
+    <ClCompile Include="src\lib\angelscript\add_on\scriptstdstring\scriptstdstring.cpp" />
+    <ClCompile Include="src\lib\angelscript\add_on\scriptstdstring\scriptstdstring_utils.cpp" />
+    <ClCompile Include="src\lib\angelscript\add_on\serializer\serializer.cpp" />
+    <ClCompile Include="src\lib\angelscript\add_on\weakref\weakref.cpp" />
     <ClCompile Include="src\lib\imgui\imgui.cpp" />
     <ClCompile Include="src\lib\imgui\imgui_demo.cpp" />
     <ClCompile Include="src\lib\imgui\imgui_draw.cpp" />
@@ -140,10 +180,10 @@
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <RemoveUnreferencedCodeData>false</RemoveUnreferencedCodeData>
       <ForcedIncludeFiles>src/core/EngineDefs.h</ForcedIncludeFiles>
-      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_MBCS;AS_USE_NAMESPACE;AS_USE_STLNAMES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);D3D12.lib;DXGI.lib;dxcompiler.lib</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);D3D12.lib;DXGI.lib;dxcompiler.lib;angelscript64d.lib</AdditionalDependencies>
       <SubSystem>Windows</SubSystem>
       <EntryPointSymbol>
       </EntryPointSymbol>
@@ -172,12 +212,12 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
       <DisableLanguageExtensions>false</DisableLanguageExtensions>
       <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)include\SDL\</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_MBCS;AS_USE_NAMESPACE;AS_USE_STLNAMES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);D3D12.lib;DXGI.lib;dxcompiler.lib</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);D3D12.lib;DXGI.lib;dxcompiler.lib;angelscript64.lib</AdditionalDependencies>
       <SubSystem>Windows</SubSystem>
       <EntryPointSymbol>
       </EntryPointSymbol>

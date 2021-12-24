@@ -37,6 +37,15 @@
     <Filter Include="Source Files\core\input">
       <UniqueIdentifier>{0dffdaf2-f113-4657-ac0d-9c98238ab7c8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\core\scripting">
+      <UniqueIdentifier>{f0a38259-dcd9-47ef-8c08-5a06f774af40}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\lib\angelscript">
+      <UniqueIdentifier>{f5d76f92-7334-4c63-b352-d5b81d7704a8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\lib\angelscript\addon">
+      <UniqueIdentifier>{eca0644b-67c7-404c-bf9a-273d0590b50e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\core\Camera.h">
@@ -141,6 +150,66 @@
     <ClInclude Include="src\core\renderer\shadercompiler.h">
       <Filter>Source Files\core\renderer</Filter>
     </ClInclude>
+    <ClInclude Include="src\core\scripting\ASEngine.h">
+      <Filter>Source Files\core\scripting</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\angelscript\add_on\autowrapper\aswrappedcall.h">
+      <Filter>Source Files\lib\angelscript\addon</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\angelscript\add_on\contextmgr\contextmgr.h">
+      <Filter>Source Files\lib\angelscript\addon</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\angelscript\add_on\datetime\datetime.h">
+      <Filter>Source Files\lib\angelscript\addon</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\angelscript\add_on\debugger\debugger.h">
+      <Filter>Source Files\lib\angelscript\addon</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\angelscript\add_on\scriptany\scriptany.h">
+      <Filter>Source Files\lib\angelscript\addon</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\angelscript\add_on\scriptarray\scriptarray.h">
+      <Filter>Source Files\lib\angelscript\addon</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\angelscript\add_on\scriptbuilder\scriptbuilder.h">
+      <Filter>Source Files\lib\angelscript\addon</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\angelscript\add_on\scriptdictionary\scriptdictionary.h">
+      <Filter>Source Files\lib\angelscript\addon</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\angelscript\add_on\scriptfile\scriptfile.h">
+      <Filter>Source Files\lib\angelscript\addon</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\angelscript\add_on\scriptfile\scriptfilesystem.h">
+      <Filter>Source Files\lib\angelscript\addon</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\angelscript\add_on\scriptgrid\scriptgrid.h">
+      <Filter>Source Files\lib\angelscript\addon</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\angelscript\add_on\scripthandle\scripthandle.h">
+      <Filter>Source Files\lib\angelscript\addon</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\angelscript\add_on\scripthelper\scripthelper.h">
+      <Filter>Source Files\lib\angelscript\addon</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\angelscript\add_on\scriptmath\scriptmath.h">
+      <Filter>Source Files\lib\angelscript\addon</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\angelscript\add_on\scriptmath\scriptmathcomplex.h">
+      <Filter>Source Files\lib\angelscript\addon</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\angelscript\add_on\scriptstdstring\scriptstdstring.h">
+      <Filter>Source Files\lib\angelscript\addon</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\angelscript\add_on\serializer\serializer.h">
+      <Filter>Source Files\lib\angelscript\addon</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\angelscript\add_on\weakref\weakref.h">
+      <Filter>Source Files\lib\angelscript\addon</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\angelscript\angelscript.h">
+      <Filter>Source Files\lib\angelscript</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\core\Functions.cpp">
@@ -232,6 +301,66 @@
     </ClCompile>
     <ClCompile Include="src\core\renderer\shadercompiler.cpp">
       <Filter>Source Files\core\renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\scripting\ASEngine.cpp">
+      <Filter>Source Files\core\scripting</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\angelscript\add_on\contextmgr\contextmgr.cpp">
+      <Filter>Source Files\lib\angelscript\addon</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\angelscript\add_on\datetime\datetime.cpp">
+      <Filter>Source Files\lib\angelscript\addon</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\angelscript\add_on\debugger\debugger.cpp">
+      <Filter>Source Files\lib\angelscript\addon</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\angelscript\add_on\autowrapper\generator\generateheader.cpp">
+      <Filter>Source Files\lib\angelscript\addon</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\angelscript\add_on\scriptany\scriptany.cpp">
+      <Filter>Source Files\lib\angelscript\addon</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\angelscript\add_on\scriptarray\scriptarray.cpp">
+      <Filter>Source Files\lib\angelscript\addon</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\angelscript\add_on\scriptbuilder\scriptbuilder.cpp">
+      <Filter>Source Files\lib\angelscript\addon</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\angelscript\add_on\scriptdictionary\scriptdictionary.cpp">
+      <Filter>Source Files\lib\angelscript\addon</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\angelscript\add_on\scriptfile\scriptfile.cpp">
+      <Filter>Source Files\lib\angelscript\addon</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\angelscript\add_on\scriptfile\scriptfilesystem.cpp">
+      <Filter>Source Files\lib\angelscript\addon</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\angelscript\add_on\scriptgrid\scriptgrid.cpp">
+      <Filter>Source Files\lib\angelscript\addon</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\angelscript\add_on\scripthandle\scripthandle.cpp">
+      <Filter>Source Files\lib\angelscript\addon</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\angelscript\add_on\scripthelper\scripthelper.cpp">
+      <Filter>Source Files\lib\angelscript\addon</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\angelscript\add_on\scriptmath\scriptmath.cpp">
+      <Filter>Source Files\lib\angelscript\addon</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\angelscript\add_on\scriptmath\scriptmathcomplex.cpp">
+      <Filter>Source Files\lib\angelscript\addon</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\angelscript\add_on\scriptstdstring\scriptstdstring.cpp">
+      <Filter>Source Files\lib\angelscript\addon</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\angelscript\add_on\scriptstdstring\scriptstdstring_utils.cpp">
+      <Filter>Source Files\lib\angelscript\addon</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\angelscript\add_on\serializer\serializer.cpp">
+      <Filter>Source Files\lib\angelscript\addon</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\angelscript\add_on\weakref\weakref.cpp">
+      <Filter>Source Files\lib\angelscript\addon</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

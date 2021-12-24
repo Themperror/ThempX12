@@ -25,6 +25,7 @@ namespace Themp
 
 #define RESOURCES_FOLDER L"../resources/"
 #define MATERIALS_FOLDER RESOURCES_FOLDER"materials/"
+#define SCRIPTS_FOLDER RESOURCES_FOLDER"scripts/"
 #define PASSES_FOLDER RESOURCES_FOLDER"passes/"
 #define SHADERS_FOLDER RESOURCES_FOLDER"shaders/"
 #define RENDER_TARGET_FOLDER RESOURCES_FOLDER"rendertargets/"
@@ -71,14 +72,14 @@ namespace Themp
 	}
 
 
-	std::vector<std::wstring> LoadFilesFromDirectory(std::wstring dir)
+	std::vector<std::wstring> LoadFilesFromDirectoryW(std::wstring dir)
 	{
 		std::vector<std::wstring> files;
 
 		DWORD attributes = GetFileAttributesW(dir.c_str());
 		if (attributes == INVALID_FILE_ATTRIBUTES)
 		{
-			Themp::Print(L"Unable to find folder at " MATERIALS_FOLDER);
+			Themp::Print(L"Unable to find folder at %s", dir.c_str());
 			Themp::Break();
 			return {};
 		}
@@ -96,6 +97,40 @@ namespace Themp
 			{
 				// create a full path for each file we find, e.g. "c:\indir\foo.txt"
 				std::wstring file_path;
+				file_path.reserve(2048);
+				file_path = dir + ffd.cFileName;
+				std::transform(file_path.begin(), file_path.end(), file_path.begin(), ::towlower);
+				files.push_back(file_path);
+			}
+		}
+		FindClose(hFind);
+		return files;
+	}
+	std::vector<std::string> LoadFilesFromDirectoryA(std::string dir)
+	{
+		std::vector<std::string> files;
+
+		DWORD attributes = GetFileAttributesA(dir.c_str());
+		if (attributes == INVALID_FILE_ATTRIBUTES)
+		{
+			Themp::Print(L"Unable to find folder at %s", dir.c_str());
+			Themp::Break();
+			return {};
+		}
+
+		WIN32_FIND_DATA ffd{};
+		HANDLE hFind = FindFirstFileA((dir + "*").c_str(), &ffd);
+		if (hFind == INVALID_HANDLE_VALUE)
+		{
+			Themp::Print("Something went wrong %S", dir.c_str());
+		}
+		while (FindNextFileA(hFind, &ffd) != 0)
+		{
+			// ignore directories
+			if (!(ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+			{
+				// create a full path for each file we find, e.g. "c:\indir\foo.txt"
+				std::string file_path;
 				file_path.reserve(2048);
 				file_path = dir + ffd.cFileName;
 				std::transform(file_path.begin(), file_path.end(), file_path.begin(), ::towlower);
@@ -135,10 +170,31 @@ namespace Themp
 		return data;
 	}
 
+	std::vector<std::pair<std::string, std::string>> Resources::GetScriptFiles()
+	{
+		//////
+		//This is 'real' ugly
+		std::string pathAscii;
+		int length = lstrlenW(SCRIPTS_FOLDER);
+		pathAscii.resize(length * sizeof(wchar_t));
+		size_t convCount = 0;
+		wcstombs_s(&convCount, pathAscii.data(), pathAscii.size(), SCRIPTS_FOLDER, length * sizeof(wchar_t));
+		pathAscii.resize(convCount-1);
+		///////
+		auto files = LoadFilesFromDirectoryA(pathAscii);
+		std::vector<std::pair<std::string, std::string>> fileDatas;
+		fileDatas.reserve(files.size());
+		for (auto& file : files)
+		{
+			fileDatas.push_back({ file, ReadFileToString(std::wstring(file.begin(), file.end()))});
+		}
+		return fileDatas;
+	}
+
 	std::vector<D3D::SubPass>& Resources::LoadMaterials()
 	{
-		std::vector<std::wstring> materials = LoadFilesFromDirectory(MATERIALS_FOLDER);
-		std::vector<std::wstring> shaderFiles = LoadFilesFromDirectory(SHADERS_FOLDER);
+		std::vector<std::wstring> materials = LoadFilesFromDirectoryW(MATERIALS_FOLDER);
+		std::vector<std::wstring> shaderFiles = LoadFilesFromDirectoryW(SHADERS_FOLDER);
 		std::string materialData(10240, '\0');
 		for (const std::wstring& path : materials)
 		{

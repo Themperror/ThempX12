@@ -6,6 +6,7 @@
 #include "core/renderer/types.h"
 #include "core/input/keyboard.h"
 #include "core/input/manager.h"
+#include "core/scripting/ASEngine.h"
 #include "core/util/print.h"
 #include "core/util/svars.h"
 #include "game/game.h"
@@ -41,6 +42,7 @@ namespace Themp
 		m_Resources = std::make_unique<Resources>();
 		m_Game = std::make_unique<Game::Game>();
 		m_Input = std::make_unique<Input::Manager>();
+		m_Scripting = std::make_unique<Scripting::ASEngine>();
 
 		ImGui::CreateContext();
 		auto& io = ImGui::GetIO();
@@ -68,6 +70,9 @@ namespace Themp
 
 		Print("Setting up Game!");
 		m_Game->Start();
+
+		m_Scripting->Init();
+		m_Scripting->CompileScripts();
 
 		Timer mainTimer;
 		Timer tickTimer;
@@ -196,6 +201,7 @@ namespace Themp
 
 				tickTimer.StartTime();
 				m_Game->Update(totalDelta);
+				m_Scripting->Update();
 
 				
 
@@ -246,6 +252,7 @@ namespace Themp
 		Engine::s_SVars.SetSVarInt(SVar::iWindowWidth, windowRect.right - windowRect.left);
 		Engine::s_SVars.SetSVarInt(SVar::iWindowHeight, windowRect.bottom - windowRect.top);
 
+		m_Scripting->Stop();
 		m_Game->Stop();
 		m_Game = nullptr;
 		m_Renderer->Stop();
