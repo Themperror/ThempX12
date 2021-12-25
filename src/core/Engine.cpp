@@ -8,6 +8,7 @@
 #include "core/input/manager.h"
 #include "core/scripting/ASEngine.h"
 #include "core/util/print.h"
+#include "core/util/break.h"
 #include "core/util/svars.h"
 #include "game/game.h"
 
@@ -63,16 +64,16 @@ namespace Themp
 		}
 		m_Input->AddInputDevice<Input::Keyboard>(0);
 
-		
+		m_Scripting->Init();
+
 		Print("Reading all resource data!");
-		auto& subpasses = m_Resources->LoadMaterials();
-		m_Renderer->CreatePipelines(*m_Resources, subpasses);
+		m_Resources->LoadMaterials();
+		m_Renderer->CreatePipelines(*m_Resources);
+		m_Resources->LoadScene("testScene.scene");
 
 		Print("Setting up Game!");
 		m_Game->Start();
 
-		m_Scripting->Init();
-		m_Scripting->CompileScripts();
 
 		Timer mainTimer;
 		Timer tickTimer;
@@ -106,24 +107,9 @@ namespace Themp
 		{
 			Input::Keyboard& mainKeyboard = m_Input->GetDevice<Input::Keyboard>(0);
 			double delta = mainTimer.GetDeltaTimeReset();
-			//Engine::Print("Total Delta was: %lf", delta);
 			totalDelta += delta;
 			time += delta;
 			trackerTime += delta;
-
-			//for (size_t i = 0; i < 256; i++)
-			//{
-			//	uint16_t keystate = GetAsyncKeyState(i) & 0x8000;
-			//	int8_t currentKey = m_Game->m_Keys[i];
-			//	if (keystate)//pressed
-			//	{
-			//		m_Game->m_Keys[i] = currentKey == 0 ? 2 : 1;
-			//	}
-			//	else //unpressed
-			//	{
-			//		m_Game->m_Keys[i] = currentKey > 0 ? -1 : 0;
-			//	}
-			//}
 
 			MSG msg;
 			while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
@@ -201,10 +187,7 @@ namespace Themp
 
 				tickTimer.StartTime();
 				m_Game->Update(totalDelta);
-				m_Scripting->Update();
-
-				
-
+				m_Scripting->Update(*m_Resources);
 				tickTimeAdd += tickTimer.GetDeltaTimeReset();
 
 				m_Input->Update();
@@ -283,6 +266,36 @@ std::string GetPathName(std::string s)
 		}
 	}
 	return name;
+}
+
+
+std::string Engine::ReadFileToString(const std::string& filePath)
+{
+	HANDLE file = CreateFileA(filePath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+
+	if (file == INVALID_HANDLE_VALUE)
+	{
+		Themp::Print("Was unable to open the file: [%s]", filePath.c_str());
+		Themp::Break();
+		return "";
+	}
+
+	DWORD fileSize = GetFileSize(file, NULL);
+	std::string data(fileSize, '\0');
+	DWORD readBytes = 0;
+	if (!ReadFile(file, data.data(), fileSize, &readBytes, NULL))
+	{
+		Themp::Print("Was unable to read the file: [%s]", filePath.c_str());
+		Themp::Break();
+	}
+	if (readBytes != fileSize)
+	{
+		Themp::Print("Was unable to read the entire file: [%s]", filePath.c_str());
+		Themp::Break();
+	}
+	CloseHandle(file);
+
+	return data;
 }
 
 

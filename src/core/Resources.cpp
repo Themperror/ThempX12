@@ -1,8 +1,10 @@
-#include "Engine.h"
 #include "Resources.h"
+#include "Engine.h"
 #include "renderer/control.h"
 #include "renderer/gpu_resources.h"
 #include "renderer/shadercompiler.h"
+#include "core/scripting/asengine.h"
+#include "renderer/material.h"
 #include "util/print.h"
 #include "util/break.h"
 #include "util/stringUtils.h"
@@ -23,18 +25,48 @@ namespace Themp
 {
 	std::unique_ptr<Resources> Resources::instance;
 
-#define RESOURCES_FOLDER L"../resources/"
+#define RESOURCES_FOLDER "../resources/"
 #define MATERIALS_FOLDER RESOURCES_FOLDER"materials/"
+#define MODELS_FOLDER RESOURCES_FOLDER"models/"
+#define SCENES_FOLDER RESOURCES_FOLDER"scenes/"
 #define SCRIPTS_FOLDER RESOURCES_FOLDER"scripts/"
 #define PASSES_FOLDER RESOURCES_FOLDER"passes/"
 #define SHADERS_FOLDER RESOURCES_FOLDER"shaders/"
 #define RENDER_TARGET_FOLDER RESOURCES_FOLDER"rendertargets/"
 
+	std::string_view Resources::GetResourcesFolder()
+	{
+		return RESOURCES_FOLDER;
+	}
+	std::string_view Resources::GetMaterialsFolder()
+	{
+		return MATERIALS_FOLDER;
+	}
+	std::string_view Resources::GetModelsFolder()
+	{
+		return MODELS_FOLDER;
+	}
+	std::string_view Resources::GetScenesFolder()
+	{
+		return SCENES_FOLDER;
+	}
+	std::string_view Resources::GetScriptsFolder()
+	{
+		return SCRIPTS_FOLDER;
+	}
+	std::string_view Resources::GetPassesFolder()
+	{
+		return PASSES_FOLDER;
+	}
+	std::string_view Resources::GetShadersFolder()
+	{
+		return SHADERS_FOLDER;
+	}
+	std::string_view Resources::GetRenderTargetsFolder()
+	{
+		return RENDER_TARGET_FOLDER;
+	}
 
-	// TODO fix string conversions
-	//I'd like to start off mentioning I know that conversion from string -> wstring is done wrongly,
-	//my first priority is getting it all up and running in a regular ascii environment, 
-	//so handling utf8 and wchar conversions is atm out of my scope.
 
 	D3D::Texture& Resources::Get(D3D::RTVHandle handle)
 	{
@@ -61,9 +93,9 @@ namespace Themp
 		return m_Shaders[handle.handle];
 	}
 
-	std::wstring GetFilePath(std::wstring_view base, std::wstring_view filename, std::wstring_view extension)
+	std::string GetFilePath(std::string_view base, std::string_view filename, std::string_view extension)
 	{
-		std::wstring path = std::wstring(base);
+		std::string path = std::string(base);
 		path.reserve(filename.size() + extension.size() + path.size());
 		path.append(filename.begin(), filename.end())
 			.append(extension.begin(), extension.end());
@@ -71,42 +103,32 @@ namespace Themp
 		return path;
 	}
 
-
-	std::vector<std::wstring> LoadFilesFromDirectoryW(std::wstring dir)
+	std::string GetFileName(std::string_view path)
 	{
-		std::vector<std::wstring> files;
-
-		DWORD attributes = GetFileAttributesW(dir.c_str());
-		if (attributes == INVALID_FILE_ATTRIBUTES)
+		std::string filename = std::string(path.begin(), path.end());
+		for (size_t i = 0; i < filename.size(); i++)
 		{
-			Themp::Print(L"Unable to find folder at %s", dir.c_str());
-			Themp::Break();
-			return {};
-		}
-
-		WIN32_FIND_DATAW ffd;
-		HANDLE hFind = FindFirstFileW((dir + L"*").c_str(), &ffd);
-		if (hFind == INVALID_HANDLE_VALUE)
-		{
-			Themp::Print("Something went wrong %S", dir.c_str());
-		}
-		while (FindNextFileW(hFind, &ffd) != 0)
-		{
-			// ignore directories
-			if (!(ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+			if (filename[i] == '/')
 			{
-				// create a full path for each file we find, e.g. "c:\indir\foo.txt"
-				std::wstring file_path;
-				file_path.reserve(2048);
-				file_path = dir + ffd.cFileName;
-				std::transform(file_path.begin(), file_path.end(), file_path.begin(), ::towlower);
-				files.push_back(file_path);
+				filename[i] = '\\';
 			}
 		}
-		FindClose(hFind);
-		return files;
+		size_t lastBackSlash = filename.find_last_of('\\');
+		if (lastBackSlash != std::string::npos && lastBackSlash +1 < filename.size())
+		{
+			filename = filename.substr(lastBackSlash + 1, filename.size() - lastBackSlash - 1);
+		}
+
+		size_t lastPeriod = filename.find_last_of('.');
+		if (lastPeriod != std::string::npos)
+		{
+			filename = filename.substr(0, lastPeriod);
+		}
+
+		return filename;
 	}
-	std::vector<std::string> LoadFilesFromDirectoryA(std::string dir)
+
+	std::vector<std::string> LoadFilesFromDirectory(std::string dir)
 	{
 		std::vector<std::string> files;
 
@@ -122,7 +144,7 @@ namespace Themp
 		HANDLE hFind = FindFirstFileA((dir + "*").c_str(), &ffd);
 		if (hFind == INVALID_HANDLE_VALUE)
 		{
-			Themp::Print("Something went wrong %S", dir.c_str());
+			Themp::Print("Something went wrong %s", dir.c_str());
 		}
 		while (FindNextFileA(hFind, &ffd) != 0)
 		{
@@ -141,66 +163,55 @@ namespace Themp
 		return files;
 	}
 
-	std::string ReadFileToString(const std::wstring& filePath)
-	{
-		HANDLE file = CreateFileW(filePath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-
-		if (file == INVALID_HANDLE_VALUE)
-		{
-			Themp::Print("Was unable to open the file: [%S]", filePath.c_str());
-			Themp::Break();
-			return "";
-		}
-
-		DWORD fileSize = GetFileSize(file, NULL);
-		std::string data(fileSize, '\0');
-		DWORD readBytes = 0;
-		if (!ReadFile(file, data.data(), fileSize, &readBytes, NULL))
-		{
-			Themp::Print("Was unable to read the file: [%S]", filePath.c_str());
-			Themp::Break();
-		}
-		if (readBytes != fileSize)
-		{
-			Themp::Print("Was unable to read the entire file: [%S]", filePath.c_str());
-			Themp::Break();
-		}
-		CloseHandle(file);
-
-		return data;
-	}
-
 	std::vector<std::pair<std::string, std::string>> Resources::GetScriptFiles()
 	{
-		//////
-		//This is 'real' ugly
-		std::string pathAscii;
-		int length = lstrlenW(SCRIPTS_FOLDER);
-		pathAscii.resize(length * sizeof(wchar_t));
-		size_t convCount = 0;
-		wcstombs_s(&convCount, pathAscii.data(), pathAscii.size(), SCRIPTS_FOLDER, length * sizeof(wchar_t));
-		pathAscii.resize(convCount-1);
-		///////
-		auto files = LoadFilesFromDirectoryA(pathAscii);
+		auto files = LoadFilesFromDirectory(SCRIPTS_FOLDER);
 		std::vector<std::pair<std::string, std::string>> fileDatas;
 		fileDatas.reserve(files.size());
 		for (auto& file : files)
 		{
-			fileDatas.push_back({ file, ReadFileToString(std::wstring(file.begin(), file.end()))});
+			fileDatas.push_back({ file, Engine::ReadFileToString(file)});
 		}
 		return fileDatas;
 	}
 
-	std::vector<D3D::SubPass>& Resources::LoadMaterials()
+	void Resources::LoadMaterials()
 	{
-		std::vector<std::wstring> materials = LoadFilesFromDirectoryW(MATERIALS_FOLDER);
-		std::vector<std::wstring> shaderFiles = LoadFilesFromDirectoryW(SHADERS_FOLDER);
+		std::vector<std::string> materials = LoadFilesFromDirectory(MATERIALS_FOLDER);
+		std::vector<std::string> shaderFiles = LoadFilesFromDirectory(SHADERS_FOLDER);
 		std::string materialData(10240, '\0');
-		for (const std::wstring& path : materials)
+		std::vector<D3D::SubPass> passes;
+		for (const std::string& path : materials)
 		{
-			Themp::Print("Loading material file: [%S]", path.c_str());
-			auto passes = LoadMaterial(ReadFileToString(path), shaderFiles);
+			std::string fileName = GetFileName(path);
+			D3D::Material material;
+			for (int i = 0; i < m_Materials.size(); i++)
+			{
+				if (m_Materials[i].m_Name == fileName)
+				{
+					goto CONTINUE;
+				}
+			}
+			Themp::Print("Loading material file: [%s]", path.c_str());
+			passes.clear();
+			passes = LoadMaterial(Engine::ReadFileToString(path), shaderFiles);
+
 			MergePasses(passes);
+			for (int i = 0; i < m_Subpasses.size(); i++)
+			{
+				for (int j = 0; j < passes.size(); j++)
+				{
+					if (passes[j].pass == m_Subpasses[i].pass)
+					{
+						material.m_SubPasses.push_back(i);
+					}
+				}
+			}
+			material.m_Name = GetFileName(path);
+			m_Materials.push_back(material);
+
+		CONTINUE:
+			continue;
 		}
 
 		const D3D::ShaderCompiler& compiler = Themp::Engine::instance->m_Renderer->GetShaderCompiler();
@@ -208,8 +219,6 @@ namespace Themp
 		{
 			compiler.Compile(m_Shaders[i]);
 		}
-
-		return m_Subpasses;
 	}
 
 
@@ -276,13 +285,13 @@ namespace Themp
 		Pass pass{ filename };
 
 		//std::format is C++20 :(
-		const wchar_t* extension = L".pass";
-		std::wstring path = std::wstring(PASSES_FOLDER);
-		path.reserve(filename.size() + wcslen(extension) + path.size());
+		const char* extension = ".pass";
+		std::string path = std::string(PASSES_FOLDER);
+		path.reserve(filename.size() + strlen(extension) + path.size());
 		path.append(filename.begin(), filename.end())
 			.append(extension);
 
-		std::string data = Themp::Util::ToLowerCase(ReadFileToString(path));
+		std::string data = Themp::Util::ToLowerCase(Engine::ReadFileToString(path));
 
 		const toml::parse_result result = toml::parse(data);
 		if (!result)
@@ -722,7 +731,7 @@ namespace Themp
 		return m_Passes.size()-1;
 	}
 
-	D3D::ShaderHandle Resources::LoadShader(std::string_view filename, std::vector<std::wstring>& shaderFiles)
+	D3D::ShaderHandle Resources::LoadShader(std::string_view filename, std::vector<std::string>& shaderFiles)
 	{
 		for (int i = 0; i < m_Shaders.size(); i++)
 		{
@@ -733,20 +742,20 @@ namespace Themp
 			}
 		}
 
-		std::wstring name = std::wstring(filename.begin(), filename.end());
+		std::string name = std::string(filename.begin(), filename.end());
 
-		static const std::unordered_map<std::wstring_view, D3D::Shader::ShaderType> TargetToType =
+		static const std::unordered_map<std::string_view, D3D::Shader::ShaderType> TargetToType =
 		{
-			{L"_vs", D3D::Shader::ShaderType::Vertex},
-			{L"_ps", D3D::Shader::ShaderType::Pixel},
-			{L"_gs", D3D::Shader::ShaderType::Geometry},
-			{L"_ds", D3D::Shader::ShaderType::Domain},
-			{L"_hs", D3D::Shader::ShaderType::Hull},
-			{L"_cs", D3D::Shader::ShaderType::Compute},
-			{L"_ms", D3D::Shader::ShaderType::Mesh},
-			{L"_as", D3D::Shader::ShaderType::Amplify},
-			{L"_rh", D3D::Shader::ShaderType::RayHit},
-			{L"_rm", D3D::Shader::ShaderType::RayMiss},
+			{"_vs", D3D::Shader::ShaderType::Vertex},
+			{"_ps", D3D::Shader::ShaderType::Pixel},
+			{"_gs", D3D::Shader::ShaderType::Geometry},
+			{"_ds", D3D::Shader::ShaderType::Domain},
+			{"_hs", D3D::Shader::ShaderType::Hull},
+			{"_cs", D3D::Shader::ShaderType::Compute},
+			{"_ms", D3D::Shader::ShaderType::Mesh},
+			{"_as", D3D::Shader::ShaderType::Amplify},
+			{"_rh", D3D::Shader::ShaderType::RayHit},
+			{"_rm", D3D::Shader::ShaderType::RayMiss},
 		};
 
 		D3D::Shader shader{};
@@ -754,16 +763,16 @@ namespace Themp
 
 		for (int i = 0; i < shaderFiles.size(); i++)
 		{
-			std::wstring_view fileExt;
+			std::string_view fileExt;
 			const auto& lastBackSlash = shaderFiles[i].find_last_of(L'\\');
 			const auto& lastForwardSlash = shaderFiles[i].find_last_of(L'/');
-			if (lastBackSlash != std::wstring::npos)
+			if (lastBackSlash != std::string::npos)
 			{
-				fileExt = std::wstring_view(shaderFiles[i].data() + lastBackSlash + 1);
+				fileExt = std::string_view(shaderFiles[i].data() + lastBackSlash + 1);
 			} 
-			else if (lastForwardSlash != std::wstring::npos)
+			else if (lastForwardSlash != std::string::npos)
 			{
-				fileExt = std::wstring_view(shaderFiles[i].data() + lastForwardSlash + 1);
+				fileExt = std::string_view(shaderFiles[i].data() + lastForwardSlash + 1);
 			}
 			else
 			{
@@ -775,13 +784,13 @@ namespace Themp
 			const auto& underscore = fileExt.find_last_of(L'_');
 
 			//not great, there's still some edge cases but it'll do if we just all keep to conventions :P
-			if (underscore == std::wstring::npos || period == std::wstring::npos || underscore > period)
+			if (underscore == std::string::npos || period == std::string::npos || underscore > period)
 			{
 				continue;
 			}
 
-			std::wstring_view target = std::wstring_view(fileExt.data() + underscore, period - underscore);
-			std::wstring_view fileNoExt = std::wstring_view(fileExt.data(), underscore);
+			std::string_view target = std::string_view(fileExt.data() + underscore, period - underscore);
+			std::string_view fileNoExt = std::string_view(fileExt.data(), underscore);
 
 			if (name.size() == fileNoExt.size() && fileNoExt == name)
 			{
@@ -845,7 +854,7 @@ namespace Themp
 
 
 
-		std::string data = ReadFileToString(GetFilePath(RENDER_TARGET_FOLDER, std::wstring(filename.begin(),filename.end()), L".target"));
+		std::string data = Engine::ReadFileToString(GetFilePath(RENDER_TARGET_FOLDER, filename, ".target"));
 		const toml::parse_result result = toml::parse(Themp::Util::ToLowerCase(data));
 		if (!result)
 		{
@@ -981,14 +990,6 @@ namespace Themp
 					{
 						clearValue.DepthStencil.Depth = static_cast<float>(values[0].as_floating_point()->get());
 					}
-					else
-					{
-						Themp::Print("is_integer: %i", values[0].is_integer());
-						Themp::Print("is_array: %i", values[0].is_array());
-						Themp::Print("is_table: %i", values[0].is_table());
-						Themp::Print("is_number: %i", values[0].is_number());
-						Themp::Print("is_boolean: %i", values[0].is_boolean());
-					}
 				}
 				else
 				{
@@ -1034,10 +1035,10 @@ namespace Themp
 
 		auto& resourceManager = Engine::instance->m_Renderer->GetResourceManager();
 		auto device = Engine::instance->m_Renderer->GetDevice();
-		auto resource = resourceManager.GetTextureResource(device, std::wstring(filename.begin(),filename.end()), flags, format, 1, multisample, width, height, depth, &clearValue, textureType);
+		auto resource = resourceManager.GetTextureResource(device, std::string(filename.begin(),filename.end()), flags, format, 1, multisample, width, height, depth, &clearValue, textureType);
 		auto& tex = resourceManager.GetTextureFromResource(device, resource, textureType);
 
-		tex.m_ClearValue = clearValue;
+		tex.SetClearValue(clearValue);
 
 		switch (textureType)
 		{
@@ -1080,7 +1081,7 @@ namespace Themp
 		}
 	}
 
-	std::vector<D3D::SubPass> Resources::LoadMaterial(const std::string& data, std::vector<std::wstring>& shaderFiles)
+	std::vector<D3D::SubPass> Resources::LoadMaterial(const std::string& data, std::vector<std::string>& shaderFiles)
 	{
 		using namespace Themp::D3D;
 		enum MaterialMembers
@@ -1142,7 +1143,7 @@ namespace Themp
 					{
 						hasNormal = normal.as_boolean()->get();
 					}
-					passData.push_back({hasPos, hasNormal, hasUv, passHandle , shaderHandle });
+					passData.push_back({ hasPos, hasNormal, hasUv, passHandle , shaderHandle });
 				}
 				else
 				{
@@ -1155,4 +1156,140 @@ namespace Themp
 
 	}
 
+	void Resources::AddObject3D(D3D::Object3D obj)
+	{
+		m_3DObjects.push_back(obj);
+	}
+	const std::vector<Themp::D3D::Object3D>& Resources::GetSceneObjects()
+	{
+		return m_3DObjects;
+	}
+
+	void Resources::LoadScene(std::string sceneFile)
+	{
+		std::string scenePath = SCENES_FOLDER;
+		scenePath.append(sceneFile);
+
+		std::string sceneData = Engine::ReadFileToString(scenePath);
+		const toml::parse_result result = toml::parse(Themp::Util::ToLowerCase(sceneData));
+		if (!result)
+		{
+			Themp::Print("%*s at line [%i:%i]", result.error().description().size(), result.error().description().data(), result.error().source().begin.line, result.error().source().begin.column);
+			Themp::Break();
+		}
+		auto GetFloatFromArr = [](const toml::v2::array& arr) 
+		{ 
+			if (arr.size() == 3 && arr[0].is_floating_point() && arr[1].is_floating_point() && arr[2].is_floating_point())
+			{
+				return DirectX::XMFLOAT3(arr[0].as_floating_point()->get(), arr[1].as_floating_point()->get(), arr[2].as_floating_point()->get()); 
+			}
+			Themp::Print("float3 value wasn't 3 components or one or more values wasn't a float");
+			return DirectX::XMFLOAT3(0, 0, 0);
+		};
+
+		for (const auto& rootArrays : result)
+		{
+			const auto& arr = *rootArrays.second.as_array();
+			D3D::Model model = LoadModel(*Engine::instance->m_Renderer, rootArrays.first);
+			for(const auto& element : arr)
+			{
+				const auto& table = *element.as_table();
+				D3D::Object3D obj3D{};
+				const auto& nameIt = table["name"].as_string();
+				if (nameIt)
+				{
+					obj3D.m_Name = nameIt->get();
+				}
+
+				const auto& positionArr = table["position"].as_array();
+				DirectX::XMFLOAT3 position{};
+				if (positionArr)
+				{
+					position = GetFloatFromArr(*positionArr);
+				}
+				const auto& rotationArr = table["rotation"].as_array();
+				DirectX::XMFLOAT3 rotation{};
+				if (rotationArr)
+				{
+					rotation = GetFloatFromArr(*rotationArr);
+				}
+				const auto& scaleArr = table["scale"].as_array();
+				DirectX::XMFLOAT3 scale{};
+				if (scaleArr)
+				{
+					scale = GetFloatFromArr(*scaleArr);
+				}
+
+				obj3D.m_Transform = Transform(position, rotation, scale);
+				
+
+				obj3D.m_ScriptHandle = Engine::instance->m_Scripting->AddScript("quad");
+				Engine::instance->m_Scripting->LinkToObject3D(obj3D.m_ScriptHandle, obj3D.m_Name);
+
+				const auto& materialIt = table["meshmaterials"].as_array();
+				if (materialIt)
+				{
+					const auto& materials = *materialIt;
+					for (int i = 0; i < std::min(materials.size(), obj3D.m_Model.m_Meshes.size()); i++)
+					{
+						const std::string& name = materials[i].as_string()->get();
+						for (int j = 0; j < m_Materials.size(); j++)
+						{
+							if (m_Materials[j].m_Name == name)
+							{
+								obj3D.m_Model.m_Meshes[i].m_MaterialHandle = j;
+								goto CONTINUE;
+							}
+						}
+						Themp::Print("material with name: %s was not found!", name);
+					CONTINUE:
+						continue;
+					}
+				}
+
+				m_3DObjects.push_back(obj3D);
+				
+			}
+		}
+		
+	}
+
+
+	Themp::D3D::Model Resources::LoadModel(D3D::Control& control, std::string modelName)
+	{
+		using namespace Themp::D3D;
+		for (const auto& model : m_Models)
+		{
+			if (model.m_Name == modelName)
+			{
+				return model;
+			}
+		}
+
+		auto& obj = m_Models.emplace_back();
+		const auto& testMesh = Engine::instance->m_Renderer->GetResourceManager().Test_GetAndAddRandomModel();
+		obj.m_Meshes = testMesh.m_Meshes;
+		obj.m_Name = modelName;
+		return obj;
+		//for (size_t i = 0; i < modelFiles.size(); i++)
+		//{
+		//	std::string modelData = ReadFileToString(modelFiles[i]);
+		//
+		//	const toml::parse_result result = toml::parse(Themp::Util::ToLowerCase(modelData));
+		//
+		//	std::string name = result["name"].as_string()->get();
+		//	std::string material = result["material"].as_string()->get();
+		//	auto& obj = m_Models.emplace_back();
+		//	const auto& testMesh = Engine::instance->m_Renderer->GetResourceManager().Test_GetAndAddRandomModel();
+		//	obj.m_Meshes = testMesh.m_Meshes;
+		//	obj.m_Name = GetFileName(modelFiles[i]);
+		//
+		//	const auto& iterator = std::find_if(m_Materials.begin(), m_Materials.end(), [&](D3D::Material& it) { return it.m_Name == material; } );
+		//	if (iterator != m_Materials.end())
+		//	{
+		//		control.AddMeshToDraw(obj, *this, iterator->m_SubPasses);
+		//	}
+		//	return obj;
+		//}
+	}
 }

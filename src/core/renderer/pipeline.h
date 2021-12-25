@@ -25,6 +25,8 @@ namespace Themp
 			std::array<D3D12_RECT, 8> m_Scissors;
 
 			void SetTo(ComPtr<ID3D12GraphicsCommandList> cmdList);
+
+			PassHandle GetPassHandle() const { return m_PassHandle; }
 		private:
 			PassHandle m_PassHandle = PassHandle::Invalid;
 		};

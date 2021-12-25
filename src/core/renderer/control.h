@@ -6,9 +6,11 @@
 #include "gpu_resources.h"
 #include "types.h"
 #include "core/renderer/pipeline.h"
+#include "core/renderer/object3d.h"
 
 #include <d3d12.h>
 #include <memory>
+#include <vector>
 namespace Themp
 {
 	class Resources;
@@ -19,9 +21,22 @@ namespace Themp
 		class Control
 		{
 		public:
+			struct Renderable
+			{
+				size_t ID;
+				Model object;
+			};
+			struct RenderPass
+			{
+				Pipeline pipeline;
+				std::vector<Renderable> objects;
+			};
+
+		public:
 			bool Init();
 			void Stop();
 
+			void AddMeshToDraw(const Model& object, Themp::Resources& resources, const std::vector<SubPassHandle>& subpasses);
 			void BeginDraw();
 			void EndDraw();
 
@@ -31,7 +46,7 @@ namespace Themp
 			const Context& GetContext() const;
 			ComPtr<ID3D12CommandQueue> GetCommandQueue(D3D12_COMMAND_LIST_TYPE commandListType) const;
 			GPU_Resources& GetResourceManager() const;
-			void CreatePipelines(Themp::Resources& resources, const std::vector<D3D::SubPass>& subPasses);
+			void CreatePipelines(Themp::Resources& resources);
 			const ShaderCompiler& GetShaderCompiler();
 		private:
 			Frame& GetCurrentBackbuffer();
@@ -41,7 +56,7 @@ namespace Themp
 			ComPtr<ID3D12Fence> m_Fence;
 			std::vector<Frame> m_Backbuffers;
 			std::vector<uint64_t> m_FrameFenceValues;
-			std::vector<Pipeline> m_Pipelines;
+			std::vector<RenderPass> m_Renderpasses;
 			uint64_t m_FenceValue = 0;
 			HANDLE m_FenceEvent;
 			int m_CurrentBackBuffer = 0;

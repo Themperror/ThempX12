@@ -5,13 +5,21 @@
 #include "core/renderer/texture.h"
 #include "core/resources.h"
 #include "core/renderer/shadercompiler.h"
+#include "core/renderer/object3d.h"
+#include "core/resources.h"
+
 
 #include <lib/imgui/imgui.h>
 #include <lib/imgui/impl/imgui_impl_dx12.h>
+
+
 using namespace Themp::D3D;
 
 
+
 MeshData testMesh;
+Object3D testObject;
+
 
 Themp::D3D::ShaderCompiler s_ShaderCompiler;
 
@@ -55,8 +63,6 @@ bool Control::Init()
 
 	s_ShaderCompiler.Init();
 
-
-	testMesh = m_GPU_Resources->Test_GetAndAddRandomModel();
 	return true;
 }
 void Control::Stop()
@@ -66,14 +72,37 @@ void Control::Stop()
 	m_Context->WaitForFenceValue(m_Fence, m_FrameFenceValues[m_CurrentBackBuffer], m_FenceEvent);
 }
 
-void Control::CreatePipelines(Themp::Resources& resources, const std::vector<D3D::SubPass>& subPasses)
+void Control::CreatePipelines(Themp::Resources& resources)
 {
-	for(int i = 0; i < subPasses.size(); i++)
+	for(int i = 0; i < resources.GetAmountOfSubpasses(); i++)
 	{
-		auto& pipeline = m_Pipelines.emplace_back();
-		pipeline.Init(subPasses[i]);
+		auto& renderpass = m_Renderpasses.emplace_back();
+		renderpass.pipeline.Init(resources.Get(SubPassHandle(i)));
 	}
 }
+
+void Control::AddMeshToDraw(const Model& renderable , Themp::Resources& resources, const std::vector<SubPassHandle>& subpasses)
+{
+	for (size_t i = 0; i < subpasses.size(); i++)
+	{
+		for (auto& pass : m_Renderpasses)
+		{
+			if (pass.pipeline.GetPassHandle() == resources.Get(subpasses[i]).pass)
+			{
+				//pass.objects.push_back(model);
+			}
+		}
+	}
+}
+
+
+//void Control::AddObjectToDraw(const Object3D& object)
+//{
+//	for (auto& pass : m_Renderpasses)
+//	{
+//		//object.m_Model.m_Meshes
+//	}
+//}
 
 void Control::BeginDraw()
 {
@@ -86,17 +115,25 @@ void Control::BeginDraw()
 		m_Context->EnableVsync(vsyncEnabled);
 
 		ImGui::Checkbox("VSync", &vsyncEnabled);
-		ImGui::Text("Test");
 	}
 	ImGui::End();
 
 	const auto& vertexBufferViews = m_GPU_Resources->GetVertexBufferViews();
 	frame.GetCmdList()->IASetVertexBuffers(0u, static_cast<UINT>(vertexBufferViews.size()), vertexBufferViews.data());
 	frame.GetCmdList()->IASetIndexBuffer(&m_GPU_Resources->GetIndexBufferView());
-	for (int i = 0; i < m_Pipelines.size(); i++)
+	for (int i = 0; i < m_Renderpasses.size(); i++)
 	{
-		m_Pipelines[i].SetTo(frame.GetCmdList());
-		frame.GetCmdList()->DrawIndexedInstanced(testMesh.indexCount, 1, testMesh.indexIndex, testMesh.vertexIndex, 0);
+		m_Renderpasses[i].pipeline.SetTo(frame.GetCmdList());
+		for (int j = 0; j < m_Renderpasses[i].objects.size(); j++)
+		{
+			const auto& object = m_Renderpasses[i].objects[j];
+			for (int k = 0; k < object.object.m_Meshes.size(); k++)
+			{
+				const auto& meshData = object.object.m_Meshes[k].m_MeshData;
+				frame.GetCmdList()->DrawIndexedInstanced(meshData.indexCount, 1, meshData.indexIndex, meshData.vertexIndex, 0);
+			}
+		}
+		
 	}
 
 	//frame.GetCmdList().Get()->SetDescriptorHeaps(1, m_ImguiSRVHeap.GetAddressOf());

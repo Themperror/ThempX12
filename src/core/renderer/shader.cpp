@@ -9,7 +9,7 @@ namespace Themp::D3D
 	{
 		m_Name = name;
 	}
-	void Shader::AddShaderSource(std::wstring name, ShaderType type)
+	void Shader::AddShaderSource(std::string name, ShaderType type)
 	{
 		m_ShaderPairs.push_back({ name, type });
 	}

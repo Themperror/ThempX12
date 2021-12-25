@@ -3,6 +3,7 @@
 #include "core/util/print.h"
 #include "core/util/break.h"
 #include "core/util/svars.h"
+#include "core/util/stringUtils.h"
 
 #include <unordered_map>
 #include <string>
@@ -49,9 +50,10 @@ namespace Themp::D3D
 		std::wstring_view target = TypeToTarget.find(src.type)->second;
 
 		std::vector<std::wstring> compileArgs;
+		std::wstring wideName = Themp::Util::ToWideString(src.name);
 		compileArgs.reserve(16);
 
-		compileArgs.emplace_back(src.name);
+		compileArgs.emplace_back(wideName);
 		compileArgs.emplace_back(L"-E");
 		compileArgs.emplace_back(L"main");
 
@@ -62,13 +64,13 @@ namespace Themp::D3D
 		compileArgs.emplace_back(target).append(L"_6_0");
 
 		compileArgs.emplace_back(L"-Fo");
-		compileArgs.emplace_back(SHADER_DATA_FOLDER).append(src.name).append(L".").append(target);
+		compileArgs.emplace_back(SHADER_DATA_FOLDER).append(wideName).append(L".").append(target);
 
 		if (debug)
 		{
 			compileArgs.emplace_back(L"-Zs");
 			compileArgs.emplace_back(L"-Fd");
-			compileArgs.emplace_back(SHADER_DATA_FOLDER).append(src.name).append(L".").append(target).append(L".pdb");
+			compileArgs.emplace_back(SHADER_DATA_FOLDER).append(wideName).append(L".").append(target).append(L".pdb");
 		}
 
 
@@ -84,7 +86,7 @@ namespace Themp::D3D
 		//
 		ComPtr<IDxcBlobEncoding> pSource = nullptr;
 		std::wstring fileName = SHADER_RESOURCES_FOLDER;
-		fileName.append(src.name);
+		fileName.append(wideName);
 		fileName.append(L"_").append(target);
 		fileName.append(L".hlsl");
 		pUtils->LoadFile(fileName.c_str(), nullptr, &pSource);

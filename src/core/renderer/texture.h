@@ -19,6 +19,7 @@ namespace Themp
 			ComPtr<ID3D12Resource> GetResource(TEXTURE_TYPE type) const;
 			CD3DX12_CPU_DESCRIPTOR_HANDLE GetCPUHandle() const { return m_CPUHandle;  }
 			const D3D12_CLEAR_VALUE& GetClearValue() const { return m_ClearValue; }
+			void SetClearValue(const D3D12_CLEAR_VALUE& val) { m_ClearValue = val; }
 		private:
 
 			void InitSRVTexture(ComPtr<ID3D12Resource> textureSource, ComPtr<ID3D12Device2> device, const D3D::DescriptorHeapTracker& heapTracker);

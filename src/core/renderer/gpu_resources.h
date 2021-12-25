@@ -7,11 +7,13 @@
 #include "types.h"
 #include "texture.h"
 #include <DirectXMath.h>
+
 using namespace Microsoft::WRL;
 
 namespace Themp::D3D
 {
 	class Device;
+	class Model;
 	class GPU_Resources
 	{
 	public:
@@ -19,9 +21,9 @@ namespace Themp::D3D
 	public:
 		ComPtr<ID3D12DescriptorHeap> GetDescriptorHeap(DESCRIPTOR_HEAP_TYPE type, uint32_t reservedSlots = 0);
 		Texture& GetTextureFromResource(ComPtr<ID3D12Device2> device, ComPtr<ID3D12Resource> resource, TEXTURE_TYPE type);
-		ComPtr<ID3D12Resource> GetTextureResource(ComPtr<ID3D12Device2> device, const std::wstring& name, D3D12_RESOURCE_FLAGS flags, DXGI_FORMAT format, int mipCount, DXGI_SAMPLE_DESC multisample, int width, int height, int depth, D3D12_CLEAR_VALUE* optClearValue, D3D::TEXTURE_TYPE& outType);
+		ComPtr<ID3D12Resource> GetTextureResource(ComPtr<ID3D12Device2> device, const std::string& name, D3D12_RESOURCE_FLAGS flags, DXGI_FORMAT format, int mipCount, DXGI_SAMPLE_DESC multisample, int width, int height, int depth, D3D12_CLEAR_VALUE* optClearValue, D3D::TEXTURE_TYPE& outType);
 
-		MeshData Test_GetAndAddRandomModel();
+		Model Test_GetAndAddRandomModel();
 
 		void UploadMeshStagingBuffers();
 

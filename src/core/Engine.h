@@ -60,6 +60,7 @@ namespace Themp
 		static std::unique_ptr<Themp::Engine> instance;
 		static SVars s_SVars;
 		void Start();
+		static std::string ReadFileToString(const std::string& filePath);
 
 		std::string m_BaseDir;
 		HWND m_Window = nullptr;

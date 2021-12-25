@@ -7,6 +7,8 @@
 #include "core/util/print.h"
 #include "core/util/break.h"
 #include "core/util/svars.h"
+#include "core/util/stringUtils.h"
+#include "core/renderer/model.h"
 
 #include <assert.h>
 namespace Themp::D3D
@@ -114,7 +116,7 @@ namespace Themp::D3D
 		m_MainIndexBuffer->SetName(L"MainIndexBuffer");
 	}
 
-	MeshData GPU_Resources::Test_GetAndAddRandomModel()
+	Model GPU_Resources::Test_GetAndAddRandomModel()
 	{
 		std::vector<Vertex> vertices;
 		std::vector<uint32_t> indices;
@@ -135,7 +137,9 @@ namespace Themp::D3D
 		indices.push_back(3);
 		indices.push_back(2);
 
-		return AppendMeshToStagingBuffers(vertices, indices);
+		Model model{};
+		model.m_Meshes.emplace_back().m_MeshData = AppendMeshToStagingBuffers(vertices, indices);
+		return model;
 
 	}
 
@@ -286,7 +290,7 @@ namespace Themp::D3D
 	}
 
 
-	ComPtr<ID3D12Resource> GPU_Resources::GetTextureResource(ComPtr<ID3D12Device2> device, const std::wstring& name, D3D12_RESOURCE_FLAGS flags, DXGI_FORMAT format, int mipCount, DXGI_SAMPLE_DESC multisample, int width, int height, int depth, D3D12_CLEAR_VALUE* optClearValue, TEXTURE_TYPE& outType)
+	ComPtr<ID3D12Resource> GPU_Resources::GetTextureResource(ComPtr<ID3D12Device2> device, const std::string& name, D3D12_RESOURCE_FLAGS flags, DXGI_FORMAT format, int mipCount, DXGI_SAMPLE_DESC multisample, int width, int height, int depth, D3D12_CLEAR_VALUE* optClearValue, TEXTURE_TYPE& outType)
 	{
 		outType = flags == D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_NONE ? D3D::TEXTURE_TYPE::SRV :
 			(flags & D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL) ? D3D::TEXTURE_TYPE::DSV :
@@ -372,7 +376,7 @@ namespace Themp::D3D
 			Themp::Break();
 			return nullptr;
 		}
-		resource->SetName(name.c_str());
+		resource->SetName(Themp::Util::ToWideString(name).c_str());
 		return resource;
 	}
 	Texture& GPU_Resources::GetTextureFromResource(ComPtr<ID3D12Device2> device, ComPtr<ID3D12Resource> resource, TEXTURE_TYPE type)

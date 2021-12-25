@@ -46,6 +46,9 @@
     <Filter Include="Source Files\lib\angelscript\addon">
       <UniqueIdentifier>{eca0644b-67c7-404c-bf9a-273d0590b50e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\core\components">
+      <UniqueIdentifier>{d7e641da-e8c2-43e5-a077-60cc4db29c09}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\core\Camera.h">
@@ -210,6 +213,21 @@
     <ClInclude Include="src\lib\angelscript\angelscript.h">
       <Filter>Source Files\lib\angelscript</Filter>
     </ClInclude>
+    <ClInclude Include="src\core\renderer\object3d.h">
+      <Filter>Source Files\core\renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\renderer\material.h">
+      <Filter>Source Files\core\renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\components\transform.h">
+      <Filter>Source Files\core\components</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\renderer\model.h">
+      <Filter>Source Files\core\renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\scripting\Registrar.h">
+      <Filter>Source Files\core\scripting</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\core\Functions.cpp">
@@ -361,6 +379,21 @@
     </ClCompile>
     <ClCompile Include="src\lib\angelscript\add_on\weakref\weakref.cpp">
       <Filter>Source Files\lib\angelscript\addon</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\renderer\object3d.cpp">
+      <Filter>Source Files\core\renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\renderer\material.cpp">
+      <Filter>Source Files\core\renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\components\transform.cpp">
+      <Filter>Source Files\core\components</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\renderer\model.cpp">
+      <Filter>Source Files\core\renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\scripting\Registrar.cpp">
+      <Filter>Source Files\core\scripting</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

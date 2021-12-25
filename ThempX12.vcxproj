@@ -12,6 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\core\Camera.h" />
+    <ClInclude Include="src\core\components\transform.h" />
     <ClInclude Include="src\core\EngineDefs.h" />
     <ClInclude Include="src\core\Functions.h" />
     <ClInclude Include="src\core\input\keyboard.h" />
@@ -21,7 +22,10 @@
     <ClInclude Include="src\core\renderer\device.h" />
     <ClInclude Include="src\core\renderer\frame.h" />
     <ClInclude Include="src\core\renderer\gpu_resources.h" />
+    <ClInclude Include="src\core\renderer\material.h" />
     <ClInclude Include="src\core\renderer\mesh.h" />
+    <ClInclude Include="src\core\renderer\model.h" />
+    <ClInclude Include="src\core\renderer\object3d.h" />
     <ClInclude Include="src\core\renderer\pass.h" />
     <ClInclude Include="src\core\renderer\pipeline.h" />
     <ClInclude Include="src\core\renderer\shader.h" />
@@ -31,6 +35,7 @@
     <ClInclude Include="src\core\Resources.h" />
     <ClInclude Include="src\core\Engine.h" />
     <ClInclude Include="src\core\scripting\ASEngine.h" />
+    <ClInclude Include="src\core\scripting\Registrar.h" />
     <ClInclude Include="src\core\util\break.h" />
     <ClInclude Include="src\core\util\print.h" />
     <ClInclude Include="src\core\util\stringUtils.h" />
@@ -68,6 +73,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\core\Camera.cpp" />
+    <ClCompile Include="src\core\components\transform.cpp" />
     <ClCompile Include="src\core\Functions.cpp" />
     <ClCompile Include="src\core\input\keyboard.cpp" />
     <ClCompile Include="src\core\input\manager.cpp" />
@@ -76,7 +82,10 @@
     <ClCompile Include="src\core\renderer\device.cpp" />
     <ClCompile Include="src\core\renderer\frame.cpp" />
     <ClCompile Include="src\core\renderer\gpu_resources.cpp" />
+    <ClCompile Include="src\core\renderer\material.cpp" />
     <ClCompile Include="src\core\renderer\mesh.cpp" />
+    <ClCompile Include="src\core\renderer\model.cpp" />
+    <ClCompile Include="src\core\renderer\object3d.cpp" />
     <ClCompile Include="src\core\renderer\pass.cpp" />
     <ClCompile Include="src\core\renderer\pipeline.cpp" />
     <ClCompile Include="src\core\renderer\shader.cpp" />
@@ -85,6 +94,7 @@
     <ClCompile Include="src\core\Resources.cpp" />
     <ClCompile Include="src\core\Engine.cpp" />
     <ClCompile Include="src\core\scripting\ASEngine.cpp" />
+    <ClCompile Include="src\core\scripting\Registrar.cpp" />
     <ClCompile Include="src\core\util\break.cpp" />
     <ClCompile Include="src\core\util\print.cpp" />
     <ClCompile Include="src\core\util\stringUtils.cpp" />

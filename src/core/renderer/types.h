@@ -24,8 +24,10 @@ x##Handle(const x##Handle& rhs) noexcept{ this->handle = rhs.handle;} \
 x##Handle(x##Handle&& rhs) noexcept { handle = rhs.handle;} \
 x##Handle& operator=(const x##Handle& rhs) noexcept{ this->handle = rhs.handle; return *this;} \
 x##Handle& operator=(x##Handle&& rhs) noexcept { this->handle = rhs.handle; return *this;} \
-bool operator==(const size_t rhs) noexcept { return handle == rhs; }\
-bool operator==(const x##Handle& rhs) noexcept { return handle == rhs.handle; }\
+bool operator==(const size_t rhs) const noexcept { return handle == rhs; }\
+bool operator==(const x##Handle& rhs) const noexcept { return handle == rhs.handle; }\
+bool operator!=(const size_t rhs) const noexcept { return handle != rhs; }\
+bool operator!=(const x##Handle& rhs) const noexcept { return handle != rhs.handle; }\
 bool IsValid() const noexcept { return handle != Invalid;} \
 static inline constexpr const size_t Invalid = std::numeric_limits<size_t>::max(); }
 
@@ -56,6 +58,7 @@ namespace Themp::D3D
 	Handle(SRV);
 	Handle(Texture);
 	Handle(Model);
+	Handle(Script);
 
 	struct RenderTargetHandle
 	{
@@ -308,7 +311,7 @@ namespace Themp::D3D
 
 	struct Blend
 	{
-		enum BlendType
+		enum class BlendType
 		{
 			ZERO,
 			ONE,
@@ -329,7 +332,7 @@ namespace Themp::D3D
 			INV_SRC1_ALPHA,
 			COUNT
 		};
-		constexpr static std::string_view Str[COUNT]
+		constexpr static std::string_view Str[static_cast<size_t>(BlendType::COUNT)]
 		{
 			"zero",
 			"one",
@@ -352,7 +355,7 @@ namespace Themp::D3D
 
 		void SetFromString(std::string_view str)
 		{
-			for (int i = 0; i < COUNT; i++)
+			for (int i = 0; i < static_cast<size_t>(BlendType::COUNT); i++)
 			{
 				if (str == Str[i])
 				{
@@ -779,39 +782,39 @@ namespace Themp::D3D
 			switch (op.type)
 			{
 			default:
-			case Blend::ONE:
+			case Blend::BlendType::ONE:
 				return D3D12_BLEND::D3D12_BLEND_ONE;
-			case Blend::ZERO:
+			case Blend::BlendType::ZERO:
 				return D3D12_BLEND::D3D12_BLEND_ZERO;
-			case Blend::BLEND_FACTOR:
+			case Blend::BlendType::BLEND_FACTOR:
 				return D3D12_BLEND::D3D12_BLEND_BLEND_FACTOR;
-			case Blend::DEST_ALPHA:
+			case Blend::BlendType::DEST_ALPHA:
 				return D3D12_BLEND::D3D12_BLEND_DEST_ALPHA;
-			case Blend::DEST_COLOR:
+			case Blend::BlendType::DEST_COLOR:
 				return D3D12_BLEND::D3D12_BLEND_DEST_COLOR;
-			case Blend::INV_BLEND_FACTOR:
+			case Blend::BlendType::INV_BLEND_FACTOR:
 				return D3D12_BLEND::D3D12_BLEND_INV_BLEND_FACTOR;
-			case Blend::INV_DEST_ALPHA:
+			case Blend::BlendType::INV_DEST_ALPHA:
 				return D3D12_BLEND::D3D12_BLEND_INV_DEST_ALPHA;
-			case Blend::INV_DEST_COLOR:
+			case Blend::BlendType::INV_DEST_COLOR:
 				return D3D12_BLEND::D3D12_BLEND_INV_DEST_COLOR;
-			case Blend::INV_SRC1_ALPHA:
+			case Blend::BlendType::INV_SRC1_ALPHA:
 				return D3D12_BLEND::D3D12_BLEND_INV_SRC1_ALPHA;
-			case Blend::INV_SRC1_COLOR:
+			case Blend::BlendType::INV_SRC1_COLOR:
 				return D3D12_BLEND::D3D12_BLEND_INV_SRC1_COLOR;
-			case Blend::INV_SRC_ALPHA:
+			case Blend::BlendType::INV_SRC_ALPHA:
 				return D3D12_BLEND::D3D12_BLEND_INV_SRC_ALPHA;
-			case Blend::INV_SRC_COLOR:
+			case Blend::BlendType::INV_SRC_COLOR:
 				return D3D12_BLEND::D3D12_BLEND_INV_SRC_COLOR;
-			case Blend::SRC1_ALPHA:
+			case Blend::BlendType::SRC1_ALPHA:
 				return D3D12_BLEND::D3D12_BLEND_SRC1_ALPHA;
-			case Blend::SRC1_COLOR:
+			case Blend::BlendType::SRC1_COLOR:
 				return D3D12_BLEND::D3D12_BLEND_SRC1_COLOR;
-			case Blend::SRC_ALPHA:
+			case Blend::BlendType::SRC_ALPHA:
 				return D3D12_BLEND::D3D12_BLEND_SRC_ALPHA;
-			case Blend::SRC_ALPHA_SAT:
+			case Blend::BlendType::SRC_ALPHA_SAT:
 				return D3D12_BLEND::D3D12_BLEND_SRC_ALPHA_SAT;
-			case Blend::SRC_COLOR:
+			case Blend::BlendType::SRC_COLOR:
 				return D3D12_BLEND::D3D12_BLEND_SRC_COLOR;
 			}
 		}

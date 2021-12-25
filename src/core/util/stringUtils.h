@@ -7,6 +7,7 @@
 namespace Themp::Util
 {
 	std::string ToLowerCase(const std::string& string);
+	std::wstring ToWideString(const std::string& string);
 
 	template<typename T, typename S, 
 		std::enable_if_t<

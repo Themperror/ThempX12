@@ -4,6 +4,7 @@
 #include "core/resources.h"
 #include "core/util/Print.h"
 #include "core/util/Break.h"
+#include "core/scripting/registrar.h"
 
 #include <lib/angelscript/angelscript.h>
 #include <lib/angelscript/add_on/scriptstdstring/scriptstdstring.h>
@@ -30,24 +31,6 @@ namespace Themp::Scripting
 
 		Themp::Print("%s (%d, %d) : %s : %s\n", msg->section, msg->row, msg->col, type, msg->message);
 	}
-	void ASPrint(const std::string& msg)
-	{
-		Themp::Print(msg);
-	}
-	void ASPrintIP0(const std::string& msg, int param0)
-	{
-		Themp::Print(msg, param0);
-	}
-
-	void ASPrintFP0(const std::string& msg, float param0)
-	{
-		Themp::Print(msg, param0);
-	}
-
-	void ASPrintSP0(const std::string& msg, std::string& param0)
-	{
-		Themp::Print(msg, param0.c_str());
-	}
 
 	static void ASYield()
 	{
@@ -67,14 +50,16 @@ namespace Themp::Scripting
 		AngelScript::asIScriptContext* ctx = AngelScript::asGetActiveContext();
 		if (ctx)
 		{
-			Script& script = *reinterpret_cast<Script*>(ctx->GetUserData(UserDataID));
+			D3D::ScriptHandle handle = reinterpret_cast<size_t>(ctx->GetUserData(UserDataID));
+			Script& script = *Engine::instance->m_Scripting->GetScript(handle); 
+			
 
 			AngelScript::asIScriptEngine* engine = ctx->GetEngine();
 			AngelScript::asIScriptContext* coroutine = engine->RequestContext();
 			if (coroutine == nullptr)
 			{
 				Themp::Print("Failed to create coroutine from script %s", script.scriptName);
-				Themp::Break();
+Themp::Break();
 			}
 
 			// Prepare the context
@@ -87,8 +72,9 @@ namespace Themp::Scripting
 				Themp::Break();
 				return;
 			}
+			handle = Engine::instance->m_Scripting->GetNextScriptHandle();
 			//link our coroutine to our current script, so that if it creates other coroutines they all contain to the same script
-			coroutine->SetUserData(&script, UserDataID);
+			coroutine->SetUserData(reinterpret_cast<void*>(handle.handle), UserDataID);
 
 			r = coroutine->Execute();
 			if (r == AngelScript::asEContextState::asEXECUTION_SUSPENDED)
@@ -129,8 +115,8 @@ namespace Themp::Scripting
 			}
 			coroutine->SetArgObject(0, arg);
 			//link our coroutine to our current script, so that if it creates other coroutines they all contain to the same script
-			coroutine->SetUserData(&script, UserDataID); 
-			
+			coroutine->SetUserData(&script, UserDataID);
+
 			r = coroutine->Execute();
 			if (r == AngelScript::asEContextState::asEXECUTION_SUSPENDED)
 			{
@@ -151,158 +137,175 @@ namespace Themp::Scripting
 		}
 
 		AngelScript::RegisterStdString(m_ScriptingEngine);
-
-		result = m_ScriptingEngine->RegisterGlobalFunction("void print(const string &in)", AngelScript::asFUNCTION(ASPrint), AngelScript::asCALL_CDECL);
-		if (result < 0)
-		{
-			Themp::Print("Failed to register print function to ASEngine");
-			Themp::Break();
-		}
-		
-		result = m_ScriptingEngine->RegisterGlobalFunction("void print(const string &in, int param0)", AngelScript::asFUNCTION(ASPrintIP0), AngelScript::asCALL_CDECL);
-		if (result < 0)
-		{
-			Themp::Print("Failed to register print function to ASEngine");
-			Themp::Break();
-		}
-		result = m_ScriptingEngine->RegisterGlobalFunction("void print(const string &in, float param0)", AngelScript::asFUNCTION(ASPrintFP0), AngelScript::asCALL_CDECL);
-		if (result < 0)
-		{
-			Themp::Print("Failed to register print function to ASEngine");
-			Themp::Break();
-		}
-		result = m_ScriptingEngine->RegisterGlobalFunction("void print(const string &in, string param0)", AngelScript::asFUNCTION(ASPrintSP0), AngelScript::asCALL_CDECL);
-		if (result < 0)
-		{
-			Themp::Print("Failed to register print function to ASEngine");
-			Themp::Break();
-		}
-
 		AngelScript::RegisterScriptArray(m_ScriptingEngine, true);
 		AngelScript::RegisterScriptDictionary(m_ScriptingEngine);
+
 		result = m_ScriptingEngine->RegisterGlobalFunction("void yield()", AngelScript::asFUNCTION(ASYield), AngelScript::asCALL_CDECL);
 		result = m_ScriptingEngine->RegisterFuncdef("void coroutineDictionary(dictionary@)");
 		result = m_ScriptingEngine->RegisterGlobalFunction("void createCoRoutine(coroutineDictionary @+, dictionary @+)", AngelScript::asFUNCTION(ASCreateCoRoutineWithDictionary), AngelScript::asCALL_CDECL);
 		result = m_ScriptingEngine->RegisterFuncdef("void coroutine()");
 		result = m_ScriptingEngine->RegisterGlobalFunction("void createCoRoutine(coroutine @+)", AngelScript::asFUNCTION(ASCreateCoRoutine), AngelScript::asCALL_CDECL);
 
+		Registrar::Init(m_ScriptingEngine);
 		return m_ScriptingEngine != nullptr;
 	}
 
-	void ASEngine::CompileScripts()
+	D3D::ScriptHandle ASEngine::AddScript(const std::string& filename)
 	{
-		const auto& scripts = Themp::Engine::instance->m_Resources->GetScriptFiles();
-		AngelScript::CScriptBuilder builder;
-		for (auto& pair : scripts)
+		Script script{};
+		script.scriptName = filename;
+		LoadScript(script, Engine::ReadFileToString(std::string(Resources::GetScriptsFolder()).append(filename).append(".as")));
+		script.handle = GetNextScriptHandle();
+		m_Scripts.push_back(script);
+
+		script.context->SetUserData(reinterpret_cast<void*>(m_LatestHandleID), UserDataID);
+		return script.handle;
+	}
+
+	void ASEngine::LinkToObject3D(D3D::ScriptHandle handle, std::string& name)
+	{
+		for (int i = 0; i < m_Scripts.size(); i++)
 		{
-			int r = builder.StartNewModule(m_ScriptingEngine, pair.first.c_str());
-			if (r < 0)
+			if(m_Scripts[i].handle == handle.handle)
 			{
-				Themp::Print("Failed to start new scripting module");
-				Themp::Break();
+				m_Scripts[i].context->SetArgObject(0, &name);
 			}
-
-			r = builder.AddSectionFromMemory(pair.first.c_str(), pair.second.c_str(), pair.second.size());
-			if (r == 0)
-			{
-				Themp::Print("Script: %s was already included before", pair.first.c_str());
-			}
-			else if (r < 0)
-			{
-				Themp::Print("Failed to add script: %s", pair.first.c_str());
-				Themp::Break();
-			}
-
-			r = builder.BuildModule();
-			if (r < 0)
-			{
-				Themp::Print("Failed to build script: %s", pair.first.c_str());
-				Themp::Break();
-			}
-
-			AngelScript::asIScriptModule* mod = m_ScriptingEngine->GetModule(pair.first.c_str());
-			if (mod != nullptr)
-			{
-				AngelScript::asIScriptFunction* entryPoint = mod->GetFunctionByName("main");
-				if (entryPoint == nullptr)
-				{
-					Themp::Print("No function named `main` was found in script: %s, please add the entry point and try again!", pair.first.c_str());
-				}
-				else
-				{
-					AngelScript::asIScriptContext* context = m_ScriptingEngine->CreateContext();
-				
-					Script script;
-					script.context = context;
-					script.scriptName = pair.first;
-
-					r = script.context->Prepare(entryPoint);
-					if (r < 0)
-					{
-						Themp::Print("Failed to prepare script: %s!", pair.first.c_str());
-					}
-					m_Scripts.push_back(script);
-				}
-			}
-		}
-
-		for (auto& script : m_Scripts)
-		{
-			script.context->SetUserData(&script, UserDataID);
 		}
 	}
 
-	void ASEngine::Update()
+	Script* ASEngine::GetScript(D3D::ScriptHandle handle)
 	{
-		for (auto& script : m_Scripts)
+		for (int i = 0; i < m_Scripts.size(); i++)
 		{
-			AngelScript::asEContextState state = script.context->GetState();
-			if (state == AngelScript::asEContextState::asEXECUTION_PREPARED || state == AngelScript::asEContextState::asEXECUTION_SUSPENDED)
+			if (m_Scripts[i].handle == handle.handle)
 			{
-				int ret = script.context->Execute();
-				if (ret == AngelScript::asEContextState::asEXECUTION_EXCEPTION)
+				return &m_Scripts[i];
+			}
+		}
+		return nullptr;
+	}
+
+	D3D::ScriptHandle ASEngine::GetNextScriptHandle()
+	{
+		return m_LatestHandleID++;
+	}
+
+	void ASEngine::LoadScript(Script& script, std::string data)
+	{
+		AngelScript::CScriptBuilder builder;
+		int r = builder.StartNewModule(m_ScriptingEngine, script.scriptName.c_str());
+		if (r < 0)
+		{
+			Themp::Print("Failed to start new scripting module");
+			Themp::Break();
+		}
+
+		r = builder.AddSectionFromMemory(script.scriptName.c_str(), data.c_str(), static_cast<unsigned int>(data.size()));
+		if (r == 0)
+		{
+			Themp::Print("Script: %s was already included before", script.scriptName.c_str());
+		}
+		else if (r < 0)
+		{
+			Themp::Print("Failed to add script: %s", script.scriptName.c_str());
+			Themp::Break();
+		}
+
+		r = builder.BuildModule();
+		if (r < 0)
+		{
+			Themp::Print("Failed to build script: %s", script.scriptName.c_str());
+			Themp::Break();
+		}
+
+		AngelScript::asIScriptModule* mod = m_ScriptingEngine->GetModule(script.scriptName.c_str());
+		if (mod != nullptr)
+		{
+			AngelScript::asIScriptFunction* entryPoint = mod->GetFunctionByName("main");
+			if (entryPoint == nullptr)
+			{
+				Themp::Print("No function named `main` was found in script: %s, please add the entry point and try again!", script.scriptName.c_str());
+			}
+			else
+			{
+				AngelScript::asIScriptContext* context = m_ScriptingEngine->CreateContext();
+
+				script.context = context;
+				r = script.context->Prepare(entryPoint);
+				if (r < 0)
 				{
-					Themp::Print("Script %s has run into an exception!", script.scriptName.c_str());
-					Themp::Break();
+					Themp::Print("Failed to prepare script: %s!", script.scriptName.c_str());
 				}
-				
+
+			}
+		}
+	}
+
+	void ASEngine::Update(Resources& resources)
+	{
+		for (auto& obj3D : resources.GetSceneObjects())
+		{
+			if (obj3D.m_ScriptHandle != D3D::ScriptHandle::Invalid)
+			{
+				Script* script = GetScript(obj3D.m_ScriptHandle);
+				ExecuteScript(*script);
+			}
+		}
+	}
+
+	void ASEngine::ExecuteScript(Script& script)
+	{
+		AngelScript::asEContextState state = script.context->GetState();
+		if (state == AngelScript::asEContextState::asEXECUTION_PREPARED || state == AngelScript::asEContextState::asEXECUTION_SUSPENDED)
+		{
+			int ret = script.context->Execute();
+			if (ret == AngelScript::asEContextState::asEXECUTION_EXCEPTION)
+			{
+				Themp::Print("Script %s has run into an exception!", script.scriptName.c_str());
+				Themp::Break();
+			}
+			else if (ret == AngelScript::asEContextState::asEXECUTION_ERROR)
+			{
+				Themp::Print("Script %s has run into an error! [%s]", script.scriptName.c_str(), script.context->GetExceptionString());
+				Themp::Break();
 			}
 
-			if (state == AngelScript::asEContextState::asEXECUTION_SUSPENDED || state == AngelScript::asEContextState::asEXECUTION_FINISHED)
-			{
-				for (int i = 0; i < script.coroutines.size(); i++)
-				{
-					AngelScript::asIScriptContext* coroutine = script.coroutines[i];
-					if (coroutine->GetState() == AngelScript::asEContextState::asEXECUTION_SUSPENDED)
-					{
-						int ret = coroutine->Execute();
-						if (ret != AngelScript::asEXECUTION_FINISHED)
-						{
-							if (ret == AngelScript::asEContextState::asEXECUTION_EXCEPTION)
-							{
-								Themp::Print("Coroutine in script %s has run into an exception!", script.scriptName.c_str());
-								Themp::Break();
-							}
-						}
-						else
-						{
-							m_CoroutinesToRemove.push_back(coroutine);
-						}
-					}
-				}
+		}
 
-				for (auto& coroutineToRemove : m_CoroutinesToRemove)
+		if (state == AngelScript::asEContextState::asEXECUTION_SUSPENDED || state == AngelScript::asEContextState::asEXECUTION_FINISHED)
+		{
+			for (int i = 0; i < script.coroutines.size(); i++)
+			{
+				AngelScript::asIScriptContext* coroutine = script.coroutines[i];
+				if (coroutine->GetState() == AngelScript::asEContextState::asEXECUTION_SUSPENDED)
 				{
-					for (int i = script.coroutines.size() - 1; i >= 0; i--)
+					int ret = coroutine->Execute();
+					if (ret != AngelScript::asEXECUTION_FINISHED)
 					{
-						if (coroutineToRemove == script.coroutines[i])
+						if (ret == AngelScript::asEContextState::asEXECUTION_EXCEPTION)
 						{
-							script.coroutines.erase(script.coroutines.begin() + i);
+							Themp::Print("Coroutine in script %s has run into an exception!", script.scriptName.c_str());
+							Themp::Break();
 						}
 					}
+					else
+					{
+						m_CoroutinesToRemove.push_back(coroutine);
+					}
 				}
-				m_CoroutinesToRemove.clear();
 			}
+
+			for (auto& coroutineToRemove : m_CoroutinesToRemove)
+			{
+				for (int i = static_cast<int>(script.coroutines.size()) - 1; i >= 0; i--)
+				{
+					if (coroutineToRemove == script.coroutines[i])
+					{
+						script.coroutines.erase(script.coroutines.begin() + i);
+					}
+				}
+			}
+			m_CoroutinesToRemove.clear();
 		}
 	}
 

@@ -24,12 +24,12 @@ namespace Themp::D3D
 		};
 		struct SourcePair
 		{
-			std::wstring name;
+			std::string name;
 			ShaderType type;
 			ComPtr<IDxcBlob> data;
 		};
 		void Init(const std::string& name);
-		void AddShaderSource(std::wstring name, ShaderType type);
+		void AddShaderSource(std::string name, ShaderType type);
 		bool IsValid() const;
 		std::string_view GetName() const { return m_Name; }
 		const std::vector<SourcePair>& GetShaders() const;

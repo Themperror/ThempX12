@@ -7,6 +7,7 @@
 #include "core/resources.h"
 #include "core/util/print.h"
 #include "core/util/break.h"
+#include "core/util/stringUtils.h"
 namespace Themp
 {
 	namespace D3D
@@ -219,7 +220,7 @@ namespace Themp
 				Themp::Print("Failed to create pipeline state!");
 				Themp::Break();
 			}
-			m_Pipeline->SetName(std::wstring(pass.m_Name.begin(), pass.m_Name.end()).c_str());
+			m_Pipeline->SetName(Themp::Util::ToWideString(pass.m_Name).c_str());
 		}
 
 

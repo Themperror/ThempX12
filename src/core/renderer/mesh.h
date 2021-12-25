@@ -6,7 +6,8 @@ namespace Themp::D3D
 {
 	class Mesh
 	{
-		int m_MaterialID;
-		MeshData meshData;
+	public:
+		MaterialHandle m_MaterialHandle;
+		MeshData m_MeshData;
 	};
 }
