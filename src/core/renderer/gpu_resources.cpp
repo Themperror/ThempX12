@@ -143,6 +143,22 @@ namespace Themp::D3D
 
 	}
 
+	int GPU_Resources::ReleaseTexture(Texture& tex)
+	{
+		for (int i = 0; i < m_Textures.size(); i++)
+		{
+			if (m_Textures[i]->m_HeapIndex == tex.m_HeapIndex)
+			{
+				m_Textures[i]->m_RTV.Reset();
+				m_Textures[i]->m_DSV.Reset();
+				m_Textures[i]->m_SRV.Reset();
+				m_Textures[i]->m_UAV.Reset();
+				return i;
+			}
+		}
+		return -1;
+	}
+
 	MeshData GPU_Resources::AppendMeshToStagingBuffers(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices)
 	{
 		int maxVertices = Engine::s_SVars.GetSVarInt(SVar::iMaxVerticesInBuffer);
@@ -161,9 +177,9 @@ namespace Themp::D3D
 		m_MeshDataStage.indexData.push_back(indices);
 		m_MeshDataStage.vertexData.push_back(vertices);
 		MeshData meshData;
-		meshData.indexCount = indices.size();
+		meshData.indexCount = static_cast<uint32_t>(indices.size());
 		meshData.indexIndex = m_MeshBufferStageTracker.indexCount;
-		meshData.vertexCount = vertices.size();
+		meshData.vertexCount = static_cast<uint32_t>(vertices.size());
 		meshData.vertexIndex = m_MeshBufferStageTracker.vertexCount;
 
 
@@ -312,19 +328,7 @@ namespace Themp::D3D
 		props.MemoryPoolPreference = outType == D3D::TEXTURE_TYPE::SRV ? D3D12_MEMORY_POOL_UNKNOWN : D3D12_MEMORY_POOL_L1;
 		*/
 		props.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-		props.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
-
-		DescriptorHeapTracker& heapTracker = outType == D3D::TEXTURE_TYPE::SRV ? m_CB_SRV_UAV_Heap :
-			outType == D3D::TEXTURE_TYPE::DSV ? m_DSV_Heap :
-			outType == D3D::TEXTURE_TYPE::RTV ? m_RTV_Heap : m_CB_SRV_UAV_Heap;
-
-		if (heapTracker.usedSlots + 1 >= heapTracker.maxSlots)
-		{
-			Themp::Print("Ran out of space in DescriptorHeap for texture: [%S]", name.c_str());
-			Themp::Break();
-			return nullptr;
-		}
-		heapTracker.usedSlots++;
+		props.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;		
 
 		D3D12_RESOURCE_DESC desc{};
 		desc.Dimension = depth > 0 ? D3D12_RESOURCE_DIMENSION_TEXTURE3D : height > 0 ? D3D12_RESOURCE_DIMENSION_TEXTURE2D : D3D12_RESOURCE_DIMENSION_TEXTURE1D;
@@ -385,37 +389,58 @@ namespace Themp::D3D
 		resource->SetName(Themp::Util::ToWideString(name).c_str());
 		return resource;
 	}
-	Texture& GPU_Resources::GetTextureFromResource(ComPtr<ID3D12Device2> device, ComPtr<ID3D12Resource> resource, TEXTURE_TYPE type)
+	Texture& GPU_Resources::GetTextureFromResource(ComPtr<ID3D12Device2> device, ComPtr<ID3D12Resource> resource, TEXTURE_TYPE type, int reusedIndex)
 	{
-		auto& tex = m_Textures.emplace_back(std::make_unique<Texture>());
+		auto& tex = reusedIndex != -1 ? m_Textures[reusedIndex] : m_Textures.emplace_back(std::make_unique<Texture>());
 
 		DescriptorHeapTracker& heapTracker = type == TEXTURE_TYPE::SRV ? m_CB_SRV_UAV_Heap :
 											type == TEXTURE_TYPE::DSV ? m_DSV_Heap :
 											type == TEXTURE_TYPE::RTV ? m_RTV_Heap : m_CB_SRV_UAV_Heap;
 
-		if (heapTracker.usedSlots+1 < heapTracker.maxSlots)
+		if(reusedIndex != -1)
 		{
 			switch (type)
 			{
 			case TEXTURE_TYPE::SRV:
-				tex->InitSRVTexture(resource, device, heapTracker);
+				tex->ReInitSRVTexture(resource, device, heapTracker);
 				break;
 			case TEXTURE_TYPE::DSV:
-				tex->InitDSVTexture(resource, device, heapTracker);
+				tex->ReInitDSVTexture(resource, device, heapTracker);
 				break;
 			case TEXTURE_TYPE::RTV:
-				tex->InitRTVTexture(resource, device, heapTracker);
+				tex->ReInitRTVTexture(resource, device, heapTracker);
 				break;
 			case TEXTURE_TYPE::UAV:
-				tex->InitUAVTexture(resource, device, heapTracker);
+				tex->ReInitUAVTexture(resource, device, heapTracker);
 				break;
 			}
-			heapTracker.usedSlots++;
 		}
 		else
 		{
-			Themp::Print("Ran out of descriptor slots!");
-			Themp::Break();
+			if (heapTracker.usedSlots + 1 < heapTracker.maxSlots)
+			{
+				switch (type)
+				{
+				case TEXTURE_TYPE::SRV:
+					tex->InitSRVTexture(resource, device, heapTracker);
+					break;
+				case TEXTURE_TYPE::DSV:
+					tex->InitDSVTexture(resource, device, heapTracker);
+					break;
+				case TEXTURE_TYPE::RTV:
+					tex->InitRTVTexture(resource, device, heapTracker);
+					break;
+				case TEXTURE_TYPE::UAV:
+					tex->InitUAVTexture(resource, device, heapTracker);
+					break;
+				}
+				heapTracker.usedSlots++;
+			}
+			else
+			{
+				Themp::Print("Ran out of descriptor slots!");
+				Themp::Break();
+			}
 		}
 		return *tex;
 	}

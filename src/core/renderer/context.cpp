@@ -135,13 +135,35 @@ void Context::SetupRenderTargetViews()
 		ComPtr<ID3D12Resource> backBuffer;
 		if (m_Swapchain->GetBuffer(i, IID_PPV_ARGS(&backBuffer)) == S_OK)
 		{
-			m_BackBuffers[i] = &Engine::instance->m_Renderer->GetResourceManager().GetTextureFromResource(m_Device,  backBuffer.Get(), TEXTURE_TYPE::RTV);
+			m_BackBuffers[i] = &Engine::instance->m_Renderer->GetResourceManager().GetTextureFromResource(m_Device, backBuffer.Get(), TEXTURE_TYPE::RTV);
 			
 			rtvHandle.ptr += rtvDescriptorSize;
 		}
 	}
 }
 
+
+void Context::ResizeSwapchain(int width, int height)
+{
+	std::vector<int> releasedIndices;
+	for (auto& tex : m_BackBuffers)
+	{
+		releasedIndices.push_back(Engine::instance->m_Renderer->GetResourceManager().ReleaseTexture(*tex));
+	}
+	
+	HRESULT result = m_Swapchain->ResizeBuffers(0, width, height, DXGI_FORMAT_UNKNOWN, m_SupportsFreeSync ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0);
+	if (result == S_OK)
+	{
+		for (int i = 0; i < m_NumBackBuffers; ++i)
+		{
+			ComPtr<ID3D12Resource> backBuffer;
+			if (m_Swapchain->GetBuffer(i, IID_PPV_ARGS(&backBuffer)) == S_OK)
+			{
+				m_BackBuffers[i] = &Engine::instance->m_Renderer->GetResourceManager().GetTextureFromResource(m_Device, backBuffer.Get(), TEXTURE_TYPE::RTV, releasedIndices[i]);
+			}
+		}
+	}
+}
 
 ComPtr<IDXGISwapChain4> Context::GetSwapChain() const
 {
@@ -222,7 +244,6 @@ ComPtr<IDXGISwapChain4> Context::CreateSwapChain(HWND hWnd, ComPtr<ID3D12Command
 		Themp::Print("Couldn't cast IDXGISwapChain1 to IDXGISwapChain4!");
 		return nullptr;
 	}
-
 
 	return dxgiSwapChain4;
 }

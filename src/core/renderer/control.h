@@ -39,6 +39,7 @@ namespace Themp
 			void PopulateRenderingGraph(Themp::Resources& resources);
 			void BeginDraw();
 			void EndDraw();
+			void ResizeSwapchain(int width, int height);
 
 			ComPtr<ID3D12GraphicsCommandList> GetImguiCmdList();
 			ComPtr<ID3D12Device2> GetDevice() const;

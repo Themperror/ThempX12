@@ -106,6 +106,22 @@ void Control::PopulateRenderingGraph(Themp::Resources& resources)
 	}
 }
 
+void Control::ResizeSwapchain(int width, int height)
+{
+	for (int i = 0; i < m_FrameFenceValues.size(); i++)
+	{
+		m_FrameFenceValues[i] = m_Context->Signal(m_Device->GetCmdQueue(), m_Fence, m_FenceValue);
+		m_Context->WaitForFenceValue(m_Fence, m_FrameFenceValues[i], m_FenceEvent);
+	}
+
+	m_Context->ResizeSwapchain(width, height);
+	for (int i = 0; i < m_Backbuffers.size(); i++)
+	{
+		m_Backbuffers[i].RetrieveNewFrameBuffer();
+	}
+	m_CurrentBackBuffer = m_Context->GetSwapChain()->GetCurrentBackBufferIndex();
+}
+
 void Control::BeginDraw()
 {
 	Frame& frame = GetCurrentBackbuffer();

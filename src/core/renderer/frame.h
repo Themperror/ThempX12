@@ -15,6 +15,9 @@ namespace Themp::D3D
 		void Init(int bufferIndex, RTVHeap heap);
 		void Reset();
 		void Present();
+		void RetrieveNewFrameBuffer();
+		void PrepareForResize();
+
 		ComPtr<ID3D12CommandAllocator> GetCommandAllocator() const;
 		const Texture& GetFrameBuffer() const;
 		ComPtr<ID3D12GraphicsCommandList> GetCmdList() const;
@@ -23,8 +26,11 @@ namespace Themp::D3D
 		ComPtr<ID3D12CommandAllocator> m_CommandAllocator;
 		const Texture* m_FrameBuffer = nullptr;
 
+
 		size_t m_rtvHeapStart = 0;
 		int m_rtvHeapIndex = 0;
 		int m_rtvDescriptorSize = 0;
+		int m_FrameIndex = 0;
+		bool m_InFlight = false;
 	};
 }

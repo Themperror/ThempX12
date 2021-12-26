@@ -53,6 +53,7 @@ namespace Themp
 			m_InittedTypes[static_cast<size_t>(TEXTURE_TYPE::SRV)] = true;
 			device->CreateShaderResourceView(textureSource.Get(), &desc, m_CPUHandle);
 			m_SRV = textureSource;
+			m_SRV->SetName(L"Shader Resource View");
 		}
 
 		void Texture::InitDSVTexture(ComPtr<ID3D12Resource> textureSource, ComPtr<ID3D12Device2> device, const D3D::DescriptorHeapTracker& heapTracker)
@@ -73,6 +74,7 @@ namespace Themp
 			m_InittedTypes[static_cast<size_t>(TEXTURE_TYPE::DSV)] = true;
 			device->CreateDepthStencilView(textureSource.Get(), &desc, m_CPUHandle);
 			m_DSV = textureSource;
+			m_DSV->SetName(L"Depth Target");
 		}
 
 		void Texture::InitRTVTexture(ComPtr<ID3D12Resource> textureSource, ComPtr<ID3D12Device2>device, const D3D::DescriptorHeapTracker& heapTracker)
@@ -93,6 +95,48 @@ namespace Themp
 			m_InittedTypes[static_cast<size_t>(TEXTURE_TYPE::RTV)] = true;
 			device->CreateRenderTargetView(textureSource.Get(), &desc, m_CPUHandle);
 			m_RTV = textureSource;
+			m_RTV->SetName(L"RenderTarget");
+		}
+
+		void Texture::ReInitSRVTexture(ComPtr<ID3D12Resource> textureSource, ComPtr<ID3D12Device2>device, const D3D::DescriptorHeapTracker& heapTracker) {}
+		
+		void Texture::ReInitDSVTexture(ComPtr<ID3D12Resource> textureSource, ComPtr<ID3D12Device2>device, const D3D::DescriptorHeapTracker& heapTracker)
+		{
+			UINT m_descriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+			D3D12_CPU_DESCRIPTOR_HANDLE heapStart = heapTracker.heap->GetCPUDescriptorHandleForHeapStart();
+			m_CPUHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(heapStart, m_HeapIndex, m_descriptorSize);
+
+			D3D12_RESOURCE_DESC rDesc = textureSource->GetDesc();
+			D3D12_DEPTH_STENCIL_VIEW_DESC desc{};
+			desc.Format = rDesc.Format;
+			desc.Texture2D.MipSlice = 0;
+			assert(rDesc.Dimension == D3D12_RESOURCE_DIMENSION::D3D12_RESOURCE_DIMENSION_TEXTURE2D);
+			desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+
+			m_InittedTypes[static_cast<size_t>(TEXTURE_TYPE::DSV)] = true;
+			device->CreateDepthStencilView(textureSource.Get(), &desc, m_CPUHandle);
+			m_DSV = textureSource;
+			m_DSV->SetName(L"Depth Target");
+		}
+
+		void Texture::ReInitUAVTexture(ComPtr<ID3D12Resource> textureSource, ComPtr<ID3D12Device2>device, const D3D::DescriptorHeapTracker& heapTracker) {}
+		void Texture::ReInitRTVTexture(ComPtr<ID3D12Resource> textureSource, ComPtr<ID3D12Device2>device, const D3D::DescriptorHeapTracker& heapTracker)
+		{
+			UINT m_descriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+			D3D12_CPU_DESCRIPTOR_HANDLE heapStart = heapTracker.heap->GetCPUDescriptorHandleForHeapStart();
+			m_CPUHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(heapStart, m_HeapIndex, m_descriptorSize);
+
+			D3D12_RESOURCE_DESC rDesc = textureSource->GetDesc();
+			D3D12_RENDER_TARGET_VIEW_DESC desc{};
+			desc.Format = rDesc.Format;
+			desc.Texture2D.MipSlice = 0;
+			desc.Texture2D.PlaneSlice = 0;
+			desc.ViewDimension = D3D12_RTV_DIMENSION::D3D12_RTV_DIMENSION_TEXTURE2D;
+
+			m_InittedTypes[static_cast<size_t>(TEXTURE_TYPE::RTV)] = true;
+			device->CreateRenderTargetView(textureSource.Get(), &desc, m_CPUHandle);
+			m_RTV = textureSource;
+			m_RTV->SetName(L"RenderTarget");
 		}
 	}
 }

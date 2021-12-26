@@ -67,7 +67,6 @@ namespace Themp
 		return RENDER_TARGET_FOLDER;
 	}
 
-
 	D3D::Texture& Resources::Get(D3D::RTVHandle handle)
 	{
 		return m_ColorTargets[handle.handle].second;
@@ -92,7 +91,6 @@ namespace Themp
 	{
 		return m_Shaders[handle.handle];
 	}
-
 	D3D::Material& Resources::Get(D3D::MaterialHandle handle)
 	{
 		return m_Materials[handle.handle];
@@ -180,6 +178,47 @@ namespace Themp
 		return fileDatas;
 	}
 
+
+	void Resources::ResizeRendertargets(int width, int height)
+	{
+		std::vector<std::pair<int,int>> releasedIndices;
+		auto& gpuResources = Engine::instance->m_Renderer->GetResourceManager();
+		auto device = Engine::instance->m_Renderer->GetDevice();
+		for (int i = 1; i < m_ColorTargets.size(); i++)
+		{
+			auto desc = m_ColorTargets[i].second.GetResource(D3D::TEXTURE_TYPE::RTV)->GetDesc();
+			int releasedIndex = gpuResources.ReleaseTexture(m_ColorTargets[i].second);
+			if (m_ColorTargets[i].first.doesScale)
+			{
+				float scale = m_ColorTargets[i].first.scalar;
+				int resX = Engine::s_SVars.GetSVarInt(SVar::iWindowWidth);
+				int resY = Engine::s_SVars.GetSVarInt(SVar::iWindowHeight);
+				desc.Width = static_cast<UINT64>(static_cast<float>(resX) * scale);
+				desc.Height = static_cast<UINT>(static_cast<float>(resY) * scale);
+			}
+
+			D3D::TEXTURE_TYPE outType;
+			auto newResource = gpuResources.GetTextureResource(device, m_ColorTargets[i].first.name, desc.Flags, desc.Format, desc.MipLevels, desc.SampleDesc, desc.Width, desc.Height, 0, &m_ColorTargets[i].first.clearValue, outType);
+			m_ColorTargets[i].second = gpuResources.GetTextureFromResource(device, newResource, outType, releasedIndex);
+		}
+		for (int i = 0; i < m_DepthTargets.size(); i++)
+		{
+			auto desc = m_DepthTargets[i].second.GetResource(D3D::TEXTURE_TYPE::DSV)->GetDesc();
+			int releasedIndex = gpuResources.ReleaseTexture(m_DepthTargets[i].second);
+			if (m_DepthTargets[i].first.doesScale)
+			{
+				float scale = m_DepthTargets[i].first.scalar;
+				int resX = Engine::s_SVars.GetSVarInt(SVar::iWindowWidth);
+				int resY = Engine::s_SVars.GetSVarInt(SVar::iWindowHeight);
+				desc.Width = static_cast<UINT64>(static_cast<float>(resX) * scale);
+				desc.Height = static_cast<UINT>(static_cast<float>(resY) * scale);
+			}
+
+			D3D::TEXTURE_TYPE outType;
+			auto newResource = gpuResources.GetTextureResource(device, m_DepthTargets[i].first.name, desc.Flags, desc.Format, desc.MipLevels, desc.SampleDesc, desc.Width, desc.Height, 0, &m_DepthTargets[i].first.clearValue, outType);
+			m_DepthTargets[i].second = gpuResources.GetTextureFromResource(device, newResource, outType, releasedIndex);
+		}
+	}
 	void Resources::LoadMaterials()
 	{
 		std::vector<std::string> materials = LoadFilesFromDirectory(MATERIALS_FOLDER);
@@ -826,7 +865,7 @@ namespace Themp
 
 		for (int i = 0; i < m_ColorTargets.size(); i++)
 		{
-			if (m_ColorTargets[i].first == filename)
+			if (m_ColorTargets[i].first.name == filename)
 			{
 				rtvHandle = (D3D::RTVHandle)i;
 				break;
@@ -835,7 +874,7 @@ namespace Themp
 
 		for (int i = 0; i < m_DepthTargets.size(); i++)
 		{
-			if (m_DepthTargets[i].first == filename)
+			if (m_DepthTargets[i].first.name == filename)
 			{
 				dsvHandle = (D3D::DSVHandle)i;
 				break;
@@ -844,7 +883,7 @@ namespace Themp
 
 		for (int i = 0; i < m_SRVs.size(); i++)
 		{
-			if (m_SRVs[i].first == filename)
+			if (m_SRVs[i].first.name == filename)
 			{
 				srvHandle = (D3D::SRVHandle)i;
 				break;
@@ -1042,14 +1081,19 @@ namespace Themp
 
 		tex.SetClearValue(clearValue);
 
+		ResourceTextureInfo info;
+		info.name = filename;
+		info.scalar = scale;
+		info.doesScale = doesScale;
+		info.clearValue = clearValue;
 		switch (textureType)
 		{
 		case D3D::TEXTURE_TYPE::RTV:
-			m_ColorTargets.push_back({ std::string(filename), tex });
+			m_ColorTargets.push_back({ info, tex });
 			rtvHandle = m_ColorTargets.size() - 1;
 			break;
 		case D3D::TEXTURE_TYPE::DSV:
-			m_DepthTargets.push_back({ std::string(filename), tex });
+			m_DepthTargets.push_back({ info, tex });
 			dsvHandle = m_DepthTargets.size() - 1;
 			break;
 		}
@@ -1057,7 +1101,7 @@ namespace Themp
 		if (createSRV)
 		{
 			auto& srv = resourceManager.GetTextureFromResource(device, resource, D3D::TEXTURE_TYPE::SRV);
-			m_SRVs.push_back({ std::string(filename), srv });
+			m_SRVs.push_back({ info, srv });
 			srvHandle = m_SRVs.size() - 1;
 		}
 		
@@ -1184,7 +1228,9 @@ namespace Themp
 		{ 
 			if (arr.size() == 3 && arr[0].is_floating_point() && arr[1].is_floating_point() && arr[2].is_floating_point())
 			{
-				return DirectX::XMFLOAT3(arr[0].as_floating_point()->get(), arr[1].as_floating_point()->get(), arr[2].as_floating_point()->get()); 
+				return DirectX::XMFLOAT3(static_cast<float>(arr[0].as_floating_point()->get()),
+										 static_cast<float>(arr[1].as_floating_point()->get()),
+										 static_cast<float>(arr[2].as_floating_point()->get()));
 			}
 			Themp::Print("float3 value wasn't 3 components or one or more values wasn't a float");
 			return DirectX::XMFLOAT3(0, 0, 0);

@@ -60,6 +60,7 @@ namespace Themp
 		static std::unique_ptr<Themp::Engine> instance;
 		static SVars s_SVars;
 		void Start();
+		void ResizeWindow(int width, int height);
 		static std::string ReadFileToString(const std::string& filePath);
 
 		std::string m_BaseDir;
@@ -67,6 +68,7 @@ namespace Themp
 		HINSTANCE m_HInstance = 0;
 		bool m_Quitting = false;
 		bool m_CursorShown = true;
+		bool m_AllowResizing = true;
 		std::unique_ptr<Game::Game> m_Game;
 		std::unique_ptr<Scripting::ASEngine> m_Scripting;
 		std::unique_ptr<D3D::Control> m_Renderer;

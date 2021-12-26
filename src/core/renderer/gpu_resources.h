@@ -20,11 +20,12 @@ namespace Themp::D3D
 		GPU_Resources(const D3D::Device& device);
 	public:
 		ComPtr<ID3D12DescriptorHeap> GetDescriptorHeap(DESCRIPTOR_HEAP_TYPE type, uint32_t reservedSlots = 0);
-		Texture& GetTextureFromResource(ComPtr<ID3D12Device2> device, ComPtr<ID3D12Resource> resource, TEXTURE_TYPE type);
+		Texture& GetTextureFromResource(ComPtr<ID3D12Device2> device, ComPtr<ID3D12Resource> resource, TEXTURE_TYPE type, int reusedIndex = -1);
 		ComPtr<ID3D12Resource> GetTextureResource(ComPtr<ID3D12Device2> device, const std::string& name, D3D12_RESOURCE_FLAGS flags, DXGI_FORMAT format, int mipCount, DXGI_SAMPLE_DESC multisample, int width, int height, int depth, D3D12_CLEAR_VALUE* optClearValue, D3D::TEXTURE_TYPE& outType);
 
 		Model Test_GetAndAddRandomModel();
 
+		int ReleaseTexture(Texture& tex);
 		void UploadMeshStagingBuffers();
 
 		ComPtr<ID3D12Resource> GetPositionVertexBuffer() const;

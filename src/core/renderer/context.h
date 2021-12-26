@@ -37,6 +37,7 @@ namespace Themp
 			ComPtr<ID3D12GraphicsCommandList> CreateCommandList(ComPtr<ID3D12CommandAllocator> commandAllocator, D3D12_COMMAND_LIST_TYPE type) const;
 			const Texture* GetBackBufferTexture(int idx)  const;
 
+			void ResizeSwapchain(int width, int height);
 			RTVHeap GetBackBufferHeap() const;
 
 			ComPtr<IDXGISwapChain4> GetSwapChain() const;

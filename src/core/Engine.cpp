@@ -107,6 +107,7 @@ namespace Themp
 		m_CursorShown = true;
 		while (!instance->m_Quitting)
 		{
+			m_AllowResizing = true;
 			Input::Keyboard& mainKeyboard = m_Input->GetDevice<Input::Keyboard>(0);
 			double delta = mainTimer.GetDeltaTimeReset();
 			totalDelta += delta;
@@ -251,7 +252,18 @@ namespace Themp
 		ImGui::DestroyContext();
 	}
 
-
+	void Engine::ResizeWindow(int width, int height)
+	{
+		Themp::Print("Resizing Window to %ix%i !", width, height);
+		if (m_Renderer)
+		{
+			m_Renderer->ResizeSwapchain(width, height);
+		}
+		if (m_Resources)
+		{
+			m_Resources->ResizeRendertargets(width, height);
+		}
+	}
 }
 
 std::string GetPathName(std::string s)
@@ -402,12 +414,18 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			newWindowSizeY = windowRect.bottom;
 
 			GetClientRect(Themp::Engine::instance->m_Window, &windowRect);
-			if (Themp::Engine::instance->m_Renderer)
+			int currentWidth = Themp::Engine::s_SVars.GetSVarInt(SVar::iWindowWidth);
+			int currentHeight = Themp::Engine::s_SVars.GetSVarInt(SVar::iWindowHeight);
+			if (currentWidth != windowRect.right || currentHeight != windowRect.bottom)
 			{
-				Themp::Engine::s_SVars.SetSVarInt(SVar::iWindowWidth, windowRect.right);
-				Themp::Engine::s_SVars.SetSVarInt(SVar::iWindowHeight, windowRect.bottom);
-				//Themp::Engine::instance->m_Renderer->ResizeWindow(windowRect.right, windowRect.bottom);
-			}
+				if (Themp::Engine::instance->m_AllowResizing)
+				{
+					Themp::Engine::instance->m_AllowResizing = false;
+					Themp::Engine::s_SVars.SetSVarInt(SVar::iWindowWidth, windowRect.right);
+					Themp::Engine::s_SVars.SetSVarInt(SVar::iWindowHeight, windowRect.bottom);
+					Themp::Engine::instance->ResizeWindow(windowRect.right, windowRect.bottom);
+				}
+			}			
 		}
 	}
 
@@ -434,6 +452,11 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		case WM_ENTERSIZEMOVE:
 		break;
 		case WM_EXITSIZEMOVE:
+			GetClientRect(Themp::Engine::instance->m_Window, &windowRect);
+			Themp::Engine::s_SVars.SetSVarInt(SVar::iWindowWidth, windowRect.right);
+			Themp::Engine::s_SVars.SetSVarInt(SVar::iWindowHeight, windowRect.bottom);
+			Themp::Engine::instance->ResizeWindow(windowRect.right, windowRect.bottom);
+			
 		break;
 	}
 	return DefWindowProc(hWnd, message, wParam, lParam);

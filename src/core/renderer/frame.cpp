@@ -7,6 +7,7 @@ using namespace Themp::D3D;
 
 void Frame::Init(int bufferIndex, RTVHeap heap)
 {
+	m_FrameIndex = bufferIndex;
 	auto device = Engine::instance->m_Renderer->GetDevice();
 	
 	const Context& context = Engine::instance->m_Renderer->GetContext();
@@ -16,8 +17,20 @@ void Frame::Init(int bufferIndex, RTVHeap heap)
 	m_CommandList = context.CreateCommandList(m_CommandAllocator, D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT);
 }
 
+void Frame::PrepareForResize()
+{
+	m_CommandList->Close();
+}
+
+void Frame::RetrieveNewFrameBuffer()
+{
+	const Context& context = Engine::instance->m_Renderer->GetContext();
+	m_FrameBuffer = context.GetBackBufferTexture(m_FrameIndex);
+}
+
 void Frame::Reset()
 {
+	m_InFlight = true;
 	m_CommandAllocator->Reset();
 	m_CommandList->Reset(m_CommandAllocator.Get(),nullptr);
 	
@@ -59,6 +72,7 @@ void Frame::Present()
 	{
 		Themp::Print("Presenting failed, good luck..");
 	}
+	m_InFlight = false;
 
 }
 

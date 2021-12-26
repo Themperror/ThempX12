@@ -23,6 +23,7 @@ namespace Themp
 
 		Themp::D3D::Model LoadModel(D3D::Control& control, std::string modelName);
 
+		void ResizeRendertargets(int width, int height);
 		void LoadMaterials();
 		D3D::Texture& Get(D3D::RTVHandle handle);
 		D3D::Texture& Get(D3D::DSVHandle handle);
@@ -59,11 +60,17 @@ namespace Themp
 
 		void MergePasses(std::vector<D3D::SubPass> passes);
 
-
+		struct ResourceTextureInfo
+		{
+			std::string name;
+			float scalar;
+			bool doesScale;
+			D3D12_CLEAR_VALUE clearValue;
+		};
 		std::vector<Themp::D3D::Pass> m_Passes;
-		std::vector<std::pair<std::string,D3D::Texture>> m_DepthTargets;
-		std::vector<std::pair<std::string, D3D::Texture>> m_ColorTargets = { {"*swapchain", {}} };
-		std::vector<std::pair<std::string,D3D::Texture>> m_SRVs;
+		std::vector<std::pair<ResourceTextureInfo,D3D::Texture>> m_DepthTargets;
+		std::vector<std::pair<ResourceTextureInfo, D3D::Texture>> m_ColorTargets = { { {"*swapchain",1.0f,true}, {}} };
+		std::vector<std::pair<ResourceTextureInfo,D3D::Texture>> m_SRVs;
 		std::vector<D3D::SubPass> m_Subpasses;
 		std::vector<D3D::Shader> m_Shaders;
 		std::vector<D3D::Material> m_Materials;
