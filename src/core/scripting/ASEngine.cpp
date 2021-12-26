@@ -16,6 +16,75 @@ namespace Themp::Scripting
 {
 	const uint64_t UserDataID = 0x1234C0FFEE1234; //completely arbitrary, just some big number unlikely to have been used by AngelScript internally
 
+
+	std::string_view GetRetCodeAsString(AngelScript::asERetCodes retCode)
+	{
+		//asSUCCESS = 0,
+		//asERROR = -1,
+		//asCONTEXT_ACTIVE = -2,
+		//asCONTEXT_NOT_FINISHED = -3,
+		//asCONTEXT_NOT_PREPARED = -4,
+		//asINVALID_ARG = -5,
+		//asNO_FUNCTION = -6,
+		//asNOT_SUPPORTED = -7,
+		//asINVALID_NAME = -8,
+		//asNAME_TAKEN = -9,
+		//asINVALID_DECLARATION = -10,
+		//asINVALID_OBJECT = -11,
+		//asINVALID_TYPE = -12,
+		//asALREADY_REGISTERED = -13,
+		//asMULTIPLE_FUNCTIONS = -14,
+		//asNO_MODULE = -15,
+		//asNO_GLOBAL_VAR = -16,
+		//asINVALID_CONFIGURATION = -17,
+		//asINVALID_INTERFACE = -18,
+		//asCANT_BIND_ALL_FUNCTIONS = -19,
+		//asLOWER_ARRAY_DIMENSION_NOT_REGISTERED = -20,
+		//asWRONG_CONFIG_GROUP = -21,
+		//asCONFIG_GROUP_IS_IN_USE = -22,
+		//asILLEGAL_BEHAVIOUR_FOR_TYPE = -23,
+		//asWRONG_CALLING_CONV = -24,
+		//asBUILD_IN_PROGRESS = -25,
+		//asINIT_GLOBAL_VARS_FAILED = -26,
+		//asOUT_OF_MEMORY = -27,
+		//asMODULE_IS_IN_USE = -28
+
+		std::string_view strings[29] =
+		{
+			"SUCCESS",
+			"ERROR",
+			"CONTEXT_ACTIVE",
+			"CONTEXT_NOT_FINISHED",
+			"CONTEXT_NOT_PREPARED",
+			"INVALID_ARG",
+			"NO_FUNCTION",
+			"NOT_SUPPORTED",
+			"INVALID_NAME",
+			"NAME_TAKEN",
+			"INVALID_DECLARATION",
+			"INVALID_OBJECT",
+			"INVALID_TYPE",
+			"ALREADY_REGISTERED",
+			"MULTIPLE_FUNCTIONS",
+			"NO_MODULE",
+			"NO_GLOBAL_VAR",
+			"INVALID_CONFIGURATION",
+			"INVALID_INTERFACE",
+			"CANT_BIND_ALL_FUNCTIONS",
+			"LOWER_ARRAY_DIMENSION_NOT_REGISTERED",
+			"WRONG_CONFIG_GROUP",
+			"CONFIG_GROUP_IS_IN_USE",
+			"ILLEGAL_BEHAVIOUR_FOR_TYPE",
+			"WRONG_CALLING_CONV",
+			"BUILD_IN_PROGRESS",
+			"INIT_GLOBAL_VARS_FAILED",
+			"OUT_OF_MEMORY",
+			"MODULE_IS_IN_USE",
+		};
+		return strings[std::abs(retCode)];
+	}
+
+
 	void MessageCallback(const AngelScript::asSMessageInfo* msg, void* param)
 	{
 		const char* type = "ERR ";
@@ -42,88 +111,98 @@ namespace Themp::Scripting
 		}
 	}
 
-	static void ASCreateCoRoutine(AngelScript::asIScriptFunction* func)
+	AngelScript::asEContextState ExecuteCoroutine(AngelScript::asIScriptContext& coroutine)
 	{
-		if (func == 0)
-			return;
+		AngelScript::asERetCodes result = static_cast<AngelScript::asERetCodes>(coroutine.Execute());
+		if (result < 0)
+		{
+			std::string_view errString = GetRetCodeAsString(result);
+			Themp::Print("Coroutine executed with error! [%*s]", errString.size(), errString.data());
+		}
+		return coroutine.GetState();
+	}
 
+	AngelScript::asIScriptContext* CreateCoroutine(AngelScript::asIScriptFunction* func, Script*& script)
+	{
 		AngelScript::asIScriptContext* ctx = AngelScript::asGetActiveContext();
 		if (ctx)
 		{
 			D3D::ScriptHandle handle = reinterpret_cast<size_t>(ctx->GetUserData(UserDataID));
-			Script& script = *Engine::instance->m_Scripting->GetScript(handle); 
-			
+			script = Engine::instance->m_Scripting->GetScript(handle);
+
 
 			AngelScript::asIScriptEngine* engine = ctx->GetEngine();
 			AngelScript::asIScriptContext* coroutine = engine->RequestContext();
 			if (coroutine == nullptr)
 			{
-				Themp::Print("Failed to create coroutine from script %s", script.scriptName);
-Themp::Break();
+				Themp::Print("Failed to create coroutine from script %s", script->scriptName);
+				Themp::Break();
+				return nullptr;
 			}
 
 			// Prepare the context
-			int r = coroutine->Prepare(func);
-			if (r < 0)
+			if (coroutine->Prepare(func) < 0)
 			{
 				// Couldn't prepare the context
 				engine->ReturnContext(coroutine);
-				Themp::Print("Failed to prepare coroutine from script %s", script.scriptName);
+				Themp::Print("Failed to prepare coroutine from script %s", script->scriptName);
 				Themp::Break();
-				return;
+				return nullptr;
 			}
-			handle = Engine::instance->m_Scripting->GetNextScriptHandle();
 			//link our coroutine to our current script, so that if it creates other coroutines they all contain to the same script
 			coroutine->SetUserData(reinterpret_cast<void*>(handle.handle), UserDataID);
 
-			r = coroutine->Execute();
-			if (r == AngelScript::asEContextState::asEXECUTION_SUSPENDED)
+			return coroutine;
+		}
+
+		return nullptr;
+	}
+
+	void ExecuteAndAddCoroutine(AngelScript::asIScriptContext& coroutine, Script*& script)
+	{
+		AngelScript::asEContextState result = ExecuteCoroutine(coroutine);
+		if (result == AngelScript::asEContextState::asEXECUTION_SUSPENDED)
+		{
+			//we suspended so the coroutine isn't done yet, we'll add it to our list and continue it later
+			script->coroutines.push_back(&coroutine);
+		}
+		else
+		{
+			if (result == AngelScript::asEContextState::asEXECUTION_EXCEPTION)
 			{
-				//we suspended so the coroutine isn't done yet, we'll add it to our list and continue it later
-				script.coroutines.push_back(coroutine);
+				Themp::Print("coroutine in script %s has run into an exception! [Function: %s] [Line: %i] [Exception: %s]", script->scriptName.c_str(), coroutine.GetExceptionFunction()->GetName(), coroutine.GetExceptionLineNumber(), coroutine.GetExceptionString());
+				Themp::Break();
 			}
+			coroutine.GetEngine()->ReturnContext(&coroutine);
 		}
 	}
 
-	static void ASCreateCoRoutineWithDictionary(AngelScript::asIScriptFunction* func, AngelScript::CScriptDictionary* arg)
+	static void ASCreateCoroutine(AngelScript::asIScriptFunction* func)
 	{
 		if (func == 0)
 			return;
 
-		AngelScript::asIScriptContext* ctx = AngelScript::asGetActiveContext();
-		if (ctx)
+		Script* script = nullptr;
+		AngelScript::asIScriptContext* coroutine = CreateCoroutine(func, script);
+		
+		ExecuteAndAddCoroutine(*coroutine, script);
+	}
+
+	static void ASCreateCoroutineWithDictionary(AngelScript::asIScriptFunction* func, AngelScript::CScriptDictionary* arg)
+	{
+		if (func == 0)
+			return;
+
+		Script* script = nullptr;
+		AngelScript::asIScriptContext* coroutine = CreateCoroutine(func, script);
+
+		if (coroutine->SetArgObject(0, arg) < 0)
 		{
-			Script& script = *reinterpret_cast<Script*>(ctx->GetUserData(UserDataID));
-
-			AngelScript::asIScriptEngine* engine = ctx->GetEngine();
-			AngelScript::asIScriptContext* coroutine = engine->RequestContext();
-			if (coroutine == nullptr)
-			{
-				Themp::Print("Failed to create coroutine from script %s", script.scriptName);
-				Themp::Break();
-			}
-
-			// Prepare the context
-			int r = coroutine->Prepare(func);
-			if (r < 0)
-			{
-				// Couldn't prepare the context
-				engine->ReturnContext(coroutine);
-				Themp::Print("Failed to prepare coroutine from script %s", script.scriptName);
-				Themp::Break();
-				return;
-			}
-			coroutine->SetArgObject(0, arg);
-			//link our coroutine to our current script, so that if it creates other coroutines they all contain to the same script
-			coroutine->SetUserData(&script, UserDataID);
-
-			r = coroutine->Execute();
-			if (r == AngelScript::asEContextState::asEXECUTION_SUSPENDED)
-			{
-				//we suspended so the coroutine isn't done yet, we'll add it to our list and continue it later
-				script.coroutines.push_back(coroutine);
-			}
+			Themp::Print("Failed to set first argument from script %s, does it have a first argument?", script->scriptName);
+			Themp::Break();
 		}
+
+		ExecuteAndAddCoroutine(*coroutine, script);
 	}
 
 	bool ASEngine::Init()
@@ -142,9 +221,9 @@ Themp::Break();
 
 		result = m_ScriptingEngine->RegisterGlobalFunction("void yield()", AngelScript::asFUNCTION(ASYield), AngelScript::asCALL_CDECL);
 		result = m_ScriptingEngine->RegisterFuncdef("void coroutineDictionary(dictionary@)");
-		result = m_ScriptingEngine->RegisterGlobalFunction("void createCoRoutine(coroutineDictionary @+, dictionary @+)", AngelScript::asFUNCTION(ASCreateCoRoutineWithDictionary), AngelScript::asCALL_CDECL);
+		result = m_ScriptingEngine->RegisterGlobalFunction("void createCoroutine(coroutineDictionary @+, dictionary @+)", AngelScript::asFUNCTION(ASCreateCoroutineWithDictionary), AngelScript::asCALL_CDECL);
 		result = m_ScriptingEngine->RegisterFuncdef("void coroutine()");
-		result = m_ScriptingEngine->RegisterGlobalFunction("void createCoRoutine(coroutine @+)", AngelScript::asFUNCTION(ASCreateCoRoutine), AngelScript::asCALL_CDECL);
+		result = m_ScriptingEngine->RegisterGlobalFunction("void createCoroutine(coroutine @+)", AngelScript::asFUNCTION(ASCreateCoroutine), AngelScript::asCALL_CDECL);
 
 		Registrar::Init(m_ScriptingEngine);
 		return m_ScriptingEngine != nullptr;
@@ -158,7 +237,7 @@ Themp::Break();
 		script.handle = GetNextScriptHandle();
 		m_Scripts.push_back(script);
 
-		script.context->SetUserData(reinterpret_cast<void*>(m_LatestHandleID), UserDataID);
+		script.context->SetUserData(reinterpret_cast<void*>(script.handle.handle), UserDataID);
 		return script.handle;
 	}
 
@@ -168,7 +247,10 @@ Themp::Break();
 		{
 			if(m_Scripts[i].handle == handle.handle)
 			{
-				m_Scripts[i].context->SetArgObject(0, &name);
+				if (m_Scripts[i].context->SetArgObject(0, &name) < 0)
+				{
+					Themp::Print("Failed to set argument to script %s, does it not take an first argument in main?", m_Scripts[i].scriptName.c_str());
+				}
 			}
 		}
 	}
@@ -193,7 +275,8 @@ Themp::Break();
 	void ASEngine::LoadScript(Script& script, std::string data)
 	{
 		AngelScript::CScriptBuilder builder;
-		int r = builder.StartNewModule(m_ScriptingEngine, script.scriptName.c_str());
+		std::string moduleID = std::to_string(m_LatestHandleID);
+		int r = builder.StartNewModule(m_ScriptingEngine, moduleID.c_str());
 		if (r < 0)
 		{
 			Themp::Print("Failed to start new scripting module");
@@ -218,7 +301,7 @@ Themp::Break();
 			Themp::Break();
 		}
 
-		AngelScript::asIScriptModule* mod = m_ScriptingEngine->GetModule(script.scriptName.c_str());
+		AngelScript::asIScriptModule* mod = m_ScriptingEngine->GetModule(moduleID.c_str());
 		if (mod != nullptr)
 		{
 			AngelScript::asIScriptFunction* entryPoint = mod->GetFunctionByName("main");
@@ -261,7 +344,7 @@ Themp::Break();
 			int ret = script.context->Execute();
 			if (ret == AngelScript::asEContextState::asEXECUTION_EXCEPTION)
 			{
-				Themp::Print("Script %s has run into an exception!", script.scriptName.c_str());
+				Themp::Print("Script %s has run into an exception! [Function: %s] [Line: %i] [Exception: %s]", script.scriptName.c_str(), script.context->GetExceptionFunction()->GetName(), script.context->GetExceptionLineNumber(), script.context->GetExceptionString());
 				Themp::Break();
 			}
 			else if (ret == AngelScript::asEContextState::asEXECUTION_ERROR)
@@ -284,7 +367,7 @@ Themp::Break();
 					{
 						if (ret == AngelScript::asEContextState::asEXECUTION_EXCEPTION)
 						{
-							Themp::Print("Coroutine in script %s has run into an exception!", script.scriptName.c_str());
+							Themp::Print("Coroutine in script %s has run into an exception! [Function: %s] [Line: %i] [Exception: %s]", script.scriptName.c_str(), coroutine->GetExceptionFunction()->GetName(), coroutine->GetExceptionLineNumber(), coroutine->GetExceptionString());
 							Themp::Break();
 						}
 					}
