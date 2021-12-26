@@ -220,9 +220,9 @@ namespace Themp::Scripting
 		AngelScript::RegisterScriptDictionary(m_ScriptingEngine);
 
 		result = m_ScriptingEngine->RegisterGlobalFunction("void yield()", AngelScript::asFUNCTION(ASYield), AngelScript::asCALL_CDECL);
+		result = m_ScriptingEngine->RegisterFuncdef("void coroutine()");
 		result = m_ScriptingEngine->RegisterFuncdef("void coroutineDictionary(dictionary@)");
 		result = m_ScriptingEngine->RegisterGlobalFunction("void createCoroutine(coroutineDictionary @+, dictionary @+)", AngelScript::asFUNCTION(ASCreateCoroutineWithDictionary), AngelScript::asCALL_CDECL);
-		result = m_ScriptingEngine->RegisterFuncdef("void coroutine()");
 		result = m_ScriptingEngine->RegisterGlobalFunction("void createCoroutine(coroutine @+)", AngelScript::asFUNCTION(ASCreateCoroutine), AngelScript::asCALL_CDECL);
 
 		Registrar::Init(m_ScriptingEngine);
@@ -385,6 +385,7 @@ namespace Themp::Scripting
 				{
 					if (coroutineToRemove == script.coroutines[i])
 					{
+						m_ScriptingEngine->ReturnContext(coroutineToRemove);
 						script.coroutines.erase(script.coroutines.begin() + i);
 					}
 				}
@@ -395,6 +396,31 @@ namespace Themp::Scripting
 
 	void ASEngine::Stop()
 	{
+		for (auto& script : m_Scripts)
+		{
+			std::string moduleID = std::to_string(script.handle.handle);
+			auto oldModule = m_ScriptingEngine->GetModule(moduleID.c_str());
+			for (auto& coroutine : script.coroutines)
+			{
+				if (oldModule != nullptr)
+				{
+					oldModule->RemoveFunction(coroutine->GetFunction());
+				}
+				coroutine->Abort();
+				coroutine->Unprepare();
+				m_ScriptingEngine->ReturnContext(coroutine);
+			}
+			script.coroutines.clear();
+
+			if (oldModule != nullptr)
+			{
+				oldModule->ResetGlobalVars();
+				oldModule->Discard();
+			}
+			script.context->Abort();
+			m_ScriptingEngine->ReturnContext(script.context);
+		}
+
 		int result = m_ScriptingEngine->ShutDownAndRelease();
 		if (result < 0)
 		{
