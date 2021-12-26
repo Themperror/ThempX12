@@ -124,7 +124,7 @@ void Control::BeginDraw()
 	frame.GetCmdList()->IASetIndexBuffer(&m_GPU_Resources->GetIndexBufferView());
 	for(auto& renderPass : m_Renderpasses)
 	{
-		renderPass.pipeline.SetTo(frame.GetCmdList());
+		renderPass.pipeline.SetTo(frame);
 		for(const auto& renderable : renderPass.renderables)
 		{
 			const auto& meshData = renderable.meshData;

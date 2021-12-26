@@ -79,7 +79,16 @@ namespace Themp
 			for (int i = 0; i < pass.m_RenderTargets.size(); i++)
 			{
 				desc.RTVFormats[i] = DXGI_FORMAT_UNKNOWN;
-				if (pass.m_RenderTargets[i].rtv.IsValid())
+
+				//0 is a special "swapchain" RTV
+				if (pass.m_RenderTargets[i].rtv == 0)
+				{
+					desc.RTVFormats[numValidTargets] = Engine::instance->m_Renderer->GetContext().GetBackBufferTexture(0)->GetResource(D3D::TEXTURE_TYPE::RTV)->GetDesc().Format;
+					//this will be overridden by the rendering every frame as this is variable
+					m_RenderTargets.push_back({});
+					numValidTargets++;
+				}
+				else if (pass.m_RenderTargets[i].rtv.IsValid()) 
 				{
 					Texture& tex = Themp::Engine::instance->m_Resources->Get(pass.m_RenderTargets[i].rtv);
 					desc.RTVFormats[numValidTargets] = tex.GetResource(D3D::TEXTURE_TYPE::RTV)->GetDesc().Format;
@@ -224,12 +233,20 @@ namespace Themp
 		}
 
 
-		void Pipeline::SetTo(ComPtr<ID3D12GraphicsCommandList> cmdList)
+		void Pipeline::SetTo(D3D::Frame& frame)
 		{
+			auto cmdList = frame.GetCmdList();
+
 			const Pass& pass = Themp::Engine::instance->m_Resources->Get(m_PassHandle);
 
 			for (int i = 0; i < m_RenderTargets.size(); i++)
 			{
+				//0 is the special "current swapchain" rendertarget
+				if (pass.m_RenderTargets[i].rtv == 0)
+				{
+					m_RenderTargets[i] = frame.GetFrameBuffer().GetCPUHandle();
+					continue;
+				}
 				const auto& tex = Themp::Engine::instance->m_Resources->Get(pass.m_RenderTargets[i].rtv);
 				cmdList->ClearRenderTargetView(m_RenderTargets[i], tex.GetClearValue().Color, 0, nullptr);
 			}

@@ -45,7 +45,7 @@ Topology = "TRIANGLE"
 
 ##targets
 DepthTarget = "maindepth"
-ColorTarget = [{"main" = 0}]
+ColorTarget = [{"*swapchain" = 0}]
 
 ##per target blend state
 ############# Blend 0

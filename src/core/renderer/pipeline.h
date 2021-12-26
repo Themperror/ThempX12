@@ -13,6 +13,7 @@ namespace Themp
 	namespace D3D
 	{
 		struct SubPass;
+		class Frame;
 		class Pipeline
 		{
 		public:
@@ -24,7 +25,7 @@ namespace Themp
 			std::array<D3D12_VIEWPORT, 8> m_Viewports;
 			std::array<D3D12_RECT, 8> m_Scissors;
 
-			void SetTo(ComPtr<ID3D12GraphicsCommandList> cmdList);
+			void SetTo(Frame& cmdList);
 
 			PassHandle GetPassHandle() const { return m_PassHandle; }
 		private:

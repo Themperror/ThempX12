@@ -62,7 +62,7 @@ namespace Themp
 
 		std::vector<Themp::D3D::Pass> m_Passes;
 		std::vector<std::pair<std::string,D3D::Texture>> m_DepthTargets;
-		std::vector<std::pair<std::string,D3D::Texture>> m_ColorTargets;
+		std::vector<std::pair<std::string, D3D::Texture>> m_ColorTargets = { {"*swapchain", {}} };
 		std::vector<std::pair<std::string,D3D::Texture>> m_SRVs;
 		std::vector<D3D::SubPass> m_Subpasses;
 		std::vector<D3D::Shader> m_Shaders;

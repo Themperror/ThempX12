@@ -824,7 +824,6 @@ namespace Themp
 		D3D::DSVHandle dsvHandle = D3D::DSVHandle::Invalid;
 		D3D::SRVHandle srvHandle = D3D::DSVHandle::Invalid;
 
-
 		for (int i = 0; i < m_ColorTargets.size(); i++)
 		{
 			if (m_ColorTargets[i].first == filename)
@@ -856,8 +855,6 @@ namespace Themp
 			Themp::Print("Found Rendertarget: [%*s] in cache!", filename.size(), filename.data());
 			return { rtvHandle, dsvHandle, srvHandle };
 		}
-
-
 
 		std::string data = Engine::ReadFileToString(GetFilePath(RENDER_TARGET_FOLDER, filename, ".target"));
 		const toml::parse_result result = toml::parse(Themp::Util::ToLowerCase(data));
