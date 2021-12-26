@@ -30,6 +30,7 @@ namespace Themp
 		D3D::SubPass& Get(D3D::SubPassHandle handle);
 		D3D::Pass& Get(D3D::PassHandle handle);
 		D3D::Shader& Get(D3D::ShaderHandle handle);
+		D3D::Material& Get(D3D::MaterialHandle handle);
 
 		size_t GetAmountOfSubpasses() const { return m_Subpasses.size(); };
 		std::vector<std::pair<std::string, std::string>> GetScriptFiles();

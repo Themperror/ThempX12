@@ -23,20 +23,20 @@ namespace Themp
 		public:
 			struct Renderable
 			{
-				size_t ID;
-				Model object;
+				size_t object3D_ID;
+				MeshData meshData;
 			};
 			struct RenderPass
 			{
 				Pipeline pipeline;
-				std::vector<Renderable> objects;
+				std::vector<Renderable> renderables;
 			};
 
 		public:
 			bool Init();
 			void Stop();
 
-			void AddMeshToDraw(const Model& object, Themp::Resources& resources, const std::vector<SubPassHandle>& subpasses);
+			void PopulateRenderingGraph(Themp::Resources& resources);
 			void BeginDraw();
 			void EndDraw();
 

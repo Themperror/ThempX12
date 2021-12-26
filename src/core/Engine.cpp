@@ -71,6 +71,8 @@ namespace Themp
 		m_Renderer->CreatePipelines(*m_Resources);
 		m_Resources->LoadScene("testScene.scene");
 
+		m_Renderer->PopulateRenderingGraph(*m_Resources);
+
 		Print("Setting up Game!");
 		m_Game->Start();
 

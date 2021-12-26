@@ -81,28 +81,29 @@ void Control::CreatePipelines(Themp::Resources& resources)
 	}
 }
 
-void Control::AddMeshToDraw(const Model& renderable , Themp::Resources& resources, const std::vector<SubPassHandle>& subpasses)
+void Control::PopulateRenderingGraph(Themp::Resources& resources)
 {
-	for (size_t i = 0; i < subpasses.size(); i++)
+	const auto& objs = resources.GetSceneObjects();
+	for (const auto& obj : objs)
 	{
-		for (auto& pass : m_Renderpasses)
+		for (const auto& mesh : obj.m_Model.m_Meshes)
 		{
-			if (pass.pipeline.GetPassHandle() == resources.Get(subpasses[i]).pass)
+			for (auto& pass : m_Renderpasses)
 			{
-				//pass.objects.push_back(model);
+				const auto& material = resources.Get(mesh.m_MaterialHandle);
+				for (const auto& subPassHandle : material.m_SubPasses)
+				{
+					if (pass.pipeline.GetPassHandle() == resources.Get(subPassHandle).pass)
+					{
+						Renderable& renderable = pass.renderables.emplace_back();
+						renderable.object3D_ID = obj.m_ID;
+						renderable.meshData = mesh.m_MeshData;
+					}
+				}
 			}
 		}
 	}
 }
-
-
-//void Control::AddObjectToDraw(const Object3D& object)
-//{
-//	for (auto& pass : m_Renderpasses)
-//	{
-//		//object.m_Model.m_Meshes
-//	}
-//}
 
 void Control::BeginDraw()
 {
@@ -121,19 +122,14 @@ void Control::BeginDraw()
 	const auto& vertexBufferViews = m_GPU_Resources->GetVertexBufferViews();
 	frame.GetCmdList()->IASetVertexBuffers(0u, static_cast<UINT>(vertexBufferViews.size()), vertexBufferViews.data());
 	frame.GetCmdList()->IASetIndexBuffer(&m_GPU_Resources->GetIndexBufferView());
-	for (int i = 0; i < m_Renderpasses.size(); i++)
+	for(auto& renderPass : m_Renderpasses)
 	{
-		m_Renderpasses[i].pipeline.SetTo(frame.GetCmdList());
-		for (int j = 0; j < m_Renderpasses[i].objects.size(); j++)
+		renderPass.pipeline.SetTo(frame.GetCmdList());
+		for(const auto& renderable : renderPass.renderables)
 		{
-			const auto& object = m_Renderpasses[i].objects[j];
-			for (int k = 0; k < object.object.m_Meshes.size(); k++)
-			{
-				const auto& meshData = object.object.m_Meshes[k].m_MeshData;
-				frame.GetCmdList()->DrawIndexedInstanced(meshData.indexCount, 1, meshData.indexIndex, meshData.vertexIndex, 0);
-			}
+			const auto& meshData = renderable.meshData;
+			frame.GetCmdList()->DrawIndexedInstanced(meshData.indexCount, 1, meshData.indexIndex, meshData.vertexIndex, 0);
 		}
-		
 	}
 
 	//frame.GetCmdList().Get()->SetDescriptorHeaps(1, m_ImguiSRVHeap.GetAddressOf());

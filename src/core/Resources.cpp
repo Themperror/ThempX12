@@ -93,6 +93,11 @@ namespace Themp
 		return m_Shaders[handle.handle];
 	}
 
+	D3D::Material& Resources::Get(D3D::MaterialHandle handle)
+	{
+		return m_Materials[handle.handle];
+	}
+
 	std::string GetFilePath(std::string_view base, std::string_view filename, std::string_view extension)
 	{
 		std::string path = std::string(base);
@@ -1160,6 +1165,7 @@ namespace Themp
 	{
 		m_3DObjects.push_back(obj);
 	}
+
 	const std::vector<Themp::D3D::Object3D>& Resources::GetSceneObjects()
 	{
 		return m_3DObjects;
@@ -1222,6 +1228,7 @@ namespace Themp
 
 				obj3D.m_Transform = Transform(position, rotation, scale);
 				
+				obj3D.m_Model = Engine::instance->m_Renderer->GetResourceManager().Test_GetAndAddRandomModel();
 
 				obj3D.m_ScriptHandle = Engine::instance->m_Scripting->AddScript("quad");
 				Engine::instance->m_Scripting->LinkToObject3D(obj3D.m_ScriptHandle, obj3D.m_Name);
