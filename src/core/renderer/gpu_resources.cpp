@@ -160,12 +160,18 @@ namespace Themp::D3D
 
 		m_MeshDataStage.indexData.push_back(indices);
 		m_MeshDataStage.vertexData.push_back(vertices);
+		MeshData meshData;
+		meshData.indexCount = indices.size();
+		meshData.indexIndex = m_MeshBufferStageTracker.indexCount;
+		meshData.vertexCount = vertices.size();
+		meshData.vertexIndex = m_MeshBufferStageTracker.vertexCount;
+
 
 		m_MeshBufferStageTracker.indexIndex = m_MeshBufferStageTracker.indexCount;
 		m_MeshBufferStageTracker.vertexIndex = m_MeshBufferStageTracker.vertexCount;
 		m_MeshBufferStageTracker.indexCount += static_cast<uint32_t>(indices.size());
 		m_MeshBufferStageTracker.vertexCount += static_cast<uint32_t>(vertices.size());
-		return m_MeshBufferStageTracker;
+		return meshData;
 	}
 
 	void GPU_Resources::UploadMeshStagingBuffers()
