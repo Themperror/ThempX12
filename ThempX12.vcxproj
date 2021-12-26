@@ -11,10 +11,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\core\Camera.h" />
+    <ClInclude Include="src\core\camera.h" />
     <ClInclude Include="src\core\components\transform.h" />
-    <ClInclude Include="src\core\EngineDefs.h" />
-    <ClInclude Include="src\core\Functions.h" />
+    <ClInclude Include="src\core\enginedefs.h" />
+    <ClInclude Include="src\core\functions.h" />
     <ClInclude Include="src\core\input\keyboard.h" />
     <ClInclude Include="src\core\input\manager.h" />
     <ClInclude Include="src\core\renderer\context.h" />
@@ -32,8 +32,8 @@
     <ClInclude Include="src\core\renderer\shadercompiler.h" />
     <ClInclude Include="src\core\renderer\texture.h" />
     <ClInclude Include="src\core\renderer\types.h" />
-    <ClInclude Include="src\core\Resources.h" />
-    <ClInclude Include="src\core\Engine.h" />
+    <ClInclude Include="src\core\resources.h" />
+    <ClInclude Include="src\core\engine.h" />
     <ClInclude Include="src\core\scripting\ASEngine.h" />
     <ClInclude Include="src\core\scripting\Registrar.h" />
     <ClInclude Include="src\core\util\break.h" />
@@ -72,9 +72,9 @@
     <ClInclude Include="src\lib\toml.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\core\Camera.cpp" />
+    <ClCompile Include="src\core\camera.cpp" />
     <ClCompile Include="src\core\components\transform.cpp" />
-    <ClCompile Include="src\core\Functions.cpp" />
+    <ClCompile Include="src\core\functions.cpp" />
     <ClCompile Include="src\core\input\keyboard.cpp" />
     <ClCompile Include="src\core\input\manager.cpp" />
     <ClCompile Include="src\core\renderer\context.cpp" />
@@ -91,8 +91,8 @@
     <ClCompile Include="src\core\renderer\shader.cpp" />
     <ClCompile Include="src\core\renderer\shadercompiler.cpp" />
     <ClCompile Include="src\core\renderer\texture.cpp" />
-    <ClCompile Include="src\core\Resources.cpp" />
-    <ClCompile Include="src\core\Engine.cpp" />
+    <ClCompile Include="src\core\resources.cpp" />
+    <ClCompile Include="src\core\engine.cpp" />
     <ClCompile Include="src\core\scripting\ASEngine.cpp" />
     <ClCompile Include="src\core\scripting\Registrar.cpp" />
     <ClCompile Include="src\core\util\break.cpp" />

@@ -51,13 +51,13 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\core\Camera.h">
+    <ClInclude Include="src\core\camera.h">
       <Filter>Source Files\core</Filter>
     </ClInclude>
-    <ClInclude Include="src\core\Functions.h">
+    <ClInclude Include="src\core\functions.h">
       <Filter>Source Files\core</Filter>
     </ClInclude>
-    <ClInclude Include="src\core\Resources.h">
+    <ClInclude Include="src\core\resources.h">
       <Filter>Source Files\core</Filter>
     </ClInclude>
     <ClInclude Include="src\game\game.h">
@@ -120,13 +120,13 @@
     <ClInclude Include="src\core\renderer\gpu_resources.h">
       <Filter>Source Files\core\renderer</Filter>
     </ClInclude>
-    <ClInclude Include="src\core\Engine.h">
+    <ClInclude Include="src\core\engine.h">
       <Filter>Source Files\core</Filter>
     </ClInclude>
     <ClInclude Include="src\core\util\break.h">
       <Filter>Source Files\core\util</Filter>
     </ClInclude>
-    <ClInclude Include="src\core\EngineDefs.h">
+    <ClInclude Include="src\core\enginedefs.h">
       <Filter>Source Files\core</Filter>
     </ClInclude>
     <ClInclude Include="src\core\renderer\types.h">
@@ -230,13 +230,13 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\core\Functions.cpp">
+    <ClCompile Include="src\core\functions.cpp">
       <Filter>Source Files\core</Filter>
     </ClCompile>
-    <ClCompile Include="src\core\Resources.cpp">
+    <ClCompile Include="src\core\resources.cpp">
       <Filter>Source Files\core</Filter>
     </ClCompile>
-    <ClCompile Include="src\core\Camera.cpp">
+    <ClCompile Include="src\core\camera.cpp">
       <Filter>Source Files\core</Filter>
     </ClCompile>
     <ClCompile Include="src\game\game.cpp">
@@ -293,7 +293,7 @@
     <ClCompile Include="src\core\renderer\gpu_resources.cpp">
       <Filter>Source Files\core\renderer</Filter>
     </ClCompile>
-    <ClCompile Include="src\core\Engine.cpp">
+    <ClCompile Include="src\core\engine.cpp">
       <Filter>Source Files\core</Filter>
     </ClCompile>
     <ClCompile Include="src\core\util\break.cpp">
