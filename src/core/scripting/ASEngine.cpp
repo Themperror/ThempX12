@@ -334,6 +334,7 @@ namespace Themp::Scripting
 				ExecuteScript(*script);
 			}
 		}
+		m_ScriptingEngine->GarbageCollect();
 	}
 
 	void ASEngine::ExecuteScript(Script& script)
