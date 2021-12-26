@@ -65,6 +65,7 @@ bool Control::Init()
 
 	return true;
 }
+
 void Control::Stop()
 {
 	m_FrameFenceValues[m_CurrentBackBuffer] = m_Context->Signal(m_Device->GetCmdQueue(), m_Fence, m_FenceValue);
@@ -88,10 +89,10 @@ void Control::PopulateRenderingGraph(Themp::Resources& resources)
 	{
 		for (const auto& mesh : obj.m_Model.m_Meshes)
 		{
-			for (auto& pass : m_Renderpasses)
+			const auto& material = resources.Get(mesh.m_MaterialHandle);
+			for (const auto& subPassHandle : material.m_SubPasses)
 			{
-				const auto& material = resources.Get(mesh.m_MaterialHandle);
-				for (const auto& subPassHandle : material.m_SubPasses)
+				for (auto& pass : m_Renderpasses)
 				{
 					if (pass.pipeline.GetPassHandle() == resources.Get(subPassHandle).pass)
 					{
