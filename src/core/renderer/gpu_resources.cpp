@@ -194,8 +194,19 @@ namespace Themp::D3D
 	}
 
 
-	ConstantBufferHandle GPU_Resources::CreateConstantBuffer(ComPtr<ID3D12Device2> device, size_t size)
+	ConstantBufferHandle GPU_Resources::CreateConstantBuffer(ComPtr<ID3D12Device2> device, size_t size, ConstantBufferHandle reuseHandle)
 	{
+		auto& newBuffer = reuseHandle.IsValid() ? Get(reuseHandle) : m_ConstantBuffers.emplace_back();
+		if (reuseHandle.IsValid())
+		{
+			//release in the case it wasn't null
+			newBuffer.buffer.Reset();
+		}
+		else
+		{
+			newBuffer.data.resize(size);
+		}
+
 		D3D12_HEAP_PROPERTIES props{};
 		props.Type = D3D12_HEAP_TYPE_UPLOAD;
 		props.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
@@ -212,17 +223,21 @@ namespace Themp::D3D
 		desc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 		desc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
-		auto& newBuffer = m_ConstantBuffers.emplace_back();
-
 		if (device->CreateCommittedResource(&props, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_GENERIC_READ, NULL, IID_PPV_ARGS(&newBuffer.buffer)) < 0)
 		{
 			Themp::Print("Failed to create Constant Buffer!");
 			Themp::Break();
 		}
 		newBuffer.buffer->SetName(L"ConstantBuffer");
-		newBuffer.data.resize(size);
 		return m_ConstantBuffers.size()-1;
 	}
+
+	ConstantBufferHandle GPU_Resources::ReserveConstantBuffer()
+	{
+		auto& CB = m_ConstantBuffers.emplace_back();
+		return m_ConstantBuffers.size()-1;
+	}
+
 	ConstantBufferData& GPU_Resources::Get(D3D::ConstantBufferHandle handle)
 	{
 		return m_ConstantBuffers[handle.handle];
@@ -231,6 +246,19 @@ namespace Themp::D3D
 	void GPU_Resources::UpdateConstantBufferData(D3D::ConstantBufferHandle handle)
 	{
 		ConstantBufferData& CB = Get(handle);
+		CB.dirty = false;
+
+		if (CB.nextOffset > 0 && CB.buffer == nullptr)
+		{
+			//align on 16 bytes
+			size_t size = CB.nextOffset + (16 - (CB.nextOffset % 16));
+			CreateConstantBuffer(Themp::Engine::instance->m_Renderer->GetDevice(), size, handle);
+		}
+		else if (CB.nextOffset == 0)
+		{
+			return;
+		}
+		
 		const D3D12_RANGE readRange{};
 		D3D12_RANGE writeRange{};
 		writeRange.Begin = 0;

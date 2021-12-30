@@ -2,7 +2,7 @@ string linkedObj;
 
 void main(string linkedObjectName)
 {
-	print("Hello from Quad! -> %s", linkedObjectName);
+	Print("Hello from Quad! -> %s", linkedObjectName);
 	linkedObj = linkedObjectName;
 	yield();
 	createCoroutine(routine);
@@ -12,5 +12,5 @@ void main(string linkedObjectName)
 void routine()
 {
 	yield();
-	print("Quad Coroutine! -> %s", linkedObj);
+	Print("Quad Coroutine! -> %s", linkedObj);
 }

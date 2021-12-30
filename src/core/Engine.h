@@ -63,12 +63,16 @@ namespace Themp
 		void ResizeWindow(int width, int height);
 		static std::string ReadFileToString(const std::string& filePath);
 
+		float GetDeltaTime() { return m_DeltaTime; }
+		float GetTimeSinceLaunch() { return m_TimeSinceLaunch; }
+
 		std::string m_BaseDir;
 		HWND m_Window = nullptr;
 		HINSTANCE m_HInstance = 0;
 		bool m_Quitting = false;
 		bool m_CursorShown = true;
 		bool m_AllowResizing = true;
+
 		std::unique_ptr<Game::Game> m_Game;
 		std::unique_ptr<Scripting::ASEngine> m_Scripting;
 		std::unique_ptr<D3D::Control> m_Renderer;
@@ -76,6 +80,8 @@ namespace Themp
 		std::unique_ptr<Input::Manager> m_Input;
 
 	private:
-		
+
+		float m_TimeSinceLaunch = 0;
+		float m_DeltaTime = 0;
 	};
 };

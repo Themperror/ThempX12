@@ -35,7 +35,9 @@ namespace Themp::D3D
 
 		int ReleaseTexture(Texture& tex);
 		void UploadMeshStagingBuffers();
-		ConstantBufferHandle CreateConstantBuffer(ComPtr<ID3D12Device2> device, size_t size);
+
+		ConstantBufferHandle CreateConstantBuffer(ComPtr<ID3D12Device2> device, size_t size, ConstantBufferHandle reuseHandle = ConstantBufferHandle::Invalid);
+		ConstantBufferHandle ReserveConstantBuffer();
 
 
 		ConstantBufferData& Get(D3D::ConstantBufferHandle handle);

@@ -59,26 +59,70 @@ namespace Themp::Scripting
 	}
 
 
-	D3D::ConstantBufferHandle GetConstantBuffer(uint64_t size)
+	D3D::ConstantBufferHandle GetConstantBuffer()
 	{
-		return Themp::Engine::instance->m_Renderer->GetResourceManager().CreateConstantBuffer(Themp::Engine::instance->m_Renderer->GetDevice(), size);
+		return Themp::Engine::instance->m_Renderer->GetResourceManager().ReserveConstantBuffer();
 	}
 
-	void SetConstantBufferData(D3D::ConstantBufferHandle& handle, uint32_t offset, float value)
+	void DeclareConstantBufferMemberFloat(D3D::ConstantBufferHandle& handle, const std::string& name)
 	{
 		auto& CB = Themp::Engine::instance->m_Renderer->GetResourceManager().Get(handle);
-		if (offset + sizeof(float) > CB.data.size())
+		auto it = CB.memberData.find(name);
+		if (it == CB.memberData.end())
 		{
-			Themp::Break();
-			return;
+			int32_t nextOffset = CB.nextOffset;
+			CB.memberData[name] = std::pair(nextOffset, "float");
+			CB.nextOffset += sizeof(float);
+			CB.data.resize(CB.nextOffset);
 		}
-
-		float origValue = 0;
-		memcpy(&origValue, CB.data.data() + offset, sizeof(value));
-		if (origValue != value)
+		else
 		{
-			memcpy(CB.data.data() + offset, &value, sizeof(value));
-			CB.dirty = true;
+			Themp::Print("Tried to declare member: %s as float, but it already exists on index %llu with type %*s", name.c_str(), it->second.first, it->second.second.size(), it->second.second.data());
+		}
+	}
+
+	void DeclareConstantBufferMemberFloat2(D3D::ConstantBufferHandle& handle, const std::string& name)
+	{
+		auto& CB = Themp::Engine::instance->m_Renderer->GetResourceManager().Get(handle);
+		constexpr int64_t float2Size = sizeof(float) * 2;
+		auto it = CB.memberData.find(name);
+		if (it == CB.memberData.end())
+		{
+			int32_t nextOffset = CB.nextOffset;
+
+			if ((nextOffset % 16) + float2Size > 16)
+			{
+				CB.nextOffset += 16 - (nextOffset % 16); //skip whatever is needed to align on 16 bytes
+			}
+			CB.memberData[name] = std::pair(CB.nextOffset, "float2");
+			CB.nextOffset += float2Size;
+			CB.data.resize(CB.nextOffset);
+		}
+		else
+		{
+			Themp::Print("Tried to declare member: %s as float2, but it already exists on index %llu with type %*s", name.c_str(), it->second.first, it->second.second.size(), it->second.second.data());
+		}
+	}
+
+	template <typename T>
+	void SetConstantBufferData(D3D::ConstantBufferHandle& handle, const std::string& name, T value)
+	{
+		auto& CB = Themp::Engine::instance->m_Renderer->GetResourceManager().Get(handle);
+		
+		const auto& it = CB.memberData.find(name);
+		if (it != CB.memberData.end())
+		{
+			size_t offset = it->second.first;
+			if (memcmp(CB.data.data() + offset, &value, sizeof(T)) != 0)
+			{
+				memcpy(CB.data.data() + offset, &value, sizeof(T));
+				CB.dirty = true;
+			}
+		}
+		else
+		{
+			Themp::Print("Tried to set member %s on constantbuffer %llu, but it was never declared", name.c_str(), handle.handle);
+			Themp::Break();
 		}
 	}
 
@@ -99,6 +143,15 @@ namespace Themp::Scripting
 			}
 		}
 		currentRenderPass->constantBuffers.emplace_back(std::pair(slot, handle));
+	}
+
+	float GetTime()
+	{
+		return Themp::Engine::instance->GetTimeSinceLaunch();
+	}
+	float GetDeltaTime()
+	{
+		return Themp::Engine::instance->GetDeltaTime();
 	}
 
 	void Registrar::Init(AngelScript::asIScriptEngine* scriptingEngine)
@@ -129,11 +182,14 @@ void Register##x(AngelScript::asIScriptEngine* scriptingEngine) { \
 
 	void Registrar::RegisterGlobalFunctions(AngelScript::asIScriptEngine* scriptingEngine)
 	{
-		CheckResult(scriptingEngine->RegisterGlobalFunction("void print(const string &in)", AngelScript::asFUNCTIONPR(ASPrint, (const std::string&), void), AngelScript::asCALL_CDECL), ASPrint);
-		CheckResult(scriptingEngine->RegisterGlobalFunction("void print(const string &in, int param0)", AngelScript::asFUNCTIONPR(ASPrint, (const std::string&, int), void) , AngelScript::asCALL_CDECL), ASPrint);
-		CheckResult(scriptingEngine->RegisterGlobalFunction("void print(const string &in, float param0)", AngelScript::asFUNCTIONPR(ASPrint, (const std::string&, float), void) , AngelScript::asCALL_CDECL), ASPrint);
-		CheckResult(scriptingEngine->RegisterGlobalFunction("void print(const string &in, string param0)", AngelScript::asFUNCTIONPR(ASPrint, (const std::string&, std::string&), void) , AngelScript::asCALL_CDECL), ASPrint);
-		CheckResult(scriptingEngine->RegisterGlobalFunction("void print(const string &in, uint64 param0)", AngelScript::asFUNCTIONPR(ASPrint, (const std::string&, uint64_t), void) , AngelScript::asCALL_CDECL), ASPrint);
+		CheckResult(scriptingEngine->RegisterGlobalFunction("void Print(const string &in)", AngelScript::asFUNCTIONPR(ASPrint, (const std::string&), void), AngelScript::asCALL_CDECL), ASPrint);
+		CheckResult(scriptingEngine->RegisterGlobalFunction("void Print(const string &in, int param0)", AngelScript::asFUNCTIONPR(ASPrint, (const std::string&, int), void) , AngelScript::asCALL_CDECL), ASPrint);
+		CheckResult(scriptingEngine->RegisterGlobalFunction("void Print(const string &in, float param0)", AngelScript::asFUNCTIONPR(ASPrint, (const std::string&, float), void) , AngelScript::asCALL_CDECL), ASPrint);
+		CheckResult(scriptingEngine->RegisterGlobalFunction("void Print(const string &in, string param0)", AngelScript::asFUNCTIONPR(ASPrint, (const std::string&, std::string&), void) , AngelScript::asCALL_CDECL), ASPrint);
+		CheckResult(scriptingEngine->RegisterGlobalFunction("void Print(const string &in, uint64 param0)", AngelScript::asFUNCTIONPR(ASPrint, (const std::string&, uint64_t), void) , AngelScript::asCALL_CDECL), ASPrint);
+
+		CheckResult(scriptingEngine->RegisterGlobalFunction("float GetTime()", AngelScript::asFUNCTIONPR(GetTime, (void), float) , AngelScript::asCALL_CDECL), GetTime);
+		CheckResult(scriptingEngine->RegisterGlobalFunction("float GetDeltaTime()", AngelScript::asFUNCTIONPR(GetDeltaTime, (void), float) , AngelScript::asCALL_CDECL), GetDeltaTime);
 		
 		RegisterConstantBufferHandle(scriptingEngine);
 		RegisterRenderPassHandle(scriptingEngine);
@@ -142,11 +198,21 @@ void Register##x(AngelScript::asIScriptEngine* scriptingEngine) { \
 		scriptingEngine->RegisterEnumValue("CBufferType", "Empty", 0);
 		scriptingEngine->RegisterEnumValue("CBufferType", "Camera", 1);
 		scriptingEngine->RegisterEnumValue("CBufferType", "Engine", 2);
-		
-		CheckResult(scriptingEngine->RegisterGlobalFunction("ConstantBufferHandle GetConstantBuffer (uint64 size)", AngelScript::asFUNCTIONPR(GetConstantBuffer, (uint64_t), D3D::ConstantBufferHandle) , AngelScript::asCALL_CDECL), GetConstantBuffer);
+
+		scriptingEngine->RegisterObjectType("float2", sizeof(float) * 2, AngelScript::asEObjTypeFlags::asOBJ_VALUE | AngelScript::asEObjTypeFlags::asOBJ_APP_CLASS_ALLFLOATS | AngelScript::asEObjTypeFlags::asOBJ_POD | AngelScript::asGetTypeTraits<DirectX::XMFLOAT2>());
+		scriptingEngine->RegisterObjectProperty("float2", "float x", 0);
+		scriptingEngine->RegisterObjectProperty("float2", "float y", sizeof(float));
+		scriptingEngine->RegisterObjectProperty("float2", "float r", 0);
+		scriptingEngine->RegisterObjectProperty("float2", "float g", sizeof(float));
+
+		CheckResult(scriptingEngine->RegisterGlobalFunction("ConstantBufferHandle GetConstantBuffer ()", AngelScript::asFUNCTIONPR(GetConstantBuffer, (void), D3D::ConstantBufferHandle) , AngelScript::asCALL_CDECL), GetConstantBuffer);
 		CheckResult(scriptingEngine->RegisterGlobalFunction("void SetConstantBuffer (int slot, CBufferType val)", AngelScript::asFUNCTIONPR(SetConstantBuffer, (int slot, CBufferType val), void) , AngelScript::asCALL_CDECL), SetConstantBuffer);
 		CheckResult(scriptingEngine->RegisterGlobalFunction("void SetConstantBuffer (int slot, ConstantBufferHandle &in)", AngelScript::asFUNCTIONPR(SetConstantBuffer, (int slot, D3D::ConstantBufferHandle& val), void) , AngelScript::asCALL_CDECL), SetConstantBuffer);
-		CheckResult(scriptingEngine->RegisterGlobalFunction("void SetConstantBufferData (ConstantBufferHandle &in, uint offset, float val)", AngelScript::asFUNCTIONPR(SetConstantBufferData, (D3D::ConstantBufferHandle& handle, uint32_t offset, float val), void) , AngelScript::asCALL_CDECL), SetConstantBufferData);
+		CheckResult(scriptingEngine->RegisterGlobalFunction("void SetConstantBufferData (ConstantBufferHandle &in, string &in, float val)", AngelScript::asFUNCTIONPR(SetConstantBufferData<float>, (D3D::ConstantBufferHandle&, const std::string&, float), void) , AngelScript::asCALL_CDECL), SetConstantBufferData<float>);
+		CheckResult(scriptingEngine->RegisterGlobalFunction("void SetConstantBufferData (ConstantBufferHandle &in, string &in, int val)", AngelScript::asFUNCTIONPR(SetConstantBufferData<int>, (D3D::ConstantBufferHandle&, const std::string&, int), void) , AngelScript::asCALL_CDECL), SetConstantBufferData<int>);
+		CheckResult(scriptingEngine->RegisterGlobalFunction("void SetConstantBufferData (ConstantBufferHandle &in, string &in, float2 val)", AngelScript::asFUNCTIONPR(SetConstantBufferData<DirectX::XMFLOAT2>, (D3D::ConstantBufferHandle&, const std::string&, DirectX::XMFLOAT2), void) , AngelScript::asCALL_CDECL), SetConstantBufferData<DirectX::XMFLOAT2>);
+		CheckResult(scriptingEngine->RegisterGlobalFunction("void DeclareConstantBufferMemberFloat (ConstantBufferHandle &in, string &in)", AngelScript::asFUNCTIONPR(DeclareConstantBufferMemberFloat, (D3D::ConstantBufferHandle&, const std::string&), void) , AngelScript::asCALL_CDECL), DeclareConstantBufferMemberFloat);
+		CheckResult(scriptingEngine->RegisterGlobalFunction("void DeclareConstantBufferMemberFloat2 (ConstantBufferHandle &in, string &in)", AngelScript::asFUNCTIONPR(DeclareConstantBufferMemberFloat2, (D3D::ConstantBufferHandle&, const std::string&), void) , AngelScript::asCALL_CDECL), DeclareConstantBufferMemberFloat2);
 	}
 
 	void Registrar::RegisterMemberFunctions(AngelScript::asIScriptEngine* scriptingEngine)

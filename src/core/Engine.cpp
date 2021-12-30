@@ -95,8 +95,6 @@ namespace Themp
 		//m_Renderer->ResizeWindow(clientRect.right, clientRect.bottom);
 		//printf("BorderX: %i\n BorderY: %i\n Caption: %i\n", borderX, borderY, caption);
 		SetCursorPos(windowRect.left + (windowRect.right - windowRect.left) / 2, windowRect.top + (windowRect.bottom - windowRect.top) / 2);
-		double totalDelta = 0.0;
-		double time = 0.0;
 		const int captionSize = GetSystemMetrics(SM_CYCAPTION);
 		const int frameSizeY =  GetSystemMetrics(SM_CYFIXEDFRAME);
 		const int frameSizeX =  GetSystemMetrics(SM_CXFIXEDFRAME);
@@ -110,8 +108,10 @@ namespace Themp
 			m_AllowResizing = true;
 			Input::Keyboard& mainKeyboard = m_Input->GetDevice<Input::Keyboard>(0);
 			double delta = mainTimer.GetDeltaTimeReset();
-			totalDelta += delta;
-			time += delta;
+
+			m_TimeSinceLaunch += delta;
+			m_DeltaTime = delta;
+
 			trackerTime += delta;
 
 			MSG msg;
@@ -176,7 +176,7 @@ namespace Themp
 					int windowDiffY = (int)((windowRect.bottom - windowRect.top - clientRect.bottom) * 0.75);
 					//int WindowedMouseX = cursorPos.x - windowRect.left - windowDiffX;
 					//int WindowedMouseY = cursorPos.y - windowRect.top - windowDiffY;
-					io.DeltaTime = (float)totalDelta;
+					io.DeltaTime = (float)delta;
 					//windows Title bar messes up the actual mouse position for collision testing with the UI, so I adjust it to fit "good enough" since getting exact measurements from top and bottom is a pain
 					io.MousePos = ImVec2((float)cursorPos.x, (float)cursorPos.y);
 					io.DisplaySize = ImVec2((float)clientRect.right, (float)clientRect.bottom);

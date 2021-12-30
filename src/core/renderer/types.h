@@ -146,7 +146,9 @@ namespace Themp::D3D
 
 	struct ConstantBufferData
 	{
-		bool dirty;
+		bool dirty = true;
+		int32_t nextOffset = 0;
+		std::unordered_map<std::string, std::pair<size_t, std::string_view>> memberData;
 		std::vector<char> data;
 		ComPtr<ID3D12Resource> buffer;
 	};
