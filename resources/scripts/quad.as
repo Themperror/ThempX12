@@ -6,7 +6,6 @@ void main(string linkedObjectName)
 	linkedObj = linkedObjectName;
 	yield();
 	createCoroutine(routine);
-	yield();
 }
 
 
@@ -14,5 +13,4 @@ void routine()
 {
 	yield();
 	print("Quad Coroutine! -> %s", linkedObj);
-	yield();
 }

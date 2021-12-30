@@ -12,6 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\core\camera.h" />
+    <ClInclude Include="src\core\components\sceneobject.h" />
     <ClInclude Include="src\core\components\transform.h" />
     <ClInclude Include="src\core\enginedefs.h" />
     <ClInclude Include="src\core\functions.h" />
@@ -25,7 +26,6 @@
     <ClInclude Include="src\core\renderer\material.h" />
     <ClInclude Include="src\core\renderer\mesh.h" />
     <ClInclude Include="src\core\renderer\model.h" />
-    <ClInclude Include="src\core\renderer\object3d.h" />
     <ClInclude Include="src\core\renderer\pass.h" />
     <ClInclude Include="src\core\renderer\pipeline.h" />
     <ClInclude Include="src\core\renderer\shader.h" />
@@ -73,6 +73,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\core\camera.cpp" />
+    <ClCompile Include="src\core\components\sceneobject.cpp" />
     <ClCompile Include="src\core\components\transform.cpp" />
     <ClCompile Include="src\core\functions.cpp" />
     <ClCompile Include="src\core\input\keyboard.cpp" />
@@ -85,7 +86,6 @@
     <ClCompile Include="src\core\renderer\material.cpp" />
     <ClCompile Include="src\core\renderer\mesh.cpp" />
     <ClCompile Include="src\core\renderer\model.cpp" />
-    <ClCompile Include="src\core\renderer\object3d.cpp" />
     <ClCompile Include="src\core\renderer\pass.cpp" />
     <ClCompile Include="src\core\renderer\pipeline.cpp" />
     <ClCompile Include="src\core\renderer\shader.cpp" />

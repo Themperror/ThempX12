@@ -2,7 +2,7 @@
 Type = "Depth"
 
 #Whether to create an SRV for this target
-CreateShaderView = false
+CreateShaderView = true
 
 #target format (See DXGI formats)
 Format = "D32_FLOAT"

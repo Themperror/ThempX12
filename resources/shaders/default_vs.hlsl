@@ -1,6 +1,12 @@
 #include "default_root.h"
+
+#include "inputs_outputs.h"
+
 [RootSignature(ROOT)]
-float4 main(float3 pos : POSITION) : SV_Position
+DefaultPSInput main(DefaultVSInput input)
 {
-	return float4(pos.xyz, 1.0);
+	DefaultPSInput output;
+	output.pos = float4(input.pos.xy + float2(input.modelMatrix._m03, input.modelMatrix._m13), 0.5, 1.0);
+	output.instanceID = input.instanceID;
+	return output;
 }

@@ -5,8 +5,10 @@
 #include "core/renderer/texture.h"
 #include "core/resources.h"
 #include "core/renderer/shadercompiler.h"
-#include "core/renderer/object3d.h"
+#include "core/components/sceneobject.h"
 #include "core/resources.h"
+
+#include <algorithm>
 
 
 #include <lib/imgui/imgui.h>
@@ -14,11 +16,6 @@
 
 
 using namespace Themp::D3D;
-
-
-
-MeshData testMesh;
-Object3D testObject;
 
 
 Themp::D3D::ShaderCompiler s_ShaderCompiler;
@@ -80,6 +77,20 @@ void Control::CreatePipelines(Themp::Resources& resources)
 		auto& renderpass = m_Renderpasses.emplace_back();
 		renderpass.pipeline.Init(resources.Get(SubPassHandle(i)));
 	}
+
+	std::sort(	
+		m_Renderpasses.begin(), 
+		m_Renderpasses.end(), 
+		[&](const auto& a, const auto& b) 
+		{ 
+			return resources.Get(a.pipeline.GetPassHandle()).GetPriority() < resources.Get(b.pipeline.GetPassHandle()).GetPriority();
+		}
+	);
+
+	for (int i = 0; i < m_Renderpasses.size(); i++)
+	{
+		m_Renderpasses[i].handle = i;
+	}
 }
 
 void Control::PopulateRenderingGraph(Themp::Resources& resources)
@@ -96,8 +107,8 @@ void Control::PopulateRenderingGraph(Themp::Resources& resources)
 				{
 					if (pass.pipeline.GetPassHandle() == resources.Get(subPassHandle).pass)
 					{
-						Renderable& renderable = pass.renderables.emplace_back();
-						renderable.object3D_ID = obj.m_ID;
+						Renderable& renderable = pass.renderables[mesh.m_MeshData.ID];
+						renderable.SceneObject_IDs.push_back(obj.m_ID);
 						renderable.meshData = mesh.m_MeshData;
 					}
 				}
@@ -133,26 +144,61 @@ void Control::BeginDraw()
 		m_Context->EnableVsync(vsyncEnabled);
 
 		ImGui::Checkbox("VSync", &vsyncEnabled);
+
+		for (auto& target : Engine::instance->m_Resources->GetAllDSVs())
+		{
+			if (target.second.GetResource(D3D::TEXTURE_TYPE::SRV))
+			{
+				ImGui::Image(reinterpret_cast<void*>(target.second.GetGPUHandle(D3D::TEXTURE_TYPE::SRV).ptr), ImVec2(256, 256));
+			}
+		}
+
+		ImGui::Text("ImageTest");
 	}
 	ImGui::End();
 
 	const auto& vertexBufferViews = m_GPU_Resources->GetVertexBufferViews();
-	frame.GetCmdList()->IASetVertexBuffers(0u, static_cast<UINT>(vertexBufferViews.size()), vertexBufferViews.data());
+	frame.GetCmdList()->IASetVertexBuffers(1u, static_cast<UINT>(vertexBufferViews.size()), vertexBufferViews.data());
 	frame.GetCmdList()->IASetIndexBuffer(&m_GPU_Resources->GetIndexBufferView());
+
+	auto& sceneObjects = Engine::instance->m_Resources->GetSceneObjects();
+
 	for(auto& renderPass : m_Renderpasses)
 	{
+#if _DEBUG
+		std::string_view passNameSV = Engine::instance->m_Resources->Get(renderPass.pipeline.GetPassHandle()).GetName();
+		frame.GetCmdList()->BeginEvent(1, passNameSV.data(), sizeof(void*));
+#endif
+		m_GPU_Resources->UpdateTransformsBufferView(*m_Device, renderPass, sceneObjects);
 		renderPass.pipeline.SetTo(frame);
+		for (auto& CB : renderPass.constantBuffers)
+		{
+			if (CB.second.IsValid())
+			{
+				ConstantBufferData& CBData = m_GPU_Resources->Get(CB.second);
+				if (CBData.dirty)
+				{
+					m_GPU_Resources->UpdateConstantBufferData(CB.second);
+				}
+				frame.GetCmdList()->SetGraphicsRootConstantBufferView(CB.first, CBData.buffer->GetGPUVirtualAddress());
+			}
+		}
+
 		for(const auto& renderable : renderPass.renderables)
 		{
-			const auto& meshData = renderable.meshData;
-			frame.GetCmdList()->DrawIndexedInstanced(meshData.indexCount, 1, meshData.indexIndex, meshData.vertexIndex, 0);
+			const auto& meshData = renderable.second.meshData;
+			frame.GetCmdList()->IASetVertexBuffers(0, 1, &renderable.second.m_PerInstanceTransforms.view);
+			frame.GetCmdList()->DrawIndexedInstanced(meshData.indexCount, renderable.second.numVisibleMeshes, meshData.indexIndex, meshData.vertexIndex, 0);
 		}
+#if _DEBUG
+		frame.GetCmdList()->EndEvent();
+#endif
 	}
 
-	//frame.GetCmdList().Get()->SetDescriptorHeaps(1, m_ImguiSRVHeap.GetAddressOf());
-
-
-	auto CPUHandle = frame.GetFrameBuffer().GetCPUHandle();
+#if _DEBUG
+	frame.GetCmdList()->BeginEvent(1, "ImGui", sizeof("ImGui"));
+#endif
+	auto CPUHandle = frame.GetFrameBuffer().GetCPUHandle(D3D::TEXTURE_TYPE::RTV);
 	frame.GetCmdList()->OMSetRenderTargets(1, &CPUHandle, true, nullptr);
 
 }
@@ -160,6 +206,9 @@ void Control::BeginDraw()
 void Control::EndDraw()
 {
 	Frame& frame = GetCurrentBackbuffer();
+#if _DEBUG
+	frame.GetCmdList()->EndEvent();
+#endif
 	frame.Present();
 
 	m_FrameFenceValues[m_CurrentBackBuffer] = m_Context->Signal(m_Device->GetCmdQueue(), m_Fence, m_FenceValue);
@@ -207,6 +256,17 @@ const Context&  Control::GetContext() const
 ComPtr<ID3D12GraphicsCommandList> Control::GetImguiCmdList()
 {
 	return GetCurrentBackbuffer().GetCmdList();
+}
+
+
+const std::vector<RenderPass>& Control::GetRenderPasses() const
+{
+	return m_Renderpasses;
+}
+
+RenderPass& Control::GetRenderPass(D3D::RenderPassHandle handle)
+{
+	return m_Renderpasses[handle.handle];
 }
 
 const Themp::D3D::ShaderCompiler& Control::GetShaderCompiler()

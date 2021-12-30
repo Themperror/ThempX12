@@ -93,7 +93,7 @@ namespace Themp
 					Texture& tex = Themp::Engine::instance->m_Resources->Get(pass.m_RenderTargets[i].rtv);
 					desc.RTVFormats[numValidTargets] = tex.GetResource(D3D::TEXTURE_TYPE::RTV)->GetDesc().Format;
 					numValidTargets++;
-					m_RenderTargets.push_back(tex.GetCPUHandle());
+					m_RenderTargets.push_back(tex.GetCPUHandle(D3D::TEXTURE_TYPE::RTV));
 				}
 			}
 			desc.NumRenderTargets = numValidTargets;
@@ -103,7 +103,7 @@ namespace Themp
 			{
 				Texture& tex = Themp::Engine::instance->m_Resources->Get(pass.m_DepthTarget.dsv);
 				desc.DSVFormat = tex.GetResource(D3D::TEXTURE_TYPE::DSV)->GetDesc().Format;
-				m_DepthTarget = tex.GetCPUHandle();
+				m_DepthTarget = tex.GetCPUHandle(D3D::TEXTURE_TYPE::DSV);
 			}
 			else
 			{
@@ -146,32 +146,52 @@ namespace Themp
 			std::vector<D3D12_INPUT_ELEMENT_DESC> iaLayouts;
 			int byteOffSet = 0;
 			int currentSlot = 0;
+
+			//Instance data is always needed (for now)
+			
+			for (int i = 0; i < 4; i++)
+			{
+				D3D12_INPUT_ELEMENT_DESC& iaDesc = iaLayouts.emplace_back();
+				iaDesc.AlignedByteOffset = byteOffSet;
+				iaDesc.Format = DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT;
+				iaDesc.InputSlot = 0;
+				iaDesc.InputSlotClass = D3D12_INPUT_CLASSIFICATION::D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA;
+				iaDesc.SemanticName = "PER_INSTANCE_MATRIX";
+				iaDesc.SemanticIndex = i;
+				iaDesc.InstanceDataStepRate = 1;
+				byteOffSet += 16;
+			}
+
+			byteOffSet = 0;
 			if (subpass.NeedsPositionInfo)
 			{
 				D3D12_INPUT_ELEMENT_DESC& iaDesc = iaLayouts.emplace_back();
-				iaDesc.AlignedByteOffset = 0;
+				iaDesc.AlignedByteOffset = byteOffSet;
 				iaDesc.Format = DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT;
-				iaDesc.InputSlot = 0;
+				iaDesc.InputSlot = 1;
 				iaDesc.InputSlotClass = D3D12_INPUT_CLASSIFICATION::D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
 				iaDesc.SemanticName = "POSITION";
+				byteOffSet += sizeof(DirectX::XMFLOAT3);
 			}
 			if (subpass.NeedsNormalInfo)
 			{
 				D3D12_INPUT_ELEMENT_DESC& iaDesc = iaLayouts.emplace_back();
-				iaDesc.AlignedByteOffset = 12;
+				iaDesc.AlignedByteOffset = byteOffSet;
 				iaDesc.Format = DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT;
-				iaDesc.InputSlot = 1;
+				iaDesc.InputSlot = 2;
 				iaDesc.InputSlotClass = D3D12_INPUT_CLASSIFICATION::D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
 				iaDesc.SemanticName = "NORMAL";
+				byteOffSet += sizeof(DirectX::XMFLOAT3);
 			}
 			if (subpass.NeedsUVInfo)
 			{
 				D3D12_INPUT_ELEMENT_DESC& iaDesc = iaLayouts.emplace_back();
-				iaDesc.AlignedByteOffset = 24;
+				iaDesc.AlignedByteOffset = byteOffSet;
 				iaDesc.Format = DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT;
-				iaDesc.InputSlot = 2;
+				iaDesc.InputSlot = 3;
 				iaDesc.InputSlotClass = D3D12_INPUT_CLASSIFICATION::D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
 				iaDesc.SemanticName = "UV";
+				byteOffSet += sizeof(DirectX::XMFLOAT2);
 			}
 
 			desc.InputLayout.NumElements = static_cast<UINT>(iaLayouts.size());
@@ -237,23 +257,27 @@ namespace Themp
 		{
 			auto cmdList = frame.GetCmdList();
 
-			const Pass& pass = Themp::Engine::instance->m_Resources->Get(m_PassHandle);
+			const auto& resources = Themp::Engine::instance->m_Resources;
+			const Pass& pass = resources->Get(m_PassHandle);
 
 			for (int i = 0; i < m_RenderTargets.size(); i++)
 			{
 				//0 is the special "current swapchain" rendertarget
 				if (pass.m_RenderTargets[i].rtv == 0)
 				{
-					m_RenderTargets[i] = frame.GetFrameBuffer().GetCPUHandle();
+					m_RenderTargets[i] = frame.GetFrameBuffer().GetCPUHandle(D3D::TEXTURE_TYPE::RTV);
 					continue;
 				}
-				const auto& tex = Themp::Engine::instance->m_Resources->Get(pass.m_RenderTargets[i].rtv);
+				const auto& tex = resources->Get(pass.m_RenderTargets[i].rtv);
+				m_RenderTargets[i] = tex.GetCPUHandle(D3D::TEXTURE_TYPE::RTV);
 				cmdList->ClearRenderTargetView(m_RenderTargets[i], tex.GetClearValue().Color, 0, nullptr);
 			}
 
 			if (pass.m_DepthTarget.dsv.IsValid())
 			{
-				const auto& tex = Themp::Engine::instance->m_Resources->Get(pass.m_DepthTarget.dsv);
+				const auto& tex = resources->Get(pass.m_DepthTarget.dsv);
+
+				m_DepthTarget = tex.GetCPUHandle(D3D::TEXTURE_TYPE::DSV);
 				D3D12_CLEAR_FLAGS flags = D3D12_CLEAR_FLAGS::D3D12_CLEAR_FLAG_DEPTH;
 				if (tex.GetResource(TEXTURE_TYPE::DSV)->GetDesc().Format == DXGI_FORMAT::DXGI_FORMAT_D24_UNORM_S8_UINT)
 				{

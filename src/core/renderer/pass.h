@@ -233,6 +233,8 @@ namespace Themp::D3D
 
 		explicit Pass(std::string_view name);
 		std::string_view GetName() const;
+		Scripting::ScriptHandle GetScriptHandle() const;
+		int GetPriority() const;
 
 		void SetPriority(int priority);
 		void SetDepthEnable(bool enabled);
@@ -271,6 +273,7 @@ namespace Themp::D3D
 		void SetBlendTarget(int index, const BlendState& state);
 		void SetViewport(int index, const Viewport& viewport);
 		void SetScissor(int index, const Scissor& scissor);
+		void SetScriptHandle(Scripting::ScriptHandle handle);
 
 		void SetName(std::string_view name);
 		bool IsValid() const;
@@ -284,6 +287,7 @@ namespace Themp::D3D
 		PrimitiveTopology m_Topology;
 		int m_MultisampleCount;
 		int m_MultisampleQuality;
+		Scripting::ScriptHandle m_ScriptHandle = Scripting::ScriptHandle::Invalid;
 		std::array<BlendState, 8> m_BlendStates;
 		std::array<RenderTargetHandle, 8> m_RenderTargets;
 		std::array<Viewport, 8> m_Viewports;

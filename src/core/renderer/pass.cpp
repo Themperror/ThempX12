@@ -40,6 +40,16 @@ std::string_view Pass::GetName() const
 	return m_Name;
 }
 
+Themp::Scripting::ScriptHandle Pass::GetScriptHandle() const
+{
+	return m_ScriptHandle;
+}
+
+int Pass::GetPriority() const
+{
+	return m_Priority;
+}
+
 void Pass::SetPriority(int priority)
 {
 	m_Priority = priority;
@@ -304,6 +314,11 @@ void Pass::SetScissor(int index, const Pass::Scissor& scissor)
 		return;
 	}
 	m_Scissors[index] = scissor;
+}
+
+void Pass::SetScriptHandle(Scripting::ScriptHandle handle)
+{
+	m_ScriptHandle = handle;
 }
 
 bool Pass::IsValid() const 

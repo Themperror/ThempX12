@@ -31,6 +31,11 @@ bool operator!=(const x##Handle& rhs) const noexcept { return handle != rhs.hand
 bool IsValid() const noexcept { return handle != Invalid;} \
 static inline constexpr const size_t Invalid = std::numeric_limits<size_t>::max(); }
 
+
+namespace Themp::Scripting
+{
+	Handle(Script);
+}
 namespace Themp::D3D
 {
 	//struct PassHandle
@@ -58,7 +63,10 @@ namespace Themp::D3D
 	Handle(SRV);
 	Handle(Texture);
 	Handle(Model);
-	Handle(Script);
+	Handle(ConstantBuffer);
+	Handle(RenderPass);
+
+	using MeshID = uint32_t;
 
 	struct RenderTargetHandle
 	{
@@ -136,6 +144,13 @@ namespace Themp::D3D
 		uint32_t maxSlots = 0;
 	};
 
+	struct ConstantBufferData
+	{
+		bool dirty;
+		std::vector<char> data;
+		ComPtr<ID3D12Resource> buffer;
+	};
+
 	struct Vertex
 	{
 		DirectX::XMFLOAT3 position;
@@ -148,10 +163,20 @@ namespace Themp::D3D
 
 	struct MeshData
 	{
+		MeshID ID;
 		uint32_t vertexIndex;
 		uint32_t vertexCount;
 		uint32_t indexIndex;
 		uint32_t indexCount;
+	};
+
+
+	struct TransformBuffer
+	{
+		size_t maxTransformsInResource = 0;
+		ComPtr<ID3D12Resource> transformsResource;
+		D3D12_VERTEX_BUFFER_VIEW view;
+		std::vector<size_t> objectIDs;
 	};
 
 	struct ModelData

@@ -101,7 +101,7 @@ namespace Themp
 	}
 	float Lerp(float v0, float v1, float t)
 	{
-		return (1 - t) * v0 + t * v1;
+		return (1.0f - t) * v0 + t * v1;
 	}
 	XMFLOAT2 Lerp(const XMFLOAT2 & v0, const XMFLOAT2 & v1, float t)
 	{

@@ -10,23 +10,35 @@
 
 using namespace Microsoft::WRL;
 
+namespace Themp
+{
+	class SceneObject;
+}
 namespace Themp::D3D
 {
 	class Device;
 	class Model;
+	struct RenderPass;
 	class GPU_Resources
 	{
 	public:
 		GPU_Resources(const D3D::Device& device);
 	public:
 		ComPtr<ID3D12DescriptorHeap> GetDescriptorHeap(DESCRIPTOR_HEAP_TYPE type, uint32_t reservedSlots = 0);
-		Texture& GetTextureFromResource(ComPtr<ID3D12Device2> device, ComPtr<ID3D12Resource> resource, TEXTURE_TYPE type, int reusedIndex = -1);
+		Texture& GetTextureFromResource(ComPtr<ID3D12Device2> device, ComPtr<ID3D12Resource> resource, TEXTURE_TYPE type, int reusedIndex = -1, int* outResultingIndex = nullptr);
 		ComPtr<ID3D12Resource> GetTextureResource(ComPtr<ID3D12Device2> device, const std::string& name, D3D12_RESOURCE_FLAGS flags, DXGI_FORMAT format, int mipCount, DXGI_SAMPLE_DESC multisample, int width, int height, int depth, D3D12_CLEAR_VALUE* optClearValue, D3D::TEXTURE_TYPE& outType);
+
+		void UpdateTransformsBufferView(const D3D::Device& device, D3D::RenderPass& pass, std::vector<SceneObject>& objects);
+		void UpdateConstantBufferData(ConstantBufferHandle handle);
 
 		Model Test_GetAndAddRandomModel();
 
 		int ReleaseTexture(Texture& tex);
 		void UploadMeshStagingBuffers();
+		ConstantBufferHandle CreateConstantBuffer(ComPtr<ID3D12Device2> device, size_t size);
+
+
+		ConstantBufferData& Get(D3D::ConstantBufferHandle handle);
 
 		ComPtr<ID3D12Resource> GetPositionVertexBuffer() const;
 		ComPtr<ID3D12Resource> GetNormalVertexBuffer() const;
@@ -48,8 +60,7 @@ namespace Themp::D3D
 		void CreateVertexBuffer(const D3D::Device& device);
 		void CreateIndexBuffer(const D3D::Device& device);
 		void UpdateIndexBufferView(const MeshData& tracker);
-
-
+		uint32_t GetNextMeshID() { return m_LatestMeshID++; }
 
 		//Texture& MakeTextureFromResource(const Context& device, DescriptorHeapTracker& heapTracker, ComPtr<ID3D12Resource> resource, TEXTURE_TYPE type);
 		std::unordered_map<std::string, Texture*> m_FileTextures;
@@ -92,6 +103,7 @@ namespace Themp::D3D
 				positionBuffer->Map(0, &read, (void**)&posData);
 				normalBuffer->Map(0, &read, (void**)&normalData);
 				uvBuffer->Map(0, &read, (void**)&uvData);
+				
 			}
 
 			void Unmap(const D3D12_RANGE& written)
@@ -131,11 +143,17 @@ namespace Themp::D3D
 		};
 
 		VertexCollectionBuffer m_MainVertexBuffers;
+
+		std::vector<ConstantBufferData> m_ConstantBuffers;
+		ComPtr<ID3D12Resource> m_InstanceTransformsBuffer;
+		D3D12_VERTEX_BUFFER_VIEW m_InstanceTransformsView;
+		
 		ComPtr<ID3D12Resource> m_MainIndexBuffer;
 		D3D12_INDEX_BUFFER_VIEW m_IndexBufferView;
 		MeshData m_MeshBufferStageTracker;
 		MeshData m_MeshBufferTracker;
 		MeshDataStage m_MeshDataStage;
+		MeshID m_LatestMeshID = 0;
 
 		DescriptorHeapTracker m_CB_SRV_UAV_Heap;
 		DescriptorHeapTracker m_RTV_Heap;

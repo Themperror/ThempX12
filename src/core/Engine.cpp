@@ -95,8 +95,8 @@ namespace Themp
 		//m_Renderer->ResizeWindow(clientRect.right, clientRect.bottom);
 		//printf("BorderX: %i\n BorderY: %i\n Caption: %i\n", borderX, borderY, caption);
 		SetCursorPos(windowRect.left + (windowRect.right - windowRect.left) / 2, windowRect.top + (windowRect.bottom - windowRect.top) / 2);
-		double totalDelta = 0;
-		double time = 0;
+		double totalDelta = 0.0;
+		double time = 0.0;
 		const int captionSize = GetSystemMetrics(SM_CYCAPTION);
 		const int frameSizeY =  GetSystemMetrics(SM_CYFIXEDFRAME);
 		const int frameSizeX =  GetSystemMetrics(SM_CXFIXEDFRAME);
@@ -163,10 +163,7 @@ namespace Themp
 				}
 				
 			}
-			const float targetFPS = (float)dm.dmDisplayFrequency;
-			const float maxDelta = (1.0f / targetFPS) * 2.0f;
-			const float timestep = 1.0f / targetFPS;
-			//if (totalDelta >= timestep)
+
 			{
 				{
 					GetWindowRect(m_Window, &windowRect);
@@ -189,8 +186,8 @@ namespace Themp
 				ImGui::NewFrame();
 
 				tickTimer.StartTime();
-				m_Game->Update(totalDelta);
-				m_Scripting->Update(*m_Resources);
+				m_Game->Update(delta);
+				m_Scripting->Update(*m_Resources, m_Renderer->GetRenderPasses());
 				tickTimeAdd += tickTimer.GetDeltaTimeReset();
 
 				m_Input->Update();
@@ -226,11 +223,6 @@ namespace Themp
 					tickTimeAdd = 0;
 					numSamples = 0;
 				}
-				if (totalDelta > maxDelta)
-				{
-					totalDelta = maxDelta;
-				}
-				totalDelta -= timestep;
 			}
 		}
 

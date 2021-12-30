@@ -91,7 +91,7 @@ namespace Themp
 	{
 		return m_Shaders[handle.handle];
 	}
-	D3D::Material& Resources::Get(D3D::MaterialHandle handle)
+	D3D::Material& Resources::Get(D3D::MaterialHandle handle) 
 	{
 		return m_Materials[handle.handle];
 	}
@@ -166,7 +166,7 @@ namespace Themp
 		return files;
 	}
 
-	std::vector<std::pair<std::string, std::string>> Resources::GetScriptFiles()
+	std::vector<std::pair<std::string, std::string>> Resources::GetScriptFiles() const
 	{
 		auto files = LoadFilesFromDirectory(SCRIPTS_FOLDER);
 		std::vector<std::pair<std::string, std::string>> fileDatas;
@@ -198,8 +198,14 @@ namespace Themp
 			}
 
 			D3D::TEXTURE_TYPE outType;
-			auto newResource = gpuResources.GetTextureResource(device, m_ColorTargets[i].first.name, desc.Flags, desc.Format, desc.MipLevels, desc.SampleDesc, desc.Width, desc.Height, 0, &m_ColorTargets[i].first.clearValue, outType);
-			m_ColorTargets[i].second = gpuResources.GetTextureFromResource(device, newResource, outType, releasedIndex);
+			auto newResource = gpuResources.GetTextureResource(device, m_ColorTargets[i].first.name, desc.Flags, desc.Format, desc.MipLevels, desc.SampleDesc, static_cast<int>(desc.Width), desc.Height, 0, &m_ColorTargets[i].first.clearValue, outType);
+			auto& tex = gpuResources.GetTextureFromResource(device, newResource, outType, releasedIndex);
+			if (m_ColorTargets[i].first.createSRV)
+			{
+				tex = gpuResources.GetTextureFromResource(device, newResource, D3D::TEXTURE_TYPE::SRV, releasedIndex);
+			}
+			m_ColorTargets[i].second = tex;
+
 		}
 		for (int i = 0; i < m_DepthTargets.size(); i++)
 		{
@@ -215,8 +221,13 @@ namespace Themp
 			}
 
 			D3D::TEXTURE_TYPE outType;
-			auto newResource = gpuResources.GetTextureResource(device, m_DepthTargets[i].first.name, desc.Flags, desc.Format, desc.MipLevels, desc.SampleDesc, desc.Width, desc.Height, 0, &m_DepthTargets[i].first.clearValue, outType);
-			m_DepthTargets[i].second = gpuResources.GetTextureFromResource(device, newResource, outType, releasedIndex);
+			auto newResource = gpuResources.GetTextureResource(device, m_DepthTargets[i].first.name, desc.Flags, desc.Format, desc.MipLevels, desc.SampleDesc, static_cast<int>(desc.Width), desc.Height, 0, &m_DepthTargets[i].first.clearValue, outType);
+			auto& tex = gpuResources.GetTextureFromResource(device, newResource, outType, releasedIndex);
+			if (m_DepthTargets[i].first.createSRV)
+			{
+				tex = gpuResources.GetTextureFromResource(device, newResource, D3D::TEXTURE_TYPE::SRV, releasedIndex);
+			}
+			m_DepthTargets[i].second = tex;
 		}
 	}
 	void Resources::LoadMaterials()
@@ -352,6 +363,16 @@ namespace Themp
 		{
 			Themp::Print("priority was not of integer type or not found");
 		}
+
+		if (const auto& scriptName = result["script"])
+		{
+			if (scriptName.is_string())
+			{
+				auto scriptHandle = Engine::instance->m_Scripting->AddScript(scriptName.as_string()->get());
+				pass.SetScriptHandle(scriptHandle);
+			}
+		}
+
 		if (!SetPassMember(result[Pass::GetPassMemberAsString(PassMember::DepthEnable)], pass, &Pass::SetDepthEnable))
 		{
 			Themp::Print("depthenable was not of boolean type or not found");
@@ -1077,7 +1098,8 @@ namespace Themp
 		auto& resourceManager = Engine::instance->m_Renderer->GetResourceManager();
 		auto device = Engine::instance->m_Renderer->GetDevice();
 		auto resource = resourceManager.GetTextureResource(device, std::string(filename.begin(),filename.end()), flags, format, 1, multisample, width, height, depth, &clearValue, textureType);
-		auto& tex = resourceManager.GetTextureFromResource(device, resource, textureType);
+		int resultingIndex = 0;
+		auto& tex = resourceManager.GetTextureFromResource(device, resource, textureType, -1, &resultingIndex);
 
 		tex.SetClearValue(clearValue);
 
@@ -1086,6 +1108,16 @@ namespace Themp
 		info.scalar = scale;
 		info.doesScale = doesScale;
 		info.clearValue = clearValue;
+		info.createSRV = createSRV;
+
+
+		if (createSRV)
+		{
+			tex = resourceManager.GetTextureFromResource(device, resource, D3D::TEXTURE_TYPE::SRV, resultingIndex);
+			m_SRVs.push_back({ info, tex });
+			srvHandle = m_SRVs.size() - 1;
+		}
+
 		switch (textureType)
 		{
 		case D3D::TEXTURE_TYPE::RTV:
@@ -1098,12 +1130,6 @@ namespace Themp
 			break;
 		}
 
-		if (createSRV)
-		{
-			auto& srv = resourceManager.GetTextureFromResource(device, resource, D3D::TEXTURE_TYPE::SRV);
-			m_SRVs.push_back({ info, srv });
-			srvHandle = m_SRVs.size() - 1;
-		}
 		
 		return {rtvHandle, dsvHandle, srvHandle};
 	}
@@ -1202,14 +1228,19 @@ namespace Themp
 
 	}
 
-	void Resources::AddObject3D(D3D::Object3D obj)
+	void Resources::AddSceneObject(SceneObject obj)
 	{
-		m_3DObjects.push_back(obj);
+		m_SceneObjects.push_back(obj);
 	}
 
-	const std::vector<Themp::D3D::Object3D>& Resources::GetSceneObjects()
+	const std::vector<Themp::SceneObject>& Resources::GetSceneObjects() const
 	{
-		return m_3DObjects;
+		return m_SceneObjects;
+	}
+
+	std::vector<Themp::SceneObject>& Resources::GetSceneObjects()
+	{
+		return m_SceneObjects;
 	}
 
 	void Resources::LoadScene(std::string sceneFile)
@@ -1243,11 +1274,11 @@ namespace Themp
 			for(const auto& element : arr)
 			{
 				const auto& table = *element.as_table();
-				D3D::Object3D obj3D{};
+				SceneObject& sceneObj = m_SceneObjects.emplace_back();
 				const auto& nameIt = table["name"].as_string();
 				if (nameIt)
 				{
-					obj3D.m_Name = nameIt->get();
+					sceneObj.m_Name = nameIt->get();
 				}
 
 				const auto& positionArr = table["position"].as_array();
@@ -1269,25 +1300,26 @@ namespace Themp
 					scale = GetFloatFromArr(*scaleArr);
 				}
 
-				obj3D.m_Transform = Transform(position, rotation, scale);
+				sceneObj.m_Transform = Transform(position, rotation, scale);
 				
-				obj3D.m_Model = Engine::instance->m_Renderer->GetResourceManager().Test_GetAndAddRandomModel();
+				sceneObj.m_Model = model;
+				sceneObj.m_ID = m_SceneObjects.size() - 1;
 
-				obj3D.m_ScriptHandle = Engine::instance->m_Scripting->AddScript("quad");
-				Engine::instance->m_Scripting->LinkToObject3D(obj3D.m_ScriptHandle, obj3D.m_Name);
+				sceneObj.m_ScriptHandle = Engine::instance->m_Scripting->AddScript("quad");
+				Engine::instance->m_Scripting->LinkToSceneObject(sceneObj.m_ScriptHandle, sceneObj.m_Name);
 
 				const auto& materialIt = table["meshmaterials"].as_array();
 				if (materialIt)
 				{
 					const auto& materials = *materialIt;
-					for (int i = 0; i < std::min(materials.size(), obj3D.m_Model.m_Meshes.size()); i++)
+					for (int i = 0; i < std::min(materials.size(), sceneObj.m_Model.m_Meshes.size()); i++)
 					{
 						const std::string& name = materials[i].as_string()->get();
 						for (int j = 0; j < m_Materials.size(); j++)
 						{
 							if (m_Materials[j].m_Name == name)
 							{
-								obj3D.m_Model.m_Meshes[i].m_MaterialHandle = j;
+								sceneObj.m_Model.m_Meshes[i].m_MaterialHandle = j;
 								goto CONTINUE;
 							}
 						}
@@ -1297,7 +1329,6 @@ namespace Themp
 					}
 				}
 
-				m_3DObjects.push_back(obj3D);
 				
 			}
 		}

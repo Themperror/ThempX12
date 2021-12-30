@@ -9,7 +9,25 @@ script = "quad"
 
 [[quad]]
 name = "quad2"
-position = [0.0, 0.0, 10.0]
+position = [0.3, 0.0, 10.0]
+rotation = [0.0, 0.0, 0.0]
+scale = [1.0, 1.0, 1.0]
+meshMaterials = ["base"
+]
+script = "quad"
+
+[[quad]]
+name = "quad3"
+position = [0.3, 0.3, 10.0]
+rotation = [0.0, 0.0, 0.0]
+scale = [1.0, 1.0, 1.0]
+meshMaterials = ["base"
+]
+script = "quad"
+
+[[quad]]
+name = "quad4"
+position = [0.3, 0.3, 10.0]
 rotation = [0.0, 0.0, 0.0]
 scale = [1.0, 1.0, 1.0]
 meshMaterials = ["base"
@@ -18,9 +36,9 @@ script = "quad"
 
 [[house]]
 name = "house"
-position = [0.0, 0.0, 10.0]
+position = [0.0, 0.3, 10.0]
 rotation = [0.0, 0.0, 0.0]
 scale = [1.0, 1.0, 1.0]
-meshMaterials = ["base"
+meshMaterials = ["shadow"
 ]
 script = "quad"

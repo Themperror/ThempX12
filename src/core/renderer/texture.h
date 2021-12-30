@@ -17,7 +17,8 @@ namespace Themp
 		{
 		public:
 			ComPtr<ID3D12Resource> GetResource(TEXTURE_TYPE type) const;
-			CD3DX12_CPU_DESCRIPTOR_HANDLE GetCPUHandle() const { return m_CPUHandle;  }
+			CD3DX12_CPU_DESCRIPTOR_HANDLE GetCPUHandle(TEXTURE_TYPE type) const;
+			CD3DX12_GPU_DESCRIPTOR_HANDLE GetGPUHandle(TEXTURE_TYPE type) const;
 			const D3D12_CLEAR_VALUE& GetClearValue() const { return m_ClearValue; }
 			void SetClearValue(const D3D12_CLEAR_VALUE& val) { m_ClearValue = val; }
 		private:
@@ -32,12 +33,22 @@ namespace Themp
 			void ReInitUAVTexture(ComPtr<ID3D12Resource> textureSource, ComPtr<ID3D12Device2>device, const D3D::DescriptorHeapTracker& heapTracker);
 
 
+			std::bitset<4> m_InittedTypes;
+
 			ComPtr<ID3D12Resource> m_SRV;
 			ComPtr<ID3D12Resource> m_UAV;
 			ComPtr<ID3D12Resource> m_RTV;
 			ComPtr<ID3D12Resource> m_DSV;
-			std::bitset<4> m_InittedTypes;
-			CD3DX12_CPU_DESCRIPTOR_HANDLE m_CPUHandle;
+
+			CD3DX12_CPU_DESCRIPTOR_HANDLE m_SRVCPUHandle;
+			CD3DX12_CPU_DESCRIPTOR_HANDLE m_DSVCPUHandle;
+			CD3DX12_CPU_DESCRIPTOR_HANDLE m_RTVCPUHandle;
+			CD3DX12_CPU_DESCRIPTOR_HANDLE m_UAVCPUHandle;
+
+			CD3DX12_GPU_DESCRIPTOR_HANDLE m_SRVGPUHandle;
+			CD3DX12_GPU_DESCRIPTOR_HANDLE m_DSVGPUHandle;
+			CD3DX12_GPU_DESCRIPTOR_HANDLE m_RTVGPUHandle;
+			CD3DX12_GPU_DESCRIPTOR_HANDLE m_UAVGPUHandle;
 			uint32_t m_HeapIndex = 0;
 
 			bool m_DoScaleWithRes = false;

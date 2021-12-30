@@ -1,5 +1,7 @@
 #include "default_root.h"
 
+#include "inputs_outputs.h"
+
 struct PSOut
 {
 	float4 color : SV_Target0;
@@ -7,12 +9,16 @@ struct PSOut
 };
 
 [RootSignature(ROOT)]
-PSOut main(float4 pos : SV_Position)
+PSOut main(DefaultPSInput input)
 {
 	PSOut psOut;
-	psOut.color = float4(pos.xyz,0.33);
-	psOut.color.x /= 800.0;
-	psOut.color.y /= 600.0;
-	psOut.depth = psOut.color.x;
+	psOut.color = float4(input.pos.xy, 0 ,0.33);
+	psOut.color.y = input.instanceID;
+	psOut.color.y /= 4.0;
+	psOut.color.z = input.instanceID;
+	psOut.color.z /= 4.0;
+	psOut.color.x = input.instanceID;
+	psOut.color.x /= 4.0;
+	psOut.depth = 0.5;
 	return psOut;
 }

@@ -1,5 +1,6 @@
 ##Determines the order of rendering
 Priority = 0
+Script = "mainpass"
 
 ##depth state see https://docs.microsoft.com/en-us/windows/win32/api/d3d12/ns-d3d12-d3d12_depth_stencil_desc
 DepthEnable = true

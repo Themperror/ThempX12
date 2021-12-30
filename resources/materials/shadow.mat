@@ -1,0 +1,6 @@
+[[SubPass]]
+PositionInfo = true
+UVInfo = false
+NormalInfo = false
+Pass = "shadow"
+Shader = "shadow"

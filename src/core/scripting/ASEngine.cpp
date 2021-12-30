@@ -2,6 +2,7 @@
 
 #include "core/engine.h"
 #include "core/resources.h"
+#include "core/renderer/control.h"
 #include "core/util/Print.h"
 #include "core/util/Break.h"
 #include "core/scripting/registrar.h"
@@ -127,7 +128,7 @@ namespace Themp::Scripting
 		AngelScript::asIScriptContext* ctx = AngelScript::asGetActiveContext();
 		if (ctx)
 		{
-			D3D::ScriptHandle handle = reinterpret_cast<size_t>(ctx->GetUserData(UserDataID));
+			ScriptHandle handle = reinterpret_cast<size_t>(ctx->GetUserData(UserDataID));
 			script = Engine::instance->m_Scripting->GetScript(handle);
 
 
@@ -229,7 +230,7 @@ namespace Themp::Scripting
 		return m_ScriptingEngine != nullptr;
 	}
 
-	D3D::ScriptHandle ASEngine::AddScript(const std::string& filename)
+	ScriptHandle ASEngine::AddScript(const std::string& filename)
 	{
 		Script script{};
 		script.scriptName = filename;
@@ -241,7 +242,7 @@ namespace Themp::Scripting
 		return script.handle;
 	}
 
-	void ASEngine::LinkToObject3D(D3D::ScriptHandle handle, std::string& name)
+	void ASEngine::LinkToSceneObject(ScriptHandle handle, std::string& name)
 	{
 		for (int i = 0; i < m_Scripts.size(); i++)
 		{
@@ -255,7 +256,7 @@ namespace Themp::Scripting
 		}
 	}
 
-	Script* ASEngine::GetScript(D3D::ScriptHandle handle)
+	Script* ASEngine::GetScript(ScriptHandle handle)
 	{
 		for (int i = 0; i < m_Scripts.size(); i++)
 		{
@@ -267,7 +268,7 @@ namespace Themp::Scripting
 		return nullptr;
 	}
 
-	D3D::ScriptHandle ASEngine::GetNextScriptHandle()
+	ScriptHandle ASEngine::GetNextScriptHandle()
 	{
 		return m_LatestHandleID++;
 	}
@@ -324,15 +325,23 @@ namespace Themp::Scripting
 		}
 	}
 
-	void ASEngine::Update(Resources& resources)
+	void ASEngine::Update(Resources& resources, const std::vector<Themp::D3D::RenderPass>& renderPasses)
 	{
 		for (auto& obj3D : resources.GetSceneObjects())
 		{
-			if (obj3D.m_ScriptHandle != D3D::ScriptHandle::Invalid)
+			if (obj3D.m_ScriptHandle != ScriptHandle::Invalid)
 			{
 				Script* script = GetScript(obj3D.m_ScriptHandle);
 				ExecuteScript(*script);
 			}
+		}
+
+		for (const auto& pass : renderPasses)
+		{
+			Registrar::SetCurrentRenderPass(pass.handle);
+			Scripting::ScriptHandle handle = resources.Get(pass.pipeline.GetPassHandle()).GetScriptHandle();
+			Script* script = GetScript(handle);
+			ExecuteScript(*script);
 		}
 		m_ScriptingEngine->GarbageCollect();
 	}

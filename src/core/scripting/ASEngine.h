@@ -14,12 +14,15 @@ namespace Themp
 {
 	class Resources;
 }
+namespace Themp::D3D
+{
+	struct RenderPass;
+}
 namespace Themp::Scripting
 {
-
 	struct Script
 	{
-		D3D::ScriptHandle handle;
+		ScriptHandle handle;
 		std::string scriptName;
 		AngelScript::asIScriptContext* context;
 		std::vector<AngelScript::asIScriptContext*> coroutines;
@@ -29,15 +32,16 @@ namespace Themp::Scripting
 	{
 	public:
 		bool Init();
-		D3D::ScriptHandle AddScript(const std::string& filename);
-		void LinkToObject3D(D3D::ScriptHandle handle, std::string& name);
+		ScriptHandle AddScript(const std::string& filename);
+		void LinkToSceneObject(ScriptHandle handle, std::string& name);
 		void LoadScript(Script& script, std::string data);
-		Script* GetScript(D3D::ScriptHandle handle);
-		D3D::ScriptHandle GetNextScriptHandle();
+		Script* GetScript(ScriptHandle handle);
+		ScriptHandle GetNextScriptHandle();
 
 		void CompileScripts();
-		void Update(Resources& resources);
+		void Update(Resources& resources, const std::vector<Themp::D3D::RenderPass>& renderPasses);
 		void Stop();
+
 	private:
 		void ExecuteScript(Script& script);
 		AngelScript::asIScriptEngine* m_ScriptingEngine = nullptr;

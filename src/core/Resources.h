@@ -1,12 +1,12 @@
 #pragma once
 
-#include "renderer/pass.h"
-#include "renderer/texture.h"
-#include "renderer/types.h"
-#include "renderer/shader.h"
-#include "renderer/material.h"
-#include "renderer/object3d.h"
-#include "renderer/model.h"
+#include "core/renderer/pass.h"
+#include "core/renderer/texture.h"
+#include "core/renderer/types.h"
+#include "core/renderer/shader.h"
+#include "core/renderer/material.h"
+#include "core/components/sceneobject.h"
+#include "core/renderer/model.h"
 
 
 namespace Themp
@@ -19,6 +19,16 @@ namespace Themp
 	class Resources
 	{
 	public:
+
+		struct ResourceTextureInfo
+		{
+			std::string name;
+			float scalar;
+			bool doesScale;
+			bool createSRV;
+			D3D12_CLEAR_VALUE clearValue;
+		};
+
 		static std::unique_ptr<Resources> instance;
 
 		Themp::D3D::Model LoadModel(D3D::Control& control, std::string modelName);
@@ -33,13 +43,15 @@ namespace Themp
 		D3D::Shader& Get(D3D::ShaderHandle handle);
 		D3D::Material& Get(D3D::MaterialHandle handle);
 
+		const std::vector<std::pair<ResourceTextureInfo, D3D::Texture>>& GetAllDSVs() { return m_DepthTargets; }
 		size_t GetAmountOfSubpasses() const { return m_Subpasses.size(); };
-		std::vector<std::pair<std::string, std::string>> GetScriptFiles();
+		std::vector<std::pair<std::string, std::string>> GetScriptFiles() const;
 
 		void LoadScene(std::string sceneFile);
-		void AddObject3D(D3D::Object3D obj);
+		void AddSceneObject(SceneObject obj);
 
-		const std::vector<Themp::D3D::Object3D>& GetSceneObjects();
+		const std::vector<Themp::SceneObject>& GetSceneObjects() const;
+		std::vector<Themp::SceneObject>& GetSceneObjects();
 
 		static std::string_view GetResourcesFolder();
 		static std::string_view GetMaterialsFolder();
@@ -60,16 +72,9 @@ namespace Themp
 
 		void MergePasses(std::vector<D3D::SubPass> passes);
 
-		struct ResourceTextureInfo
-		{
-			std::string name;
-			float scalar;
-			bool doesScale;
-			D3D12_CLEAR_VALUE clearValue;
-		};
 		std::vector<Themp::D3D::Pass> m_Passes;
 		std::vector<std::pair<ResourceTextureInfo,D3D::Texture>> m_DepthTargets;
-		std::vector<std::pair<ResourceTextureInfo, D3D::Texture>> m_ColorTargets = { { {"*swapchain",1.0f,true}, {}} };
+		std::vector<std::pair<ResourceTextureInfo, D3D::Texture>> m_ColorTargets = { { {"*swapchain",1.0f,true, false,{} }, {}} };
 		std::vector<std::pair<ResourceTextureInfo,D3D::Texture>> m_SRVs;
 		std::vector<D3D::SubPass> m_Subpasses;
 		std::vector<D3D::Shader> m_Shaders;
@@ -77,6 +82,6 @@ namespace Themp
 
 		std::vector<D3D::Model> m_Models;
 
-		std::vector<D3D::Object3D> m_3DObjects;
+		std::vector<SceneObject> m_SceneObjects;
 	};
 };

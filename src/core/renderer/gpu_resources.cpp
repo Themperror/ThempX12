@@ -9,6 +9,8 @@
 #include "core/util/svars.h"
 #include "core/util/stringUtils.h"
 #include "core/renderer/model.h"
+#include "core/components/transform.h"
+#include "core/components/sceneobject.h"
 
 #include <assert.h>
 namespace Themp::D3D
@@ -177,6 +179,7 @@ namespace Themp::D3D
 		m_MeshDataStage.indexData.push_back(indices);
 		m_MeshDataStage.vertexData.push_back(vertices);
 		MeshData meshData;
+		meshData.ID = GetNextMeshID();
 		meshData.indexCount = static_cast<uint32_t>(indices.size());
 		meshData.indexIndex = m_MeshBufferStageTracker.indexCount;
 		meshData.vertexCount = static_cast<uint32_t>(vertices.size());
@@ -188,6 +191,58 @@ namespace Themp::D3D
 		m_MeshBufferStageTracker.indexCount += static_cast<uint32_t>(indices.size());
 		m_MeshBufferStageTracker.vertexCount += static_cast<uint32_t>(vertices.size());
 		return meshData;
+	}
+
+
+	ConstantBufferHandle GPU_Resources::CreateConstantBuffer(ComPtr<ID3D12Device2> device, size_t size)
+	{
+		D3D12_HEAP_PROPERTIES props{};
+		props.Type = D3D12_HEAP_TYPE_UPLOAD;
+		props.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+		props.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+
+		D3D12_RESOURCE_DESC desc{};
+		desc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+		desc.Width = size;
+		desc.Height = 1;
+		desc.DepthOrArraySize = 1;
+		desc.MipLevels = 1;
+		desc.Format = DXGI_FORMAT_UNKNOWN;
+		desc.SampleDesc.Count = 1;
+		desc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+		desc.Flags = D3D12_RESOURCE_FLAG_NONE;
+
+		auto& newBuffer = m_ConstantBuffers.emplace_back();
+
+		if (device->CreateCommittedResource(&props, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_GENERIC_READ, NULL, IID_PPV_ARGS(&newBuffer.buffer)) < 0)
+		{
+			Themp::Print("Failed to create Constant Buffer!");
+			Themp::Break();
+		}
+		newBuffer.buffer->SetName(L"ConstantBuffer");
+		newBuffer.data.resize(size);
+		return m_ConstantBuffers.size()-1;
+	}
+	ConstantBufferData& GPU_Resources::Get(D3D::ConstantBufferHandle handle)
+	{
+		return m_ConstantBuffers[handle.handle];
+	}
+
+	void GPU_Resources::UpdateConstantBufferData(D3D::ConstantBufferHandle handle)
+	{
+		ConstantBufferData& CB = Get(handle);
+		const D3D12_RANGE readRange{};
+		D3D12_RANGE writeRange{};
+		writeRange.Begin = 0;
+		writeRange.End = writeRange.Begin;
+
+		char* data;
+		CB.buffer->Map(0, &readRange, (void**)&data);
+
+		memcpy(data + writeRange.End, CB.data.data(), CB.data.size());
+		writeRange.End += CB.data.size();
+
+		CB.buffer->Unmap(0, &writeRange);
 	}
 
 	void GPU_Resources::UploadMeshStagingBuffers()
@@ -278,6 +333,88 @@ namespace Themp::D3D
 		m_IndexBufferView.SizeInBytes = tracker.indexCount * sizeof(uint32_t);
 	}
 
+	void GPU_Resources::UpdateTransformsBufferView(const D3D::Device& device, RenderPass& pass , std::vector<SceneObject>& objects)
+	{
+
+		size_t sizePerElement = sizeof(DirectX::XMFLOAT4X4);
+		for (auto& renderable : pass.renderables)
+		{
+			if (renderable.second.SceneObject_IDs.size() > renderable.second.m_PerInstanceTransforms.maxTransformsInResource)
+			{
+				//we need to make a new buffer to contain the extra transforms
+				auto& perInstanceTransforms = renderable.second.m_PerInstanceTransforms;
+
+				D3D12_HEAP_PROPERTIES props{};
+				props.Type = D3D12_HEAP_TYPE_UPLOAD;
+				props.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+				props.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+
+				D3D12_RESOURCE_DESC desc{};
+				desc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+				desc.Height = 1;
+				desc.DepthOrArraySize = 1;
+				desc.MipLevels = 1;
+				desc.Format = DXGI_FORMAT_UNKNOWN;
+				desc.SampleDesc.Count = 1;
+				desc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+				desc.Flags = D3D12_RESOURCE_FLAG_NONE;
+
+				
+				perInstanceTransforms.maxTransformsInResource = renderable.second.SceneObject_IDs.size() * 2;
+
+				//release our current resource if any
+				perInstanceTransforms.transformsResource.Reset();
+
+				desc.Width = perInstanceTransforms.maxTransformsInResource * sizeof(DirectX::XMFLOAT4X4);
+				if (device.GetDevice()->CreateCommittedResource(&props, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_GENERIC_READ, NULL, IID_PPV_ARGS(&perInstanceTransforms.transformsResource)) < 0)
+				{
+					Themp::Print("Failed to create PerInstance Transform Buffer!");
+					Themp::Break();
+				}
+				perInstanceTransforms.transformsResource->SetName(L"PerInstanceTransformBuffer");
+				
+			}
+
+			//Update the data
+			{
+				auto& perInstanceTransforms = renderable.second.m_PerInstanceTransforms;
+				auto transformsResource = renderable.second.m_PerInstanceTransforms.transformsResource;
+
+				//we can update / shrink the buffer
+				const D3D12_RANGE readRange{};
+				D3D12_RANGE writeRange{};
+				writeRange.Begin = 0;
+				writeRange.End = writeRange.Begin;
+
+				renderable.second.numVisibleMeshes = 0;
+
+				char* transformData = nullptr;
+				transformsResource->Map(0, &readRange, (void**)&transformData);
+
+
+				for (auto& objID : renderable.second.SceneObject_IDs)
+				{
+					if (!objects[objID].m_Visible) continue;
+
+					renderable.second.numVisibleMeshes++;
+					auto& obj = objects[objID];
+					const auto& matrix = obj.m_Transform.GetModelMatrix();
+
+					memcpy(transformData + writeRange.End, &matrix, sizePerElement);
+					writeRange.End += sizePerElement;
+				}
+				transformsResource->Unmap(0, &writeRange);
+
+
+				perInstanceTransforms.view.BufferLocation = transformsResource->GetGPUVirtualAddress();
+				perInstanceTransforms.view.SizeInBytes = renderable.second.SceneObject_IDs.size() * sizePerElement;
+				perInstanceTransforms.view.StrideInBytes = sizePerElement;
+			}
+		}
+		
+
+	}
+
 	const D3D12_INDEX_BUFFER_VIEW& GPU_Resources::GetIndexBufferView() const
 	{
 		return m_IndexBufferView;
@@ -287,8 +424,6 @@ namespace Themp::D3D
 	{
 		return m_MainVertexBuffers.m_VertexBufferViews;
 	}
-
-
 
 	D3D12_DESCRIPTOR_HEAP_TYPE GetDescriptorHeapType(DESCRIPTOR_HEAP_TYPE type)
 	{
@@ -389,10 +524,13 @@ namespace Themp::D3D
 		resource->SetName(Themp::Util::ToWideString(name).c_str());
 		return resource;
 	}
-	Texture& GPU_Resources::GetTextureFromResource(ComPtr<ID3D12Device2> device, ComPtr<ID3D12Resource> resource, TEXTURE_TYPE type, int reusedIndex)
+	Texture& GPU_Resources::GetTextureFromResource(ComPtr<ID3D12Device2> device, ComPtr<ID3D12Resource> resource, TEXTURE_TYPE type, int reusedIndex, int* outResultingIndex)
 	{
 		auto& tex = reusedIndex != -1 ? m_Textures[reusedIndex] : m_Textures.emplace_back(std::make_unique<Texture>());
-
+		if (outResultingIndex != nullptr)
+		{
+			*outResultingIndex = reusedIndex != -1 ? reusedIndex : m_Textures.size()-1;
+		}
 		DescriptorHeapTracker& heapTracker = type == TEXTURE_TYPE::SRV ? m_CB_SRV_UAV_Heap :
 											type == TEXTURE_TYPE::DSV ? m_DSV_Heap :
 											type == TEXTURE_TYPE::RTV ? m_RTV_Heap : m_CB_SRV_UAV_Heap;
@@ -402,7 +540,14 @@ namespace Themp::D3D
 			switch (type)
 			{
 			case TEXTURE_TYPE::SRV:
-				tex->ReInitSRVTexture(resource, device, heapTracker);
+				if (tex->m_InittedTypes[static_cast<int>(TEXTURE_TYPE::SRV)])
+				{
+					tex->ReInitSRVTexture(resource, device, heapTracker);
+				}
+				else
+				{
+					tex->InitSRVTexture(resource, device, heapTracker);
+				}
 				break;
 			case TEXTURE_TYPE::DSV:
 				tex->ReInitDSVTexture(resource, device, heapTracker);

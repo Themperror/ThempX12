@@ -6,11 +6,11 @@
 #include "gpu_resources.h"
 #include "types.h"
 #include "core/renderer/pipeline.h"
-#include "core/renderer/object3d.h"
 
 #include <d3d12.h>
 #include <memory>
 #include <vector>
+#include <unordered_map>
 namespace Themp
 {
 	class Resources;
@@ -18,19 +18,25 @@ namespace Themp
 	{
 		class ShaderCompiler;
 		class Device;
+
+		struct Renderable
+		{
+			std::vector<size_t> SceneObject_IDs;
+			TransformBuffer m_PerInstanceTransforms;
+			size_t numVisibleMeshes;
+			MeshData meshData;
+		};
+		struct RenderPass
+		{
+			RenderPassHandle handle;
+			Pipeline pipeline;
+			std::vector<std::pair<int, ConstantBufferHandle>> constantBuffers;
+			std::unordered_map<MeshID, Renderable> renderables;
+		};
+
 		class Control
 		{
 		public:
-			struct Renderable
-			{
-				size_t object3D_ID;
-				MeshData meshData;
-			};
-			struct RenderPass
-			{
-				Pipeline pipeline;
-				std::vector<Renderable> renderables;
-			};
 
 		public:
 			bool Init();
@@ -48,6 +54,10 @@ namespace Themp
 			ComPtr<ID3D12CommandQueue> GetCommandQueue(D3D12_COMMAND_LIST_TYPE commandListType) const;
 			GPU_Resources& GetResourceManager() const;
 			void CreatePipelines(Themp::Resources& resources);
+
+			const std::vector<RenderPass>& GetRenderPasses() const;
+			RenderPass& GetRenderPass(D3D::RenderPassHandle handle);
+
 			const ShaderCompiler& GetShaderCompiler();
 		private:
 			Frame& GetCurrentBackbuffer();

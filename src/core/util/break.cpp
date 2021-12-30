@@ -34,7 +34,7 @@
 
 void Themp::Break()
 {
-#if !THEMP_RELEASE
+#if _DEBUG
 	if (IsDebuggerPresent())
 	{
 		DebugBreak();

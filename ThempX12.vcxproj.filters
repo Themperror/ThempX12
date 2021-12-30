@@ -213,9 +213,6 @@
     <ClInclude Include="src\lib\angelscript\angelscript.h">
       <Filter>Source Files\lib\angelscript</Filter>
     </ClInclude>
-    <ClInclude Include="src\core\renderer\object3d.h">
-      <Filter>Source Files\core\renderer</Filter>
-    </ClInclude>
     <ClInclude Include="src\core\renderer\material.h">
       <Filter>Source Files\core\renderer</Filter>
     </ClInclude>
@@ -227,6 +224,9 @@
     </ClInclude>
     <ClInclude Include="src\core\scripting\Registrar.h">
       <Filter>Source Files\core\scripting</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\components\sceneobject.h">
+      <Filter>Source Files\core\components</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -380,9 +380,6 @@
     <ClCompile Include="src\lib\angelscript\add_on\weakref\weakref.cpp">
       <Filter>Source Files\lib\angelscript\addon</Filter>
     </ClCompile>
-    <ClCompile Include="src\core\renderer\object3d.cpp">
-      <Filter>Source Files\core\renderer</Filter>
-    </ClCompile>
     <ClCompile Include="src\core\renderer\material.cpp">
       <Filter>Source Files\core\renderer</Filter>
     </ClCompile>
@@ -394,6 +391,9 @@
     </ClCompile>
     <ClCompile Include="src\core\scripting\Registrar.cpp">
       <Filter>Source Files\core\scripting</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\components\sceneobject.cpp">
+      <Filter>Source Files\core\components</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

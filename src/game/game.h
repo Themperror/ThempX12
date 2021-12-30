@@ -1,6 +1,6 @@
 #pragma once
 #include "core/renderer/types.h"
-#include "core/renderer/object3d.h"
+#include "core/components/sceneobject.h"
 
 #include <vector>
 
@@ -14,6 +14,6 @@ namespace Game
 		void Update(double delta);
 
 	private:
-		std::vector<Themp::D3D::Object3D> m_3DObjects;
+		std::vector<Themp::SceneObject> m_3DObjects;
 	};
 }
