@@ -58,6 +58,9 @@ namespace Themp
 			const std::vector<RenderPass>& GetRenderPasses() const;
 			RenderPass& GetRenderPass(D3D::RenderPassHandle handle);
 
+			D3D::ConstantBufferHandle GetEngineConstantBuffer() const;
+			D3D::ConstantBufferHandle GetCameraConstantBuffer() const;
+
 			const ShaderCompiler& GetShaderCompiler();
 		private:
 			Frame& GetCurrentBackbuffer();
@@ -71,6 +74,9 @@ namespace Themp
 			uint64_t m_FenceValue = 0;
 			HANDLE m_FenceEvent;
 			int m_CurrentBackBuffer = 0;
+
+			ConstantBufferHandle m_CameraBuffer;
+			ConstantBufferHandle m_EngineBuffer;
 
 			ComPtr<ID3D12DescriptorHeap> m_ImguiSRVHeap;
 		};

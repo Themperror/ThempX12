@@ -1,4 +1,5 @@
 void main()
 {
-	Print("shadowpass");
+	Print("oing rendering logic for Shadowpass");
+	SetConstantBuffer(0, CBufferType::Camera);
 }

@@ -48,7 +48,7 @@ bool Manager::HasUser<Keyboard>(int userIndex)
 void Manager::Update()
 {
 	int maxUsers = GetMaxUserIndex();
-	for (int user = 0; user < maxUsers; user++)
+	for (int user = 0; user < maxUsers+1; user++)
 	{
 		if (HasUser<Input::Keyboard>(user))
 		{

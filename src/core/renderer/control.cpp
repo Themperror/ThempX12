@@ -22,7 +22,6 @@ Themp::D3D::ShaderCompiler s_ShaderCompiler;
 
 bool Control::Init()
 {
-
 	m_Device = std::make_unique<Device>();
 	if (!m_Device->Init())
 	{
@@ -52,13 +51,16 @@ bool Control::Init()
 	m_Fence = m_Context->CreateFence();
 	m_FenceEvent = m_Context->CreateEventHandle();
 
-
 	m_Context->EnableVsync(Engine::s_SVars.GetSVarInt(SVar::iVSyncEnabled));
 
 
 	ImGui_ImplDX12_Init(GetDevice().Get(), Engine::s_SVars.GetSVarInt(SVar::iNumBackBuffers), DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM, m_ImguiSRVHeap.Get(), m_ImguiSRVHeap->GetCPUDescriptorHandleForHeapStart(), m_ImguiSRVHeap->GetGPUDescriptorHandleForHeapStart());
 
 	s_ShaderCompiler.Init();
+
+
+	m_EngineBuffer = m_GPU_Resources->CreateConstantBuffer(GetDevice(), sizeof(D3D::EngineConstantBuffer));
+	m_CameraBuffer = m_GPU_Resources->CreateConstantBuffer(GetDevice(), sizeof(D3D::CameraConstantBuffer));
 
 	return true;
 }
@@ -98,21 +100,30 @@ void Control::PopulateRenderingGraph(Themp::Resources& resources)
 	const auto& objs = resources.GetSceneObjects();
 	for (const auto& obj : objs)
 	{
+		int meshID = 0;
 		for (const auto& mesh : obj.m_Model.m_Meshes)
 		{
-			const auto& material = resources.Get(mesh.m_MaterialHandle);
-			for (const auto& subPassHandle : material.m_SubPasses)
+			if (mesh.m_MaterialHandle.IsValid())
 			{
-				for (auto& pass : m_Renderpasses)
+				const auto& material = resources.Get(mesh.m_MaterialHandle);
+				for (const auto& subPassHandle : material.m_SubPasses)
 				{
-					if (pass.pipeline.GetPassHandle() == resources.Get(subPassHandle).pass)
+					for (auto& pass : m_Renderpasses)
 					{
-						Renderable& renderable = pass.renderables[mesh.m_MeshData.ID];
-						renderable.SceneObject_IDs.push_back(obj.m_ID);
-						renderable.meshData = mesh.m_MeshData;
+						if (pass.pipeline.GetPassHandle() == resources.Get(subPassHandle).pass)
+						{
+							Renderable& renderable = pass.renderables[mesh.m_MeshData.ID];
+							renderable.SceneObject_IDs.push_back(obj.m_ID);
+							renderable.meshData = mesh.m_MeshData;
+						}
 					}
 				}
 			}
+			else
+			{
+				Themp::Print("Encountered invalid material handle in mesh %i from object: %s", meshID, obj.m_Name.c_str());
+			}
+			meshID++;
 		}
 	}
 }
@@ -137,6 +148,12 @@ void Control::BeginDraw()
 {
 	Frame& frame = GetCurrentBackbuffer();
 	frame.Reset();
+	
+	EngineConstantBuffer engineData{};
+	engineData.time = Engine::instance->GetTimeSinceLaunch();
+	engineData.screenWidth = Engine::instance->s_SVars.GetSVarInt(SVar::iWindowWidth);
+	engineData.screenHeight = Engine::instance->s_SVars.GetSVarInt(SVar::iWindowHeight);
+	m_GPU_Resources->UpdateEngineConstantBuffer(m_EngineBuffer, engineData);	
 
 	if (ImGui::Begin("Renderer"))
 	{
@@ -267,6 +284,17 @@ const std::vector<RenderPass>& Control::GetRenderPasses() const
 RenderPass& Control::GetRenderPass(D3D::RenderPassHandle handle)
 {
 	return m_Renderpasses[handle.handle];
+}
+
+
+
+Themp::D3D::ConstantBufferHandle Control::GetEngineConstantBuffer() const
+{
+	return m_EngineBuffer;
+}
+Themp::D3D::ConstantBufferHandle Control::GetCameraConstantBuffer() const
+{
+	return m_CameraBuffer;
 }
 
 const Themp::D3D::ShaderCompiler& Control::GetShaderCompiler()

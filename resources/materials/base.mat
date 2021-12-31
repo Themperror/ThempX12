@@ -6,7 +6,7 @@ Pass = "shadow"
 Shader = "shadow"
 [[SubPass]]
 PositionInfo = true
-UVInfo = true
+UVInfo = false
 NormalInfo = true
 Pass = "main"
 Shader = "default"

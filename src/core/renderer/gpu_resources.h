@@ -30,11 +30,14 @@ namespace Themp::D3D
 
 		void UpdateTransformsBufferView(const D3D::Device& device, D3D::RenderPass& pass, std::vector<SceneObject>& objects);
 		void UpdateConstantBufferData(ConstantBufferHandle handle);
+		void UpdateCameraConstantBuffer(D3D::ConstantBufferHandle handle, const CameraConstantBuffer& camData);
+		void UpdateEngineConstantBuffer(D3D::ConstantBufferHandle handle, const EngineConstantBuffer& engineData);
 
 		Model Test_GetAndAddRandomModel();
 
 		int ReleaseTexture(Texture& tex);
 		void UploadMeshStagingBuffers();
+		MeshData AppendMeshToStagingBuffers(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices);
 
 		ConstantBufferHandle CreateConstantBuffer(ComPtr<ID3D12Device2> device, size_t size, ConstantBufferHandle reuseHandle = ConstantBufferHandle::Invalid);
 		ConstantBufferHandle ReserveConstantBuffer();
@@ -57,7 +60,6 @@ namespace Themp::D3D
 			std::vector<std::vector<uint32_t>> indexData;
 		};
 
-		MeshData AppendMeshToStagingBuffers(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices);
 		DescriptorHeapTracker CreateDescriptorHeap(const D3D::Device& device, DESCRIPTOR_HEAP_TYPE type, uint32_t amount);
 		void CreateVertexBuffer(const D3D::Device& device);
 		void CreateIndexBuffer(const D3D::Device& device);

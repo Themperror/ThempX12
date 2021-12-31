@@ -1,44 +1,65 @@
-[[quad]]
-name = "quad"
+[[cube]]
+name = "cube"
+position = [0.0, 0.0, 10.0]
+rotation = [0.0, 0.0, 45.0]
+scale = [1.0, 1.0, 1.0]
+meshMaterials = [
+"base",
+"base",
+"base"
+]
+script = "cube"
+
+[[cube]]
+name = "cube2"
+position = [3, 0.0, 10.0]
+rotation = [45.0, 0.0, 0.0]
+scale = [1.0, 1.0, 1.0]
+meshMaterials = [
+"base",
+"base",
+"base"
+]
+script = "cube"
+
+[[cube]]
+name = "cube3"
+position = [-4.0, 0.3, 10.0]
+rotation = [0.0, 45.0, 0.0]
+scale = [1.0, 1.0, 1.0]
+meshMaterials = [
+"base",
+"base",
+"base"
+]
+script = "cube"
+
+[[cube]]
+name = "cube4"
+position = [4, -5, 10.0]
+rotation = [0.0, 0.0, 0.0]
+scale = [0.33, 0.33, 0.33]
+meshMaterials = [
+"base",
+"base",
+"base"
+]
+script = "cube"
+
+[[sphere]]
+name = "sphere"
 position = [0.0, 0.0, 10.0]
 rotation = [0.0, 0.0, 0.0]
-scale = [1.0, 1.0, 1.0]
+scale = [0.2, 0.2, 0.2]
 meshMaterials = ["base"
 ]
-script = "quad"
+script = "sphere"
 
-[[quad]]
-name = "quad2"
-position = [0.3, 0.0, 10.0]
+[[dragon]]
+name = "dragon"
+position = [0.0, 10.0, 10.0]
 rotation = [0.0, 0.0, 0.0]
-scale = [1.0, 1.0, 1.0]
+scale = [0.2, 0.2, 0.2]
 meshMaterials = ["base"
 ]
-script = "quad"
-
-[[quad]]
-name = "quad3"
-position = [0.3, 0.3, 10.0]
-rotation = [0.0, 0.0, 0.0]
-scale = [1.0, 1.0, 1.0]
-meshMaterials = ["base"
-]
-script = "quad"
-
-[[quad]]
-name = "quad4"
-position = [0.3, 0.3, 10.0]
-rotation = [0.0, 0.0, 0.0]
-scale = [1.0, 1.0, 1.0]
-meshMaterials = ["base"
-]
-script = "quad"
-
-[[house]]
-name = "house"
-position = [0.0, 0.3, 10.0]
-rotation = [0.0, 0.0, 0.0]
-scale = [1.0, 1.0, 1.0]
-meshMaterials = ["shadow"
-]
-script = "quad"
+script = "sphere"

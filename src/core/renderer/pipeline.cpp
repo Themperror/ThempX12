@@ -175,12 +175,28 @@ namespace Themp
 			}
 			if (subpass.NeedsNormalInfo)
 			{
-				D3D12_INPUT_ELEMENT_DESC& iaDesc = iaLayouts.emplace_back();
-				iaDesc.AlignedByteOffset = byteOffSet;
-				iaDesc.Format = DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT;
-				iaDesc.InputSlot = 2;
-				iaDesc.InputSlotClass = D3D12_INPUT_CLASSIFICATION::D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
-				iaDesc.SemanticName = "NORMAL";
+				D3D12_INPUT_ELEMENT_DESC& normalDesc = iaLayouts.emplace_back();
+				normalDesc.AlignedByteOffset = byteOffSet;
+				normalDesc.Format = DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT;
+				normalDesc.InputSlot = 2;
+				normalDesc.InputSlotClass = D3D12_INPUT_CLASSIFICATION::D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+				normalDesc.SemanticName = "NORMAL";
+				byteOffSet += sizeof(DirectX::XMFLOAT3);
+				
+				D3D12_INPUT_ELEMENT_DESC& tangentDesc = iaLayouts.emplace_back();
+				tangentDesc.AlignedByteOffset = byteOffSet;
+				tangentDesc.Format = DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT;
+				tangentDesc.InputSlot = 3;
+				tangentDesc.InputSlotClass = D3D12_INPUT_CLASSIFICATION::D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+				tangentDesc.SemanticName = "TANGENT";
+				byteOffSet += sizeof(DirectX::XMFLOAT3);
+				
+				D3D12_INPUT_ELEMENT_DESC& bitangentDesc = iaLayouts.emplace_back();
+				bitangentDesc.AlignedByteOffset = byteOffSet;
+				bitangentDesc.Format = DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT;
+				bitangentDesc.InputSlot = 4;
+				bitangentDesc.InputSlotClass = D3D12_INPUT_CLASSIFICATION::D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+				bitangentDesc.SemanticName = "BITANGENT";
 				byteOffSet += sizeof(DirectX::XMFLOAT3);
 			}
 			if (subpass.NeedsUVInfo)
@@ -188,7 +204,7 @@ namespace Themp
 				D3D12_INPUT_ELEMENT_DESC& iaDesc = iaLayouts.emplace_back();
 				iaDesc.AlignedByteOffset = byteOffSet;
 				iaDesc.Format = DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT;
-				iaDesc.InputSlot = 3;
+				iaDesc.InputSlot = 5;
 				iaDesc.InputSlotClass = D3D12_INPUT_CLASSIFICATION::D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
 				iaDesc.SemanticName = "UV";
 				byteOffSet += sizeof(DirectX::XMFLOAT2);
@@ -279,10 +295,18 @@ namespace Themp
 
 				m_DepthTarget = tex.GetCPUHandle(D3D::TEXTURE_TYPE::DSV);
 				D3D12_CLEAR_FLAGS flags = D3D12_CLEAR_FLAGS::D3D12_CLEAR_FLAG_DEPTH;
-				if (tex.GetResource(TEXTURE_TYPE::DSV)->GetDesc().Format == DXGI_FORMAT::DXGI_FORMAT_D24_UNORM_S8_UINT)
+				auto resource = tex.GetResource(TEXTURE_TYPE::DSV);
+				if (resource->GetDesc().Format == DXGI_FORMAT::DXGI_FORMAT_D24_UNORM_S8_UINT)
 				{
 					flags |= D3D12_CLEAR_FLAGS::D3D12_CLEAR_FLAG_STENCIL;
 				}
+				//CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+				//	resource.Get(),
+				//	D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+
+				//m_CommandList->ResourceBarrier(1, &barrier);
+
+
 				cmdList->ClearDepthStencilView(m_DepthTarget, flags, tex.GetClearValue().DepthStencil.Depth, tex.GetClearValue().DepthStencil.Stencil, 0, nullptr);
 			}
 			

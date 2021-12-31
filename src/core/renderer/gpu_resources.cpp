@@ -243,6 +243,41 @@ namespace Themp::D3D
 		return m_ConstantBuffers[handle.handle];
 	}
 
+	void GPU_Resources::UpdateCameraConstantBuffer(D3D::ConstantBufferHandle handle, const CameraConstantBuffer& camData)
+	{
+		ConstantBufferData& CB = Get(handle);
+
+		const D3D12_RANGE readRange{};
+		D3D12_RANGE writeRange{};
+		writeRange.Begin = 0;
+		writeRange.End = writeRange.Begin;
+
+		char* data;
+		CB.buffer->Map(0, &readRange, (void**)&data);
+
+		memcpy(data, &camData, sizeof(CameraConstantBuffer));
+		writeRange.End += sizeof(CameraConstantBuffer);
+
+		CB.buffer->Unmap(0, &writeRange);
+	}
+	void GPU_Resources::UpdateEngineConstantBuffer(D3D::ConstantBufferHandle handle, const EngineConstantBuffer& engineData)
+	{
+		ConstantBufferData& CB = Get(handle);
+
+		const D3D12_RANGE readRange{};
+		D3D12_RANGE writeRange{};
+		writeRange.Begin = 0;
+		writeRange.End = writeRange.Begin;
+
+		char* data;
+		CB.buffer->Map(0, &readRange, (void**)&data);
+
+		memcpy(data, &engineData, sizeof(EngineConstantBuffer));
+		writeRange.End += sizeof(EngineConstantBuffer);
+
+		CB.buffer->Unmap(0, &writeRange);
+	}
+
 	void GPU_Resources::UpdateConstantBufferData(D3D::ConstantBufferHandle handle)
 	{
 		ConstantBufferData& CB = Get(handle);
@@ -267,7 +302,7 @@ namespace Themp::D3D
 		char* data;
 		CB.buffer->Map(0, &readRange, (void**)&data);
 
-		memcpy(data + writeRange.End, CB.data.data(), CB.data.size());
+		memcpy(data, CB.data.data(), CB.data.size());
 		writeRange.End += CB.data.size();
 
 		CB.buffer->Unmap(0, &writeRange);

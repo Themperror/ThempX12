@@ -34,6 +34,9 @@ namespace Themp
 #define SHADERS_FOLDER RESOURCES_FOLDER"shaders/"
 #define RENDER_TARGET_FOLDER RESOURCES_FOLDER"rendertargets/"
 
+#define MODEL_VERSION_HIGH 1
+#define MODEL_VERSION_LOW 7
+
 	std::string_view Resources::GetResourcesFolder()
 	{
 		return RESOURCES_FOLDER;
@@ -1270,7 +1273,7 @@ namespace Themp
 		for (const auto& rootArrays : result)
 		{
 			const auto& arr = *rootArrays.second.as_array();
-			D3D::Model model = LoadModel(*Engine::instance->m_Renderer, rootArrays.first);
+			D3D::Model model = LoadModel(rootArrays.first);
 			for(const auto& element : arr)
 			{
 				const auto& table = *element.as_table();
@@ -1305,8 +1308,12 @@ namespace Themp
 				sceneObj.m_Model = model;
 				sceneObj.m_ID = m_SceneObjects.size() - 1;
 
-				sceneObj.m_ScriptHandle = Engine::instance->m_Scripting->AddScript("quad");
-				Engine::instance->m_Scripting->LinkToSceneObject(sceneObj.m_ScriptHandle, sceneObj.m_Name);
+				const auto& scriptName = table["script"].as_string();
+				if (scriptName)
+				{
+					sceneObj.m_ScriptHandle = Engine::instance->m_Scripting->AddScript(scriptName->as_string()->get());
+					Engine::instance->m_Scripting->LinkToSceneObject(sceneObj.m_ScriptHandle, sceneObj.m_Name);
+				}
 
 				const auto& materialIt = table["meshmaterials"].as_array();
 				if (materialIt)
@@ -1373,4 +1380,141 @@ namespace Themp
 		//	return obj;
 		//}
 	}
+
+	Themp::D3D::Model Resources::LoadModel(std::string name)
+	{
+		using namespace Themp::D3D;
+		for (const auto& model : m_Models)
+		{
+			if (model.m_Name == name)
+			{
+				return model;
+			}
+		}
+
+		struct MeshHeader
+		{
+			uint32_t numVertices;
+			uint32_t numIndices;
+			uint32_t materialID;
+		};
+		struct ModelHeader
+		{
+			char modelVersionHigh;
+			char modelVersionLow;
+			uint32_t numMeshes;
+			uint32_t numMaterials;
+			uint32_t numTextures;
+			uint32_t numChars;
+		};
+		std::string_view modelFolder = GetModelsFolder();
+		std::string modelPath = std::string(modelFolder.begin(), modelFolder.end());
+		modelPath.append(name).append("\\").append(name).append(".model");
+		FILE* modelFile = nullptr;
+		fopen_s(&modelFile, modelPath.c_str(), "rb");
+
+		if (modelFile == nullptr)
+		{
+			Themp::Print("Could not find model: %s", modelPath.c_str());
+			Themp::Break();
+			return {};
+		}
+		D3D::Model model;
+		model.m_Name = name;
+
+		std::vector<int> materialOrder;
+
+		ModelHeader header;
+		fread(&header, sizeof(ModelHeader), 1, modelFile);
+		if (header.modelVersionHigh != MODEL_VERSION_HIGH || header.modelVersionLow != MODEL_VERSION_LOW)
+		{
+			Themp::Print("Model version mismatch, cannot load this model!: %s", name.c_str());
+			Themp::Break();
+			return {};
+		}
+		for (size_t i = 0; i < header.numMeshes; i++)
+		{
+			D3D::Mesh& mesh = model.m_Meshes.emplace_back();
+			MeshHeader meshHeader;
+			//read in mesh header info, contains number of vertices,indices and the belonging material ID
+			fread_s(&meshHeader, sizeof(meshHeader), sizeof(MeshHeader), 1, modelFile);
+			//allocate room for the vertices and indices, read them in afterwards, these pointers are also used for the object themselves so we don't need to delete them.
+			std::vector<Themp::D3D::Vertex> vertices;
+			vertices.resize(meshHeader.numVertices);
+
+			std::vector<std::uint32_t> indices;
+			indices.resize(meshHeader.numIndices);
+
+			fread_s(vertices.data(), sizeof(Themp::D3D::Vertex)* meshHeader.numVertices, sizeof(Themp::D3D::Vertex), meshHeader.numVertices, modelFile);
+			fread_s(indices.data(), sizeof(uint32_t) * meshHeader.numIndices, sizeof(uint32_t), meshHeader.numIndices, modelFile);
+
+			mesh.m_MeshData = Themp::Engine::instance->m_Renderer->GetResourceManager().AppendMeshToStagingBuffers(vertices, indices);
+
+			//the mesh itself doesn't store a material ID but a handle to material itself, we assign it later  so for now keep track of it..
+			materialOrder.push_back(meshHeader.materialID);
+		}
+
+		//std::vector<Themp::Material*> loadedMaterials;
+		//for (size_t i = 0; i < header.numMaterials; i++)
+		//{
+		//	std::vector<std::string> textureNames;
+		//	std::vector<uint8_t> textureTypes;
+		//	uint32_t numTextures = 0;
+		//
+		//	//read in number of textures this material contains.
+		//	fread_s(&numTextures, sizeof(numTextures), sizeof(uint32_t), 1, modelFile);
+		//
+		//	//read in the number of characters the material name has.
+		//	uint32_t materialNameSize = 0;
+		//	fread_s(&materialNameSize, sizeof(materialNameSize), sizeof(uint32_t), 1, modelFile);
+		//
+		//	//allocate room for the string and read in all characters of the material name
+		//	std::string materialName(materialNameSize, 0);
+		//	fread_s(&materialName[0], materialName.capacity(), sizeof(char) * materialNameSize, 1, modelFile);
+		//
+		//	std::string fileNameWithoutExtension = name.substr(0, name.size() - 4);
+		//
+		//	for (size_t j = 0; j < numTextures; j++)
+		//	{
+		//		uint8_t textureType = 0;
+		//		uint32_t textureNameSize = 0;
+		//
+		//		//read in the texture type and size of the texture name (path)
+		//		fread_s(&textureType, sizeof(textureType), sizeof(uint8_t), 1, modelFile);
+		//		fread_s(&textureNameSize, sizeof(textureNameSize), sizeof(uint32_t), 1, modelFile);
+		//
+		//		//read in the texture name (path)
+		//		std::string textureName(textureNameSize, 0);
+		//		fread_s(&textureName[0], textureName.capacity(), sizeof(char) * textureNameSize, 1, modelFile);
+		//
+		//		textureTypes.push_back(textureType);
+		//		textureNames.push_back(SanitizeSlashes(fileNameWithoutExtension + "/" + textureName));
+		//	}
+		//	if (numTextures != 0)
+		//	{
+		//		Themp::Material* newMaterial = GetMaterial(SanitizeSlashes(fileNameWithoutExtension + "/" + materialName), textureNames, textureTypes, "default", false);
+		//		textureTypes.clear();
+		//		loadedMaterials.push_back(newMaterial);
+		//	}
+		//	else
+		//	{
+		//		Themp::Material* newMaterial = D3D::DefaultMaterial;
+		//		loadedMaterials.push_back(newMaterial);
+		//	}
+		//}
+		//for (size_t j = 0; j < newObject->m_Meshes.size(); j++)
+		//{
+		//	if (loadedMaterials.size() == 0)
+		//	{
+		//		newObject->m_Meshes[j]->m_Material = D3D::DefaultMaterial;
+		//		continue;
+		//	}
+		//	newObject->m_Meshes[j]->m_Material = loadedMaterials[materialOrder[j]];
+		//	//newObject->m_Meshes[j]->m_Material = loadedMaterials[0];
+		//}
+		//newObject->Construct();
+		return model;
+	}
+
+
 }

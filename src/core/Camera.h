@@ -1,21 +1,12 @@
 #pragma once
 #include <DirectXMath.h>
-#include <d3d11.h>
+#include "Core/renderer/types.h"
 namespace Themp
 {
 	using namespace DirectX;
 
 	class Camera
 	{
-		struct CameraBuffer
-		{
-			XMFLOAT4X4 viewMatrix;
-			XMFLOAT4X4 projectionMatrix;
-			XMFLOAT4X4 invProjectionMatrix;
-			XMFLOAT4X4 invViewMatrix;
-			XMFLOAT4 cameraPosition;
-			XMFLOAT4 cameraDir;
-		};
 	public:
 		enum CameraType { Perspective, Orthographic };
 		Camera();
@@ -74,8 +65,7 @@ namespace Themp
 		float GetFar() { return m_Far; }
 		float GetNear() { return m_Near; }
 
-		CameraBuffer m_CameraConstantBufferData;
-		ID3D11Buffer* m_CameraConstantBuffer = nullptr;
+		D3D::CameraConstantBuffer m_CameraConstantBufferData;
 		bool isDirty = true;
 
 	private:

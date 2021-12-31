@@ -153,6 +153,23 @@ namespace Themp::D3D
 		ComPtr<ID3D12Resource> buffer;
 	};
 
+
+	struct CameraConstantBuffer
+	{
+		DirectX::XMFLOAT4X4 viewMatrix;
+		DirectX::XMFLOAT4X4 projectionMatrix;
+		DirectX::XMFLOAT4X4 invProjectionMatrix;
+		DirectX::XMFLOAT4X4 invViewMatrix;
+		DirectX::XMFLOAT4X4 viewProjectionMatrix;
+		DirectX::XMFLOAT4 cameraPosition;
+		DirectX::XMFLOAT4 cameraDir;
+	};
+
+	struct EngineConstantBuffer
+	{
+		float time, screenWidth, screenHeight, d0;
+	};
+
 	struct Vertex
 	{
 		DirectX::XMFLOAT3 position;

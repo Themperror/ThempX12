@@ -1,12 +1,12 @@
 #include "default_root.h"
 
-#include "inputs_outputs.h"
-
 [RootSignature(ROOT)]
-DefaultPSInput main(DefaultVSInput input)
+VSOutput main(PositionVSInput posData, InstanceVSInput instanceData, NormalVSInput normalData)
 {
-	DefaultPSInput output;
-	output.pos = float4(input.pos.xy + float2(input.modelMatrix._m03, input.modelMatrix._m13), 0.5, 1.0);
-	output.instanceID = input.instanceID;
+	VSOutput output;
+	matrix worldMatrix = mul(instanceData.modelMatrix, cam.viewProjMatrix);
+	output.pos = mul(float4(posData.pos,1.0), worldMatrix);
+	output.normal =  mul(normalData.normal, (float3x3) worldMatrix).xyzz;
+	output.instanceID = instanceData.instanceID;
 	return output;
 }

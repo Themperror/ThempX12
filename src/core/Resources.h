@@ -49,6 +49,7 @@ namespace Themp
 
 		void LoadScene(std::string sceneFile);
 		void AddSceneObject(SceneObject obj);
+		Themp::D3D::Model LoadModel(std::string name);
 
 		const std::vector<Themp::SceneObject>& GetSceneObjects() const;
 		std::vector<Themp::SceneObject>& GetSceneObjects();

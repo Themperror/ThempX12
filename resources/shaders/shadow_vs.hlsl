@@ -1,10 +1,10 @@
 #include "shadow_root.h"
-#include "inputs_outputs.h"
+
 [RootSignature(ROOT)]
-DefaultPSInput main(DefaultVSInput input)
+VSOut main(PositionVSInput posData, InstanceVSInput instanceData)
 {
-	DefaultPSInput output;
-	output.pos = float4(input.pos.xy + float2(input.modelMatrix._m03, input.modelMatrix._m13), 0.5, 1.0);
-	output.instanceID = input.instanceID;
+	VSOut output;
+	output.pos = mul(float4(posData.pos,1.0), mul(instanceData.modelMatrix, cam.viewProjMatrix));
+	output.instanceID = instanceData.instanceID;
 	return output;
 }

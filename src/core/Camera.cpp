@@ -318,6 +318,7 @@ namespace Themp
 			XMMATRIX viewMatrix;
 			XMMATRIX invProjectionMatrix;
 			XMMATRIX invViewMatrix;
+			XMMATRIX viewProjMatrix;
 
 			if (m_CamType == CameraType::Perspective)
 			{
@@ -334,10 +335,13 @@ namespace Themp
 				invViewMatrix = XMMatrixInverse(nullptr, viewMatrix);
 			}
 
+			viewProjMatrix = XMMatrixMultiply(viewMatrix, projectionMatrix);
+
 			XMStoreFloat4x4(&m_CameraConstantBufferData.projectionMatrix, (projectionMatrix));
 			XMStoreFloat4x4(&m_CameraConstantBufferData.viewMatrix, (viewMatrix));
 			XMStoreFloat4x4(&m_CameraConstantBufferData.invProjectionMatrix, (invProjectionMatrix));
 			XMStoreFloat4x4(&m_CameraConstantBufferData.invViewMatrix, (invViewMatrix));
+			XMStoreFloat4x4(&m_CameraConstantBufferData.viewProjectionMatrix, (viewProjMatrix));
 			m_CameraConstantBufferData.cameraPosition = XMFLOAT4(m_Position.x, m_Position.y, m_Position.z, 1.0);
 			m_CameraConstantBufferData.cameraDir = XMFLOAT4(m_Forward.x, m_Forward.y, m_Forward.z, 0.0f);
 

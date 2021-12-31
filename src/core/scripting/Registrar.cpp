@@ -19,6 +19,27 @@
 
 namespace Themp::Scripting
 {
+
+
+#define CreateHandleRegistrar(name_space, x)  \
+static void x##New(void* mem) { auto* m = new(mem) name_space::x(); } \
+static void x##New(name_space::x rhs, name_space::x* memory) { auto* m = new(memory) name_space::x(); memory->handle = rhs.handle; } \
+static void x##Assignment(const name_space::x& rhs, name_space::x& lhs) { lhs = rhs;} \
+static void x##Destructor(void* memory) { name_space::x* handle = ((name_space::x*)memory); handle->~x(); } \
+void Register##x(AngelScript::asIScriptEngine* scriptingEngine) { \
+	CheckResult(scriptingEngine->RegisterObjectType(#x, sizeof(name_space::x), AngelScript::asEObjTypeFlags::asOBJ_VALUE | AngelScript::asGetTypeTraits<name_space::x>()), "RegisterObjectType("#x")"); \
+	CheckResult(scriptingEngine->RegisterObjectProperty(#x, "uint64 handle", 0), "RegisterObjectProperty(uint64 handle)"); \
+	CheckResult(scriptingEngine->RegisterObjectBehaviour(#x, AngelScript::asBEHAVE_CONSTRUCT, "void "#x"Constructor()", AngelScript::asFUNCTIONPR(x##New,(void*),void), AngelScript::asCALL_CDECL_OBJLAST), #x"constructMem");\
+	CheckResult(scriptingEngine->RegisterObjectBehaviour(#x, AngelScript::asBEHAVE_CONSTRUCT, "void "#x"Constructor("#x")", AngelScript::asFUNCTIONPR(x##New,(name_space::x rhs, name_space::x* memory),void), AngelScript::asCALL_CDECL_OBJLAST), #x"constructCopy");\
+	CheckResult(scriptingEngine->RegisterObjectBehaviour(#x, AngelScript::asBEHAVE_DESTRUCT, "void "#x"Destructor()", AngelScript::asFUNCTIONPR(x##Destructor,(void* memory),void), AngelScript::asCALL_CDECL_OBJLAST), #x"destruct"); \
+	CheckResult(scriptingEngine->RegisterObjectMethod(#x, #x"& opAssign(const "#x" &in other)", AngelScript::asFUNCTIONPR(x##Assignment, (const name_space::x&, name_space::x&), void), AngelScript::asCALL_CDECL_OBJLAST), #x"assign"); \
+} 
+
+
+	CreateHandleRegistrar(D3D, ConstantBufferHandle)
+	CreateHandleRegistrar(D3D, RenderPassHandle)
+
+
 	void ASPrint(const std::string& msg)
 	{
 		Themp::Print(msg);
@@ -129,6 +150,34 @@ namespace Themp::Scripting
 	void SetConstantBuffer(int slot, CBufferType val)
 	{
 		Themp::Print("Set constantbuffer slot %i with system buffer: %s", slot, val == Camera ? "Camera" : "Engine");
+
+		if (val == CBufferType::Empty)
+		{
+			std::pair<int, D3D::ConstantBufferHandle>* constantBuffer = nullptr;
+			for (int i = 0; i < currentRenderPass->constantBuffers.size(); i++)
+			{
+				auto& CB = currentRenderPass->constantBuffers[i];
+				if (CB.first == slot)
+				{
+					currentRenderPass->constantBuffers.erase(currentRenderPass->constantBuffers.begin() + i);
+					return;
+				}
+			}
+		}
+		else
+		{
+			D3D::ConstantBufferHandle handle = val == CBufferType::Engine ? Themp::Engine::instance->m_Renderer->GetEngineConstantBuffer() : Themp::Engine::instance->m_Renderer->GetCameraConstantBuffer();
+
+			for (auto& CB : currentRenderPass->constantBuffers)
+			{
+				if (CB.first == slot)
+				{
+					CB.second = handle;
+					return;
+				}
+			}
+			currentRenderPass->constantBuffers.emplace_back(std::pair(slot, handle));
+		}
 	}
 	
 	void SetConstantBuffer(int slot, D3D::ConstantBufferHandle& handle)
@@ -159,25 +208,6 @@ namespace Themp::Scripting
 		RegisterGlobalFunctions(scriptingEngine);
 		RegisterMemberFunctions(scriptingEngine);
 	}
-
-#define CreateHandleRegistrar(name_space, x)  \
-static void x##New(void* mem) { auto* m = new(mem) name_space::x(); } \
-static void x##New(name_space::x rhs, name_space::x* memory) { auto* m = new(memory) name_space::x(); memory->handle = rhs.handle; } \
-static void x##Assignment(const name_space::x& rhs, name_space::x& lhs) { lhs = rhs;} \
-static void x##Destructor(void* memory) { name_space::x* handle = ((name_space::x*)memory); handle->~x(); } \
-void Register##x(AngelScript::asIScriptEngine* scriptingEngine) { \
-	CheckResult(scriptingEngine->RegisterObjectType(#x, sizeof(name_space::x), AngelScript::asEObjTypeFlags::asOBJ_VALUE | AngelScript::asGetTypeTraits<name_space::x>()), "RegisterObjectType("#x")"); \
-	CheckResult(scriptingEngine->RegisterObjectProperty(#x, "uint64 handle", 0), "RegisterObjectProperty(uint64 handle)"); \
-	CheckResult(scriptingEngine->RegisterObjectBehaviour(#x, AngelScript::asBEHAVE_CONSTRUCT, "void "#x"Constructor()", AngelScript::asFUNCTIONPR(x##New,(void*),void), AngelScript::asCALL_CDECL_OBJLAST), #x"constructMem");\
-	CheckResult(scriptingEngine->RegisterObjectBehaviour(#x, AngelScript::asBEHAVE_CONSTRUCT, "void "#x"Constructor("#x")", AngelScript::asFUNCTIONPR(x##New,(name_space::x rhs, name_space::x* memory),void), AngelScript::asCALL_CDECL_OBJLAST), #x"constructCopy");\
-	CheckResult(scriptingEngine->RegisterObjectBehaviour(#x, AngelScript::asBEHAVE_DESTRUCT, "void "#x"Destructor()", AngelScript::asFUNCTIONPR(x##Destructor,(void* memory),void), AngelScript::asCALL_CDECL_OBJLAST), #x"destruct"); \
-	CheckResult(scriptingEngine->RegisterObjectMethod(#x, #x"& opAssign(const "#x" &in other)", AngelScript::asFUNCTIONPR(x##Assignment, (const name_space::x&, name_space::x&), void), AngelScript::asCALL_CDECL_OBJLAST), #x"assign"); \
-} 
-
-
-	CreateHandleRegistrar(D3D, ConstantBufferHandle)
-	CreateHandleRegistrar(D3D, RenderPassHandle)
-
 
 
 	void Registrar::RegisterGlobalFunctions(AngelScript::asIScriptEngine* scriptingEngine)
