@@ -182,7 +182,7 @@ void Device::EnableDebug()
 {
 	D3D12GetDebugInterface(IID_PPV_ARGS(&m_DebugInterface));
 	m_DebugInterface->EnableDebugLayer();
-	
+	m_DebugInterface->SetEnableGPUBasedValidation(true);
 }
 
 void Device::SetDebugFlags()

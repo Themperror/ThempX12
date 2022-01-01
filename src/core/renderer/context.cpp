@@ -135,7 +135,7 @@ void Context::SetupRenderTargetViews()
 		ComPtr<ID3D12Resource> backBuffer;
 		if (m_Swapchain->GetBuffer(i, IID_PPV_ARGS(&backBuffer)) == S_OK)
 		{
-			m_BackBuffers[i] = &Engine::instance->m_Renderer->GetResourceManager().GetTextureFromResource(m_Device, backBuffer.Get(), TEXTURE_TYPE::RTV);
+			m_BackBuffers[i] = &Engine::instance->m_Renderer->GetResourceManager().GetTextureFromResource(m_Device, backBuffer.Get(), TEXTURE_TYPE::RTV, Texture::ResourceState::RTV);
 			
 			rtvHandle.ptr += rtvDescriptorSize;
 		}
@@ -159,7 +159,7 @@ void Context::ResizeSwapchain(int width, int height)
 			ComPtr<ID3D12Resource> backBuffer;
 			if (m_Swapchain->GetBuffer(i, IID_PPV_ARGS(&backBuffer)) == S_OK)
 			{
-				m_BackBuffers[i] = &Engine::instance->m_Renderer->GetResourceManager().GetTextureFromResource(m_Device, backBuffer.Get(), TEXTURE_TYPE::RTV, releasedIndices[i]);
+				m_BackBuffers[i] = &Engine::instance->m_Renderer->GetResourceManager().GetTextureFromResource(m_Device, backBuffer.Get(), TEXTURE_TYPE::RTV, Texture::ResourceState::RTV, releasedIndices[i]);
 			}
 		}
 	}

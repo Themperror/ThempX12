@@ -28,7 +28,7 @@ namespace Themp
 #if defined(_DEBUG)
 			void EnableDebug();
 			void SetDebugFlags();
-			ComPtr<ID3D12Debug> m_DebugInterface;
+			ComPtr<ID3D12Debug3> m_DebugInterface;
 #endif
 			ComPtr<IDXGIAdapter4> m_Adapter;
 			ComPtr<ID3D12Device2> m_Device;

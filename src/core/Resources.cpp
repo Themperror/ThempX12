@@ -201,11 +201,12 @@ namespace Themp
 			}
 
 			D3D::TEXTURE_TYPE outType;
-			auto newResource = gpuResources.GetTextureResource(device, m_ColorTargets[i].first.name, desc.Flags, desc.Format, desc.MipLevels, desc.SampleDesc, static_cast<int>(desc.Width), desc.Height, 0, &m_ColorTargets[i].first.clearValue, outType);
-			auto& tex = gpuResources.GetTextureFromResource(device, newResource, outType, releasedIndex);
+			D3D::Texture::ResourceState outState;
+			auto newResource = gpuResources.GetTextureResource(device, m_ColorTargets[i].first.name, desc.Flags, desc.Format, desc.MipLevels, desc.SampleDesc, static_cast<int>(desc.Width), desc.Height, 0, &m_ColorTargets[i].first.clearValue, outType, outState);
+			auto& tex = gpuResources.GetTextureFromResource(device, newResource, outType, outState, releasedIndex);
 			if (m_ColorTargets[i].first.createSRV)
 			{
-				tex = gpuResources.GetTextureFromResource(device, newResource, D3D::TEXTURE_TYPE::SRV, releasedIndex);
+				tex = gpuResources.GetTextureFromResource(device, newResource, D3D::TEXTURE_TYPE::SRV, outState, releasedIndex);
 			}
 			m_ColorTargets[i].second = tex;
 
@@ -224,11 +225,12 @@ namespace Themp
 			}
 
 			D3D::TEXTURE_TYPE outType;
-			auto newResource = gpuResources.GetTextureResource(device, m_DepthTargets[i].first.name, desc.Flags, desc.Format, desc.MipLevels, desc.SampleDesc, static_cast<int>(desc.Width), desc.Height, 0, &m_DepthTargets[i].first.clearValue, outType);
-			auto& tex = gpuResources.GetTextureFromResource(device, newResource, outType, releasedIndex);
+			D3D::Texture::ResourceState outState;
+			auto newResource = gpuResources.GetTextureResource(device, m_DepthTargets[i].first.name, desc.Flags, desc.Format, desc.MipLevels, desc.SampleDesc, static_cast<int>(desc.Width), desc.Height, 0, &m_DepthTargets[i].first.clearValue, outType, outState);
+			auto& tex = gpuResources.GetTextureFromResource(device, newResource, outType, outState, releasedIndex);
 			if (m_DepthTargets[i].first.createSRV)
 			{
-				tex = gpuResources.GetTextureFromResource(device, newResource, D3D::TEXTURE_TYPE::SRV, releasedIndex);
+				tex = gpuResources.GetTextureFromResource(device, newResource, D3D::TEXTURE_TYPE::SRV, outState, releasedIndex);
 			}
 			m_DepthTargets[i].second = tex;
 		}
@@ -1100,9 +1102,11 @@ namespace Themp
 
 		auto& resourceManager = Engine::instance->m_Renderer->GetResourceManager();
 		auto device = Engine::instance->m_Renderer->GetDevice();
-		auto resource = resourceManager.GetTextureResource(device, std::string(filename.begin(),filename.end()), flags, format, 1, multisample, width, height, depth, &clearValue, textureType);
+
+		D3D::Texture::ResourceState outState;
+		auto resource = resourceManager.GetTextureResource(device, std::string(filename.begin(),filename.end()), flags, format, 1, multisample, width, height, depth, &clearValue, textureType, outState);
 		int resultingIndex = 0;
-		auto& tex = resourceManager.GetTextureFromResource(device, resource, textureType, -1, &resultingIndex);
+		auto& tex = resourceManager.GetTextureFromResource(device, resource, textureType, outState, -1, &resultingIndex);
 
 		tex.SetClearValue(clearValue);
 
@@ -1116,7 +1120,7 @@ namespace Themp
 
 		if (createSRV)
 		{
-			tex = resourceManager.GetTextureFromResource(device, resource, D3D::TEXTURE_TYPE::SRV, resultingIndex);
+			tex = resourceManager.GetTextureFromResource(device, resource, D3D::TEXTURE_TYPE::SRV, outState, resultingIndex);
 			m_SRVs.push_back({ info, tex });
 			srvHandle = m_SRVs.size() - 1;
 		}

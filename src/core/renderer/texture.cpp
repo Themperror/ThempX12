@@ -51,12 +51,63 @@ namespace Themp
 					return m_DSVCPUHandle;
 				}
 			}
+			return {};
 		}
 
 
 		bool Texture::HasType(TEXTURE_TYPE type) const
 		{
 			return m_InittedTypes[static_cast<size_t>(type)];
+		}
+
+
+		void Texture::SetResourceState(RenderPass& usedPass,D3D::TEXTURE_TYPE type, ResourceState targetState)
+		{
+			if (m_CurrentResourceState != targetState)
+			{
+				usedPass.texturesToTransition.push_back(
+					CD3DX12_RESOURCE_BARRIER::Transition(
+						GetResource(type).Get(),
+						static_cast<D3D12_RESOURCE_STATES>(m_CurrentResourceState), static_cast<D3D12_RESOURCE_STATES>(targetState))
+				);
+				m_CurrentResourceState = targetState;
+			}
+		}
+
+
+		std::wstring Texture::CreateDebugName()
+		{
+			std::wstring name;
+			name.reserve(128);
+			if (m_InittedTypes[static_cast<size_t>(TEXTURE_TYPE::SRV)])
+			{
+				name.append(L"SRV");
+			}
+			if (m_InittedTypes[static_cast<size_t>(TEXTURE_TYPE::RTV)])
+			{
+				if (name.size() > 1)
+				{
+					name.append(L"_");
+				}
+				name.append(L"RTV");
+			}
+			if (m_InittedTypes[static_cast<size_t>(TEXTURE_TYPE::DSV)])
+			{
+				if (name.size() > 1)
+				{
+					name.append(L"_");
+				}
+				name.append(L"DSV");
+			}
+			if (m_InittedTypes[static_cast<size_t>(TEXTURE_TYPE::UAV)])
+			{
+				if (name.size() > 1)
+				{
+					name.append(L"_");
+				}
+				name.append(L"UAV");
+			}
+			return name;
 		}
 
 		CD3DX12_GPU_DESCRIPTOR_HANDLE Texture::GetGPUHandle(TEXTURE_TYPE type) const
@@ -76,43 +127,21 @@ namespace Themp
 					return m_DSVGPUHandle;
 				}
 			}
+			return {};
 		}
+
+
+		void* Texture::GetHandleForImGui()
+		{
+			Themp::Engine::instance->m_Renderer->AddForImGuiImageSRV(this);
+			return reinterpret_cast<void*>(m_SRVGPUHandle.ptr);
+		}
+
 
 		void Texture::InitSRVTexture(ComPtr<ID3D12Resource> textureSource, ComPtr<ID3D12Device2> device, const D3D::DescriptorHeapTracker& heapTracker)
 		{
 			m_HeapIndex = heapTracker.usedSlots;
 			ReInitSRVTexture(textureSource, device, heapTracker);
-			//UINT m_descriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-			//D3D12_CPU_DESCRIPTOR_HANDLE heapStart = heapTracker.heap->GetCPUDescriptorHandleForHeapStart();
-			//D3D12_GPU_DESCRIPTOR_HANDLE heapStartGPU = heapTracker.heap->GetGPUDescriptorHandleForHeapStart();
-			//m_SRVCPUHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(heapStart, m_HeapIndex, m_descriptorSize);
-			//m_SRVGPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(heapStartGPU, m_HeapIndex, m_descriptorSize);
-			//
-			//D3D12_RESOURCE_DESC rDesc = textureSource->GetDesc();
-			//D3D12_SHADER_RESOURCE_VIEW_DESC desc{};
-			//if (rDesc.Format == DXGI_FORMAT_D32_FLOAT)
-			//{
-			//	desc.Format = DXGI_FORMAT_R32_FLOAT;
-			//}
-			//else if (rDesc.Format == DXGI_FORMAT_D24_UNORM_S8_UINT)
-			//{
-			//	desc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
-			//}
-			//else
-			//{
-			//	desc.Format = rDesc.Format;
-			//}
-			//desc.ViewDimension = rDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE2D ? D3D12_SRV_DIMENSION_TEXTURE2D : D3D12_SRV_DIMENSION_UNKNOWN;
-			//desc.Texture2D.MipLevels = rDesc.MipLevels;
-			//desc.Texture2D.MostDetailedMip = 0;
-			//desc.Texture2D.PlaneSlice = 0;
-			//desc.Texture2D.ResourceMinLODClamp = 0;
-			//desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-			//
-			//m_InittedTypes[static_cast<size_t>(TEXTURE_TYPE::SRV)] = true;
-			//device->CreateShaderResourceView(textureSource.Get(), &desc, m_SRVCPUHandle);
-			//m_SRV = textureSource;
-			//m_SRV->SetName(L"Shader Resource View");
 		}
 
 		void Texture::InitDSVTexture(ComPtr<ID3D12Resource> textureSource, ComPtr<ID3D12Device2> device, const D3D::DescriptorHeapTracker& heapTracker)
@@ -133,7 +162,7 @@ namespace Themp
 			m_InittedTypes[static_cast<size_t>(TEXTURE_TYPE::DSV)] = true;
 			device->CreateDepthStencilView(textureSource.Get(), &desc, m_DSVCPUHandle);
 			m_DSV = textureSource;
-			m_DSV->SetName(L"Depth Target");
+			m_DSV->SetName(CreateDebugName().c_str());
 		}
 
 		void Texture::InitRTVTexture(ComPtr<ID3D12Resource> textureSource, ComPtr<ID3D12Device2>device, const D3D::DescriptorHeapTracker& heapTracker)
@@ -156,7 +185,7 @@ namespace Themp
 			m_InittedTypes[static_cast<size_t>(TEXTURE_TYPE::RTV)] = true;
 			device->CreateRenderTargetView(textureSource.Get(), &desc, m_RTVCPUHandle);
 			m_RTV = textureSource;
-			m_RTV->SetName(L"RenderTarget");
+			m_RTV->SetName(CreateDebugName().c_str());
 		}
 
 		void Texture::ReInitSRVTexture(ComPtr<ID3D12Resource> textureSource, ComPtr<ID3D12Device2>device, const D3D::DescriptorHeapTracker& heapTracker) 
@@ -188,10 +217,14 @@ namespace Themp
 			desc.Texture2D.ResourceMinLODClamp = 0;
 			desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 
+			m_SRVWidth = static_cast<uint32_t>(rDesc.Width);
+			m_SRVHeight = rDesc.Height;
+			m_SRVDepth = rDesc.DepthOrArraySize;
+
 			m_InittedTypes[static_cast<size_t>(TEXTURE_TYPE::SRV)] = true;
 			device->CreateShaderResourceView(textureSource.Get(), &desc, m_SRVCPUHandle);
 			m_SRV = textureSource;
-			m_SRV->SetName(L"Shader Resource View");
+			m_SRV->SetName(CreateDebugName().c_str());
 		}
 		
 		void Texture::ReInitDSVTexture(ComPtr<ID3D12Resource> textureSource, ComPtr<ID3D12Device2>device, const D3D::DescriptorHeapTracker& heapTracker)
@@ -212,10 +245,9 @@ namespace Themp
 			m_InittedTypes[static_cast<size_t>(TEXTURE_TYPE::DSV)] = true;
 			device->CreateDepthStencilView(textureSource.Get(), &desc, m_DSVCPUHandle);
 			m_DSV = textureSource;
-			m_DSV->SetName(L"Depth Target");
+			m_DSV->SetName(CreateDebugName().c_str());
 		}
 
-		void Texture::ReInitUAVTexture(ComPtr<ID3D12Resource> textureSource, ComPtr<ID3D12Device2>device, const D3D::DescriptorHeapTracker& heapTracker) {}
 		void Texture::ReInitRTVTexture(ComPtr<ID3D12Resource> textureSource, ComPtr<ID3D12Device2>device, const D3D::DescriptorHeapTracker& heapTracker)
 		{
 			UINT m_descriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
@@ -234,7 +266,7 @@ namespace Themp
 			m_InittedTypes[static_cast<size_t>(TEXTURE_TYPE::RTV)] = true;
 			device->CreateRenderTargetView(textureSource.Get(), &desc, m_RTVCPUHandle);
 			m_RTV = textureSource;
-			m_RTV->SetName(L"RenderTarget");
+			m_RTV->SetName(CreateDebugName().c_str());
 		}
 	}
 }

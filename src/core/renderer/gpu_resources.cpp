@@ -470,8 +470,8 @@ namespace Themp::D3D
 
 
 				perInstanceTransforms.view.BufferLocation = transformsResource->GetGPUVirtualAddress();
-				perInstanceTransforms.view.SizeInBytes = renderable.second.SceneObject_IDs.size() * sizePerElement;
-				perInstanceTransforms.view.StrideInBytes = sizePerElement;
+				perInstanceTransforms.view.SizeInBytes = static_cast<UINT>(renderable.second.SceneObject_IDs.size() * sizePerElement);
+				perInstanceTransforms.view.StrideInBytes = static_cast<UINT>(sizePerElement);
 			}
 		}
 		
@@ -510,7 +510,7 @@ namespace Themp::D3D
 	}
 
 
-	ComPtr<ID3D12Resource> GPU_Resources::GetTextureResource(ComPtr<ID3D12Device2> device, const std::string& name, D3D12_RESOURCE_FLAGS flags, DXGI_FORMAT format, int mipCount, DXGI_SAMPLE_DESC multisample, int width, int height, int depth, D3D12_CLEAR_VALUE* optClearValue, TEXTURE_TYPE& outType)
+	ComPtr<ID3D12Resource> GPU_Resources::GetTextureResource(ComPtr<ID3D12Device2> device, const std::string& name, D3D12_RESOURCE_FLAGS flags, DXGI_FORMAT format, int mipCount, DXGI_SAMPLE_DESC multisample, int width, int height, int depth, D3D12_CLEAR_VALUE* optClearValue, TEXTURE_TYPE& outType, Texture::ResourceState& outState)
 	{
 		outType = flags == D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_NONE ? D3D::TEXTURE_TYPE::SRV :
 			(flags & D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL) ? D3D::TEXTURE_TYPE::DSV :
@@ -575,10 +575,10 @@ namespace Themp::D3D
 		desc.Flags = flags;
 
 		ComPtr<ID3D12Resource> resource;
-		D3D12_RESOURCE_STATES initialState = outType == D3D::TEXTURE_TYPE::SRV ? D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COMMON : outType == D3D::TEXTURE_TYPE::DSV ? D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_DEPTH_READ : D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET;
+		outState = outType == D3D::TEXTURE_TYPE::SRV ? Texture::ResourceState::SRV_PS : outType == D3D::TEXTURE_TYPE::DSV ? Texture::ResourceState::DSV_Write : Texture::ResourceState::RTV;
 
 		D3D12_HEAP_FLAGS heapFlags = D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE;// outType == D3D::TEXTURE_TYPE::SRV ? D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_DENY_RT_DS_TEXTURES : D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_DENY_NON_RT_DS_TEXTURES;
-		if (device->CreateCommittedResource(&props, heapFlags, &desc, initialState, optClearValue, IID_PPV_ARGS(&resource)) < 0)
+		if (device->CreateCommittedResource(&props, heapFlags, &desc, static_cast<D3D12_RESOURCE_STATES>(outState), optClearValue, IID_PPV_ARGS(&resource)) < 0)
 		{
 			Themp::Print("Failed to create texture resource!");
 			Themp::Break();
@@ -587,17 +587,18 @@ namespace Themp::D3D
 		resource->SetName(Themp::Util::ToWideString(name).c_str());
 		return resource;
 	}
-	Texture& GPU_Resources::GetTextureFromResource(ComPtr<ID3D12Device2> device, ComPtr<ID3D12Resource> resource, TEXTURE_TYPE type, int reusedIndex, int* outResultingIndex)
+	Texture& GPU_Resources::GetTextureFromResource(ComPtr<ID3D12Device2> device, ComPtr<ID3D12Resource> resource, TEXTURE_TYPE type, Texture::ResourceState initialState, int reusedIndex, int* outResultingIndex)
 	{
 		auto& tex = reusedIndex != -1 ? m_Textures[reusedIndex] : m_Textures.emplace_back(std::make_unique<Texture>());
 		if (outResultingIndex != nullptr)
 		{
-			*outResultingIndex = reusedIndex != -1 ? reusedIndex : m_Textures.size()-1;
+			*outResultingIndex = reusedIndex != -1 ? reusedIndex : static_cast<int>(m_Textures.size()-1ull);
 		}
 		DescriptorHeapTracker& heapTracker = type == TEXTURE_TYPE::SRV ? m_CB_SRV_UAV_Heap :
 											type == TEXTURE_TYPE::DSV ? m_DSV_Heap :
 											type == TEXTURE_TYPE::RTV ? m_RTV_Heap : m_CB_SRV_UAV_Heap;
 
+		tex->m_CurrentResourceState = initialState;
 		if(reusedIndex != -1)
 		{
 			switch (type)

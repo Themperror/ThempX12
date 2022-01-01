@@ -144,8 +144,7 @@ void Control::ResizeSwapchain(int width, int height)
 	m_CurrentBackBuffer = m_Context->GetSwapChain()->GetCurrentBackBufferIndex();
 }
 
-std::vector<std::pair<ComPtr<ID3D12Resource>, uint64_t>> readingDSVs;
-std::vector<CD3DX12_RESOURCE_BARRIER> barriers;
+std::vector<CD3DX12_RESOURCE_BARRIER> SRVsForImGuiBarriers;
 void Control::BeginDraw()
 {
 	Frame& frame = GetCurrentBackbuffer();
@@ -153,29 +152,23 @@ void Control::BeginDraw()
 	
 	EngineConstantBuffer engineData{};
 	engineData.time = Engine::instance->GetTimeSinceLaunch();
-	engineData.screenWidth = Engine::instance->s_SVars.GetSVarInt(SVar::iWindowWidth);
-	engineData.screenHeight = Engine::instance->s_SVars.GetSVarInt(SVar::iWindowHeight);
+	engineData.screenWidth =  static_cast<float>(Engine::instance->s_SVars.GetSVarInt(SVar::iWindowWidth));
+	engineData.screenHeight = static_cast<float>(Engine::instance->s_SVars.GetSVarInt(SVar::iWindowHeight));
 	m_GPU_Resources->UpdateEngineConstantBuffer(m_EngineBuffer, engineData);	
 
 
-	//just to display the current depth buffers
-	for (auto& target : Engine::instance->m_Resources->GetAllDSVs())
-	{
-		if (target.second.HasType(D3D::TEXTURE_TYPE::SRV))
-		{
-			readingDSVs.push_back(std::pair(target.second.GetResource(D3D::TEXTURE_TYPE::SRV),target.second.GetGPUHandle(D3D::TEXTURE_TYPE::SRV).ptr));
-		}
-	}
 	if (ImGui::Begin("Renderer"))
 	{
 		static bool vsyncEnabled = true;
 		m_Context->EnableVsync(vsyncEnabled);
 
 		ImGui::Checkbox("VSync", &vsyncEnabled);
-
-		for (auto& target : readingDSVs)
+		for (auto& target : Engine::instance->m_Resources->GetAllDSVs())
 		{
-			ImGui::Image(reinterpret_cast<void*>(target.second), ImVec2(256, 256));
+			if (target.second.HasType(D3D::TEXTURE_TYPE::SRV))
+			{
+				ImGui::Image(target.second.GetHandleForImGui(), ImVec2(256, 256));
+			}
 		}
 	}
 	ImGui::End();
@@ -193,7 +186,14 @@ void Control::BeginDraw()
 		frame.GetCmdList()->BeginEvent(1, passNameSV.data(), sizeof(void*));
 #endif
 		m_GPU_Resources->UpdateTransformsBufferView(*m_Device, renderPass, sceneObjects);
-		renderPass.pipeline.SetTo(frame);
+		renderPass.pipeline.SetTo(frame, renderPass);
+
+		if (renderPass.texturesToTransition.size() > 0)
+		{
+			frame.GetCmdList()->ResourceBarrier(renderPass.texturesToTransition.size(), renderPass.texturesToTransition.data());
+		}
+		renderPass.texturesToTransition.clear();
+
 		for (auto& CB : renderPass.constantBuffers)
 		{
 			if (CB.second.IsValid())
@@ -207,11 +207,12 @@ void Control::BeginDraw()
 			}
 		}
 
+		renderPass.pipeline.ClearTargets(frame);
 		for(const auto& renderable : renderPass.renderables)
 		{
 			const auto& meshData = renderable.second.meshData;
 			frame.GetCmdList()->IASetVertexBuffers(0, 1, &renderable.second.m_PerInstanceTransforms.view);
-			frame.GetCmdList()->DrawIndexedInstanced(meshData.indexCount, renderable.second.numVisibleMeshes, meshData.indexIndex, meshData.vertexIndex, 0);
+			frame.GetCmdList()->DrawIndexedInstanced(meshData.indexCount, renderable.second.numVisibleMeshes, meshData.indexIndex, meshData.vertexIndex, 0u);
 		}
 #if _DEBUG
 		frame.GetCmdList()->EndEvent();
@@ -219,27 +220,27 @@ void Control::BeginDraw()
 	}
 
 #if _DEBUG
-	frame.GetCmdList()->BeginEvent(1, "ImGui", sizeof("ImGui"));
+	frame.GetCmdList()->BeginEvent(1u, "ImGui", sizeof("ImGui"));
 #endif
 	auto CPUHandle = frame.GetFrameBuffer().GetCPUHandle(D3D::TEXTURE_TYPE::RTV);
 	frame.GetCmdList()->OMSetRenderTargets(1, &CPUHandle, true, nullptr);
 
-	for (auto readingAsSRV : readingDSVs)
+	for (auto texture : m_ImGuiSRVs)
 	{
-		barriers.push_back(CD3DX12_RESOURCE_BARRIER::Transition(
-			readingAsSRV.first.Get(),
-			D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_DEPTH_READ));
-
+		if (texture->m_CurrentResourceState != Texture::ResourceState::SRV_PS)
+		{
+			SRVsForImGuiBarriers.push_back(CD3DX12_RESOURCE_BARRIER::Transition(
+				texture->m_SRV.Get(),
+				static_cast<D3D12_RESOURCE_STATES>(texture->m_CurrentResourceState), static_cast<D3D12_RESOURCE_STATES>(Texture::ResourceState::SRV_PS)));
+			texture->m_CurrentResourceState = Texture::ResourceState::SRV_PS;
+		}
 	}
 
-	if (barriers.size() > 0)
+	if (SRVsForImGuiBarriers.size() > 0)
 	{
-		frame.GetCmdList()->ResourceBarrier(barriers.size(), barriers.data());
+		frame.GetCmdList()->ResourceBarrier(static_cast<UINT>(SRVsForImGuiBarriers.size()), SRVsForImGuiBarriers.data());
 	}
-	readingDSVs.clear();
-	barriers.clear();
-
-
+	SRVsForImGuiBarriers.clear();
 }
 
 void Control::EndDraw()
@@ -254,6 +255,11 @@ void Control::EndDraw()
 	m_CurrentBackBuffer = m_Context->GetSwapChain()->GetCurrentBackBufferIndex();
 
 	m_Context->WaitForFenceValue(m_Fence, m_FrameFenceValues[m_CurrentBackBuffer], m_FenceEvent);
+}
+
+void Control::AddForImGuiImageSRV(Texture* tex)
+{
+	m_ImGuiSRVs.push_back(tex);
 }
 
 Frame& Control::GetCurrentBackbuffer()

@@ -25,8 +25,8 @@ namespace Themp::D3D
 		GPU_Resources(const D3D::Device& device);
 	public:
 		ComPtr<ID3D12DescriptorHeap> GetDescriptorHeap(DESCRIPTOR_HEAP_TYPE type, uint32_t reservedSlots = 0);
-		Texture& GetTextureFromResource(ComPtr<ID3D12Device2> device, ComPtr<ID3D12Resource> resource, TEXTURE_TYPE type, int reusedIndex = -1, int* outResultingIndex = nullptr);
-		ComPtr<ID3D12Resource> GetTextureResource(ComPtr<ID3D12Device2> device, const std::string& name, D3D12_RESOURCE_FLAGS flags, DXGI_FORMAT format, int mipCount, DXGI_SAMPLE_DESC multisample, int width, int height, int depth, D3D12_CLEAR_VALUE* optClearValue, D3D::TEXTURE_TYPE& outType);
+		Texture& GetTextureFromResource(ComPtr<ID3D12Device2> device, ComPtr<ID3D12Resource> resource, TEXTURE_TYPE type, Texture::ResourceState initialState, int reusedIndex = -1, int* outResultingIndex = nullptr);
+		ComPtr<ID3D12Resource> GetTextureResource(ComPtr<ID3D12Device2> device, const std::string& name, D3D12_RESOURCE_FLAGS flags, DXGI_FORMAT format, int mipCount, DXGI_SAMPLE_DESC multisample, int width, int height, int depth, D3D12_CLEAR_VALUE* optClearValue, D3D::TEXTURE_TYPE& outType, D3D::Texture::ResourceState& outState);
 
 		void UpdateTransformsBufferView(const D3D::Device& device, D3D::RenderPass& pass, std::vector<SceneObject>& objects);
 		void UpdateConstantBufferData(ConstantBufferHandle handle);

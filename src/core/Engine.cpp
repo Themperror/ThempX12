@@ -109,8 +109,8 @@ namespace Themp
 			Input::Keyboard& mainKeyboard = m_Input->GetDevice<Input::Keyboard>(0);
 			double delta = mainTimer.GetDeltaTimeReset();
 
-			m_TimeSinceLaunch += delta;
-			m_DeltaTime = delta;
+			m_TimeSinceLaunch += static_cast<float>(delta);
+			m_DeltaTime = static_cast<float>(delta);;
 
 			trackerTime += delta;
 

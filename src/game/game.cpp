@@ -22,8 +22,8 @@ void Game::Game::Start()
 	//subPass.Register(model);
 	m_Camera = std::make_unique<Themp::Camera>();
 
-	float scrWidth = Themp::Engine::instance->s_SVars.GetSVarInt(Themp::SVar::iWindowWidth);
-	float scrHeight = Themp::Engine::instance->s_SVars.GetSVarInt(Themp::SVar::iWindowHeight);
+	float scrWidth =  static_cast<float>(Themp::Engine::instance->s_SVars.GetSVarInt(Themp::SVar::iWindowWidth));
+	float scrHeight = static_cast<float>(Themp::Engine::instance->s_SVars.GetSVarInt(Themp::SVar::iWindowHeight));
 
 	m_Camera->SetPosition(0, 0, -10);
 	m_Camera->SetTarget(DirectX::XMFLOAT3(0, 0, 0));

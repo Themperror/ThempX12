@@ -13,6 +13,7 @@ namespace Themp
 	namespace D3D
 	{
 		struct SubPass;
+		struct RenderPass;
 		class Frame;
 		class Pipeline
 		{
@@ -20,12 +21,13 @@ namespace Themp
 			void Init(const SubPass& subpass);
 			ComPtr<ID3D12PipelineState> m_Pipeline;
 			ComPtr<ID3D12RootSignature> m_RootSignature;
-			std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> m_RenderTargets;
-			D3D12_CPU_DESCRIPTOR_HANDLE m_DepthTarget{};
+			std::vector<std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_CLEAR_VALUE>> m_RenderTargets;
+			std::pair < D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_CLEAR_VALUE> m_DepthTarget{};
 			std::array<D3D12_VIEWPORT, 8> m_Viewports;
 			std::array<D3D12_RECT, 8> m_Scissors;
 
-			void SetTo(Frame& cmdList);
+			void SetTo(Frame& frame, RenderPass& renderPass);
+			void ClearTargets(Frame& frame);
 
 			PassHandle GetPassHandle() const { return m_PassHandle; }
 		private:

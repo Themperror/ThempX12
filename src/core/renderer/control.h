@@ -30,6 +30,7 @@ namespace Themp
 		{
 			RenderPassHandle handle;
 			Pipeline pipeline;
+			std::vector<CD3DX12_RESOURCE_BARRIER> texturesToTransition;
 			std::vector<std::pair<int, ConstantBufferHandle>> constantBuffers;
 			std::unordered_map<MeshID, Renderable> renderables;
 		};
@@ -61,6 +62,8 @@ namespace Themp
 			D3D::ConstantBufferHandle GetEngineConstantBuffer() const;
 			D3D::ConstantBufferHandle GetCameraConstantBuffer() const;
 
+			void AddForImGuiImageSRV(Texture* tex);
+
 			const ShaderCompiler& GetShaderCompiler();
 		private:
 			Frame& GetCurrentBackbuffer();
@@ -71,6 +74,7 @@ namespace Themp
 			std::vector<Frame> m_Backbuffers;
 			std::vector<uint64_t> m_FrameFenceValues;
 			std::vector<RenderPass> m_Renderpasses;
+			std::vector<Texture*> m_ImGuiSRVs;
 			uint64_t m_FenceValue = 0;
 			HANDLE m_FenceEvent;
 			int m_CurrentBackBuffer = 0;
