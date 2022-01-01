@@ -300,12 +300,14 @@ namespace Themp
 				{
 					flags |= D3D12_CLEAR_FLAGS::D3D12_CLEAR_FLAG_STENCIL;
 				}
-				//CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
-				//	resource.Get(),
-				//	D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+				if (tex.HasType(TEXTURE_TYPE::SRV))
+				{
+					CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+						resource.Get(),
+						D3D12_RESOURCE_STATE_DEPTH_READ, D3D12_RESOURCE_STATE_DEPTH_WRITE);
 
-				//m_CommandList->ResourceBarrier(1, &barrier);
-
+					cmdList->ResourceBarrier(1, &barrier);
+				}
 
 				cmdList->ClearDepthStencilView(m_DepthTarget, flags, tex.GetClearValue().DepthStencil.Depth, tex.GetClearValue().DepthStencil.Stencil, 0, nullptr);
 			}

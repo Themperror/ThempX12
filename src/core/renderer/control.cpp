@@ -144,6 +144,8 @@ void Control::ResizeSwapchain(int width, int height)
 	m_CurrentBackBuffer = m_Context->GetSwapChain()->GetCurrentBackBufferIndex();
 }
 
+std::vector<std::pair<ComPtr<ID3D12Resource>, uint64_t>> readingDSVs;
+std::vector<CD3DX12_RESOURCE_BARRIER> barriers;
 void Control::BeginDraw()
 {
 	Frame& frame = GetCurrentBackbuffer();
@@ -155,6 +157,15 @@ void Control::BeginDraw()
 	engineData.screenHeight = Engine::instance->s_SVars.GetSVarInt(SVar::iWindowHeight);
 	m_GPU_Resources->UpdateEngineConstantBuffer(m_EngineBuffer, engineData);	
 
+
+	//just to display the current depth buffers
+	for (auto& target : Engine::instance->m_Resources->GetAllDSVs())
+	{
+		if (target.second.HasType(D3D::TEXTURE_TYPE::SRV))
+		{
+			readingDSVs.push_back(std::pair(target.second.GetResource(D3D::TEXTURE_TYPE::SRV),target.second.GetGPUHandle(D3D::TEXTURE_TYPE::SRV).ptr));
+		}
+	}
 	if (ImGui::Begin("Renderer"))
 	{
 		static bool vsyncEnabled = true;
@@ -162,15 +173,10 @@ void Control::BeginDraw()
 
 		ImGui::Checkbox("VSync", &vsyncEnabled);
 
-		for (auto& target : Engine::instance->m_Resources->GetAllDSVs())
+		for (auto& target : readingDSVs)
 		{
-			if (target.second.GetResource(D3D::TEXTURE_TYPE::SRV))
-			{
-				ImGui::Image(reinterpret_cast<void*>(target.second.GetGPUHandle(D3D::TEXTURE_TYPE::SRV).ptr), ImVec2(256, 256));
-			}
+			ImGui::Image(reinterpret_cast<void*>(target.second), ImVec2(256, 256));
 		}
-
-		ImGui::Text("ImageTest");
 	}
 	ImGui::End();
 
@@ -217,6 +223,22 @@ void Control::BeginDraw()
 #endif
 	auto CPUHandle = frame.GetFrameBuffer().GetCPUHandle(D3D::TEXTURE_TYPE::RTV);
 	frame.GetCmdList()->OMSetRenderTargets(1, &CPUHandle, true, nullptr);
+
+	for (auto readingAsSRV : readingDSVs)
+	{
+		barriers.push_back(CD3DX12_RESOURCE_BARRIER::Transition(
+			readingAsSRV.first.Get(),
+			D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_DEPTH_READ));
+
+	}
+
+	if (barriers.size() > 0)
+	{
+		frame.GetCmdList()->ResourceBarrier(barriers.size(), barriers.data());
+	}
+	readingDSVs.clear();
+	barriers.clear();
+
 
 }
 

@@ -1,6 +1,6 @@
 [[cube]]
 name = "cube"
-position = [0.0, 0.0, 10.0]
+position = [20.0, 20.0, 0.0]
 rotation = [0.0, 0.0, 45.0]
 scale = [1.0, 1.0, 1.0]
 meshMaterials = [
@@ -12,7 +12,7 @@ script = "cube"
 
 [[cube]]
 name = "cube2"
-position = [3, 0.0, 10.0]
+position = [15, 20.0, 0.0]
 rotation = [45.0, 0.0, 0.0]
 scale = [1.0, 1.0, 1.0]
 meshMaterials = [
@@ -24,7 +24,7 @@ script = "cube"
 
 [[cube]]
 name = "cube3"
-position = [-4.0, 0.3, 10.0]
+position = [10.0, 20.0, 0.0]
 rotation = [0.0, 45.0, 0.0]
 scale = [1.0, 1.0, 1.0]
 meshMaterials = [
@@ -36,7 +36,7 @@ script = "cube"
 
 [[cube]]
 name = "cube4"
-position = [4, -5, 10.0]
+position = [5.0, 20.0, 0.0]
 rotation = [0.0, 0.0, 0.0]
 scale = [0.33, 0.33, 0.33]
 meshMaterials = [
@@ -48,7 +48,7 @@ script = "cube"
 
 [[sphere]]
 name = "sphere"
-position = [0.0, 0.0, 10.0]
+position = [0.0, 20.0, 0.0]
 rotation = [0.0, 0.0, 0.0]
 scale = [0.2, 0.2, 0.2]
 meshMaterials = ["base"
@@ -58,6 +58,60 @@ script = "sphere"
 [[dragon]]
 name = "dragon"
 position = [0.0, 10.0, 10.0]
+rotation = [0.0, 0.0, 0.0]
+scale = [0.2, 0.2, 0.2]
+meshMaterials = ["base"
+]
+script = "sphere"
+
+[[dragon]]
+name = "dragon1"
+position = [0.0, 10.0, 10.0]
+rotation = [0.0, 0.0, 0.0]
+scale = [0.2, 0.2, 0.2]
+meshMaterials = ["base"
+]
+script = "sphere"
+
+[[dragon]]
+name = "dragon2"
+position = [10.0, 10.0, 10.0]
+rotation = [0.0, 0.0, 0.0]
+scale = [0.2, 0.2, 0.2]
+meshMaterials = ["base"
+]
+script = "sphere"
+
+[[dragon]]
+name = "dragon3"
+position = [-10.0, 10.0, 10.0]
+rotation = [0.0, 0.0, 0.0]
+scale = [0.2, 0.2, 0.2]
+meshMaterials = ["base"
+]
+script = "sphere"
+
+[[dragon]]
+name = "dragon4"
+position = [0.0, 0.0, 10.0]
+rotation = [0.0, 0.0, 0.0]
+scale = [0.2, 0.2, 0.2]
+meshMaterials = ["base"
+]
+script = "sphere"
+
+[[dragon]]
+name = "dragon5"
+position = [10.0, 0.0, 10.0]
+rotation = [0.0, 0.0, 0.0]
+scale = [0.2, 0.2, 0.2]
+meshMaterials = ["base"
+]
+script = "sphere"
+
+[[dragon]]
+name = "dragon6"
+position = [-10.0, 0.0, 10.0]
 rotation = [0.0, 0.0, 0.0]
 scale = [0.2, 0.2, 0.2]
 meshMaterials = ["base"

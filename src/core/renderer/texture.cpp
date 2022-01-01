@@ -53,6 +53,12 @@ namespace Themp
 			}
 		}
 
+
+		bool Texture::HasType(TEXTURE_TYPE type) const
+		{
+			return m_InittedTypes[static_cast<size_t>(type)];
+		}
+
 		CD3DX12_GPU_DESCRIPTOR_HANDLE Texture::GetGPUHandle(TEXTURE_TYPE type) const
 		{
 			if (m_InittedTypes[static_cast<size_t>(type)])

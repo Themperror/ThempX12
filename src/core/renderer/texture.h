@@ -19,6 +19,7 @@ namespace Themp
 			ComPtr<ID3D12Resource> GetResource(TEXTURE_TYPE type) const;
 			CD3DX12_CPU_DESCRIPTOR_HANDLE GetCPUHandle(TEXTURE_TYPE type) const;
 			CD3DX12_GPU_DESCRIPTOR_HANDLE GetGPUHandle(TEXTURE_TYPE type) const;
+			bool HasType(TEXTURE_TYPE type) const;
 			const D3D12_CLEAR_VALUE& GetClearValue() const { return m_ClearValue; }
 			void SetClearValue(const D3D12_CLEAR_VALUE& val) { m_ClearValue = val; }
 		private:

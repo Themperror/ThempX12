@@ -2,7 +2,7 @@
 Type = "Depth"
 
 #Whether to create an SRV for this target
-CreateShaderView = false
+CreateShaderView = true
 
 #target format (See DXGI formats)
 Format = "D32_FLOAT"
@@ -20,4 +20,4 @@ FixedHeight = 1024
 MultiSampleCount = 1
 MultiSampleQuality = 0
 
-ClearValue = [1.0]
+ClearValue = [1.0, 0]
