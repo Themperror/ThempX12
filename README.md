@@ -11,8 +11,13 @@ I'm wanting to add support for:
 Scripting is done with AngelScript.
 
 Currently the engine has the following dependencies:
+
 AngelScript ( https://www.angelcode.com/angelscript/ ) -> Scripting,
+
 Assimp (https://github.com/assimp/assimp ) -> Model conversion (from import type to custom output type),
+
 DirectXTK12 ( https://github.com/microsoft/DirectXTK12 )-> Texture reading,
+
 DirectX Shader Compiler ( https://github.com/microsoft/DirectXShaderCompiler ) -> Runtime shader compilation
+
 And of course DirectX which is included in the Windows SDK
