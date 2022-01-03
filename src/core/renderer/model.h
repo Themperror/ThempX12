@@ -1,12 +1,12 @@
 #pragma once
 
-#include "core/renderer/mesh.h"
+#include "types.h"
 namespace Themp::D3D
 {
 	class Model
 	{
 	public:
 		std::string m_Name;
-		std::vector<Mesh> m_Meshes;
+		std::vector<D3D::MeshHandle> m_Meshes;
 	};
 }

@@ -32,7 +32,7 @@ namespace Themp
 			Pipeline pipeline;
 			std::vector<CD3DX12_RESOURCE_BARRIER> texturesToTransition;
 			std::vector<std::pair<int, ConstantBufferHandle>> constantBuffers;
-			std::unordered_map<MeshID, Renderable> renderables;
+			std::unordered_map<D3D::MeshHandle, Renderable> renderables;
 		};
 
 		class Control

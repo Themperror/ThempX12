@@ -3,6 +3,7 @@
 #include "core/util/svars.h"
 #include "core/engine.h"
 #include "core/renderer/texture.h"
+#include "core/renderer/mesh.h"
 #include "core/resources.h"
 #include "core/renderer/shadercompiler.h"
 #include "core/components/sceneobject.h"
@@ -114,7 +115,7 @@ void Control::PopulateRenderingGraph(Themp::Resources& resources)
 					{
 						if (pass.pipeline.GetPassHandle() == resources.Get(subPassHandle).pass)
 						{
-							auto it = pass.renderables.find(model.m_Meshes[i].m_MeshData.ID);
+							auto it = pass.renderables.find(model.m_Meshes[i]);
 							if (it != pass.renderables.end())
 							{
 								Renderable& renderable = it->second;
@@ -122,9 +123,10 @@ void Control::PopulateRenderingGraph(Themp::Resources& resources)
 							}
 							else
 							{
-								Renderable& renderable = pass.renderables[model.m_Meshes[i].m_MeshData.ID];
+								Renderable& renderable = pass.renderables[model.m_Meshes[i]];
 								renderable.SceneObject_IDs.push_back(obj.m_ID);
-								renderable.meshData = model.m_Meshes[i].m_MeshData;
+								const D3D::Mesh& mesh = resources.Get(model.m_Meshes[i]);
+								renderable.meshData = mesh.m_MeshData;
 							}
 						}
 					}

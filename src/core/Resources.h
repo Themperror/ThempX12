@@ -7,6 +7,7 @@
 #include "core/renderer/material.h"
 #include "core/components/sceneobject.h"
 #include "core/renderer/model.h"
+#include "core/renderer/mesh.h"
 
 
 namespace Themp
@@ -43,6 +44,7 @@ namespace Themp
 		D3D::Shader& Get(D3D::ShaderHandle handle);
 		D3D::Material& Get(D3D::MaterialHandle handle);
 		D3D::Model& Get(D3D::ModelHandle handle);
+		D3D::Mesh& Get(D3D::MeshHandle handle);
 
 		std::vector<std::pair<ResourceTextureInfo, D3D::Texture>>& GetAllDSVs() { return m_DepthTargets; }
 		size_t GetAmountOfSubpasses() const { return m_Subpasses.size(); };
@@ -71,7 +73,7 @@ namespace Themp
 		D3D::PassHandle LoadPass(std::string_view filename);
 		std::vector<D3D::SubPass> LoadMaterial(const std::string& data, std::vector<std::string>& shaderFiles);
 		D3D::MaterialHandle LoadMaterial(const std::string& path);
-		
+		void HandleChilds(D3D::Model& model, DirectX::XMFLOAT4X4 parentTransform, FILE* modelFile);
 
 		void MergePasses(const std::vector<D3D::SubPass>& passes);
 
@@ -84,6 +86,7 @@ namespace Themp
 		std::vector<D3D::Material> m_Materials;
 
 		std::vector<D3D::Model> m_Models;
+		std::vector<D3D::Mesh> m_Meshes;
 
 		std::vector<SceneObject> m_SceneObjects;
 	};

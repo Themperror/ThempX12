@@ -175,33 +175,6 @@ namespace Themp::D3D
 		m_MainIndexBuffer = newIndexBuffer;
 	}
 
-	Model GPU_Resources::Test_GetAndAddRandomModel()
-	{
-		std::vector<Vertex> vertices;
-		std::vector<uint32_t> indices;
-
-
-		//0   1
-
-        //2   3
-		vertices.push_back(Vertex{ {-0.33f,  0.33f, 1.0f}, {0,0,1}, {0,0,0}, {0,0,0}, {0,0} });
-		vertices.push_back(Vertex{ { 0.33f,  0.33f, 1.0f}, {0,0,1}, {0,0,0}, {0,0,0}, {1,0} });
-		vertices.push_back(Vertex{ {-0.33f, -0.33f, 1.0f}, {0,0,1}, {0,0,0}, {0,0,0}, {0,1} });
-		vertices.push_back(Vertex{ { 0.33f, -0.33f, 1.0f}, {0,0,1}, {0,0,0}, {0,0,0}, {1,1} });
-
-		indices.push_back(0);
-		indices.push_back(1);
-		indices.push_back(2);
-		indices.push_back(1);
-		indices.push_back(3);
-		indices.push_back(2);
-
-		Model model{};
-		model.m_Meshes.emplace_back().m_MeshData = AppendMeshToStagingBuffers(vertices, indices);
-		return model;
-
-	}
-
 	int GPU_Resources::ReleaseTexture(Texture& tex)
 	{
 		for (int i = 0; i < m_Textures.size(); i++)
@@ -397,9 +370,6 @@ namespace Themp::D3D
 			m_MainIndexBuffer->Map(0, &readRange, (void**)&indexData);
 			for (auto& indices : m_MeshDataStage.indexData)
 			{
-				//write to the offset of our indexData
-				//example: our buffer is 10 big and we only want to write from 5 to 8
-				//we get our begin address (indexData) and offset it by our current element (writeRange.End)
 				size_t dataSize = sizeof(uint32_t) * indices.size();
 				memcpy(indexData + writeRange.End, indices.data(), dataSize);
 				writeRange.End += dataSize;
@@ -492,7 +462,15 @@ namespace Themp::D3D
 		
 		for (auto& renderable : pass.renderables)
 		{
-			if (renderable.second.SceneObject_IDs.size() > renderable.second.m_PerInstanceTransforms.maxTransformsInResource)
+			size_t totalMeshes = 0;
+			if (renderable.second.SceneObject_IDs.size() > 0)
+			{
+				const Model& model = resources.Get(objects[renderable.second.SceneObject_IDs[0]].m_ModelHandle);
+				const D3D::Mesh& mesh = resources.Get(renderable.first);
+				totalMeshes += mesh.m_Transform.size() * renderable.second.SceneObject_IDs.size();
+			}
+
+			if (totalMeshes > renderable.second.m_PerInstanceTransforms.maxTransformsInResource)
 			{
 				//we need to make a new buffer to contain the extra transforms
 				auto& perInstanceTransforms = renderable.second.m_PerInstanceTransforms;
@@ -513,7 +491,7 @@ namespace Themp::D3D
 				desc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
 				
-				perInstanceTransforms.maxTransformsInResource = renderable.second.SceneObject_IDs.size() * 2;
+				perInstanceTransforms.maxTransformsInResource = (float)totalMeshes * 1.5f;
 
 				//release our current resource if any
 				perInstanceTransforms.transformsResource.Reset();
@@ -531,35 +509,45 @@ namespace Themp::D3D
 			//Update the data
 			{
 				auto& perInstanceTransforms = renderable.second.m_PerInstanceTransforms;
+				if (perInstanceTransforms.maxTransformsInResource == 0) continue;
 				auto transformsResource = renderable.second.m_PerInstanceTransforms.transformsResource;
 
 				//we can update / shrink the buffer
 				const D3D12_RANGE readRange{};
 				D3D12_RANGE writeRange{};
-				writeRange.Begin = 0;
-				writeRange.End = writeRange.Begin;
 
 				renderable.second.numVisibleMeshes = 0;
 
 				char* transformData = nullptr;
 				transformsResource->Map(0, &readRange, (void**)&transformData);
-
-				for (auto& objID : renderable.second.SceneObject_IDs)
+				
+				if (renderable.second.SceneObject_IDs.size() > 0)
 				{
-					if (!objects[objID].m_Visible) continue;
+					const D3D::Mesh& mesh = resources.Get(renderable.first);
+					for (auto& objID : renderable.second.SceneObject_IDs)
+					{
+						if (!objects[objID].m_Visible) continue;
 
-					renderable.second.numVisibleMeshes++;
-					auto& obj = objects[objID];
-					const auto& matrix = obj.m_Transform.GetModelMatrix();
-
-					memcpy(transformData + writeRange.End, &matrix, sizePerElement);
-					writeRange.End += sizePerElement;
+						renderable.second.numVisibleMeshes+= mesh.m_Transform.size();
+						auto& obj = objects[objID];
+						auto rawMatrix = obj.m_Transform.GetModelMatrix();
+						DirectX::XMMATRIX matrix = DirectX::XMLoadFloat4x4(&rawMatrix);
+						for (int i = 0; i < mesh.m_Transform.size(); i++)
+						{
+							DirectX::XMFLOAT4X4 resultRawMatrix;
+							DirectX::XMMATRIX resultingMatrix = DirectX::XMMatrixMultiply(DirectX::XMLoadFloat4x4(&mesh.m_Transform[i]), matrix);
+							DirectX::XMStoreFloat4x4(&resultRawMatrix, resultingMatrix);
+							memcpy(transformData + writeRange.End, &resultRawMatrix, sizePerElement);
+							writeRange.End += sizePerElement;
+						}
+					}
 				}
+				
 				transformsResource->Unmap(0, &writeRange);
 
 
 				perInstanceTransforms.view.BufferLocation = transformsResource->GetGPUVirtualAddress();
-				perInstanceTransforms.view.SizeInBytes = static_cast<UINT>(renderable.second.SceneObject_IDs.size() * sizePerElement);
+				perInstanceTransforms.view.SizeInBytes = static_cast<UINT>(writeRange.End);
 				perInstanceTransforms.view.StrideInBytes = static_cast<UINT>(sizePerElement);
 			}
 		}

@@ -5,6 +5,7 @@
 #include "renderer/shadercompiler.h"
 #include "core/scripting/asengine.h"
 #include "renderer/material.h"
+#include "renderer/mesh.h"
 #include "util/print.h"
 #include "util/break.h"
 #include "util/stringutils.h"
@@ -118,6 +119,10 @@ namespace Themp
 	D3D::Model& Resources::Get(D3D::ModelHandle handle) 
 	{
 		return m_Models[handle.handle];
+	}
+	D3D::Mesh& Resources::Get(D3D::MeshHandle handle) 
+	{
+		return m_Meshes[handle.handle];
 	}
 
 	std::string GetFilePath(std::string_view base, std::string_view filename, std::string_view extension)
@@ -1305,7 +1310,8 @@ namespace Themp
 				sceneObj.m_OverrideMaterials.resize(model.m_Meshes.size());
 				for (int i = 0; i < model.m_Meshes.size(); i++)
 				{
-					sceneObj.m_OverrideMaterials[i] = model.m_Meshes[i].m_MaterialHandle;
+					const D3D::Mesh& mesh = Get(model.m_Meshes[i]);
+					sceneObj.m_OverrideMaterials[i] = mesh.m_MaterialHandle;
 				}
 
 				const auto& materialIt = table["meshmaterials"].as_array();
@@ -1326,7 +1332,7 @@ namespace Themp
 		
 	}
 
-	void HandleChilds(D3D::Model& model, DirectX::XMFLOAT4X4 parentTransform, FILE* modelFile)
+	void Resources::HandleChilds(D3D::Model& model, DirectX::XMFLOAT4X4 parentTransform, FILE* modelFile)
 	{
 		uint32_t numMeshes = 0;
 		uint32_t numChilds = 0;
@@ -1345,14 +1351,15 @@ namespace Themp
 		DirectX::XMFLOAT4X4 transform;
 		fread(&transform, sizeof(DirectX::XMFLOAT4X4), 1, modelFile);
 
-		DirectX::XMMATRIX matrix = DirectX::XMMatrixMultiply(DirectX::XMLoadFloat4x4(&transform), DirectX::XMLoadFloat4x4(&parentTransform));
+		DirectX::XMMATRIX matrix = DirectX::XMMatrixMultiply(DirectX::XMLoadFloat4x4(&parentTransform), XMMatrixTranspose(DirectX::XMLoadFloat4x4(&transform)));
 		DirectX::XMStoreFloat4x4(&transform, matrix);
 		for (unsigned int i = 0; i < numMeshes; i++)
 		{
 			uint32_t meshIndex = 0;
 			fread(&meshIndex, sizeof(uint32_t), 1, modelFile);
 
-			model.m_Meshes[meshIndex].m_Transform.push_back(transform);
+			D3D::Mesh& mesh = Get(model.m_Meshes[meshIndex]);
+			mesh.m_Transform.push_back(transform);
 		}
 		for (unsigned int i = 0; i < numChilds; i++)
 		{
@@ -1429,7 +1436,9 @@ namespace Themp
 
 		for (size_t i = 0; i < header.numMeshes; i++)
 		{
-			D3D::Mesh& mesh = model.m_Meshes.emplace_back();
+			D3D::Mesh& mesh = m_Meshes.emplace_back();
+			model.m_Meshes.emplace_back(m_Meshes.size() - 1);
+
 			ModelExport::MeshHeader meshHeader;
 			//read in mesh header info, contains number of vertices,indices and the belonging material ID
 			fread_s(&meshHeader, sizeof(meshHeader), sizeof(ModelExport::MeshHeader), 1, modelFile);
@@ -1508,13 +1517,14 @@ namespace Themp
 
 		for (size_t j = 0; j < model.m_Meshes.size(); j++)
 		{
+			D3D::Mesh& mesh = Get(model.m_Meshes[j]);
 			if (loadedMaterials.size() == 0)
 			{
-				model.m_Meshes[j].m_MaterialHandle = MaterialHandle::Invalid;
+				mesh.m_MaterialHandle = MaterialHandle::Invalid;
 				Themp::Print("No material was found for a mesh on: %s, mesh will not render", name.c_str());
 				continue;
 			}
-			model.m_Meshes[j].m_MaterialHandle = loadedMaterials[materialOrder[j]];
+			mesh.m_MaterialHandle = loadedMaterials[materialOrder[j]];
 		}
 		return m_Models.size()-1;
 	}

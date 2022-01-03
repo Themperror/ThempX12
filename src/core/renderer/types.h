@@ -16,7 +16,7 @@ using namespace Microsoft::WRL;
 #undef max
 #endif
 
-#define Handle(x) struct x##Handle { \
+#define Handle(name_space, x) namespace name_space { struct x##Handle { \
 size_t handle = Invalid; \
 x##Handle() = default; \
 x##Handle(size_t rhs) noexcept { handle = rhs; } \
@@ -29,43 +29,30 @@ bool operator==(const x##Handle& rhs) const noexcept { return handle == rhs.hand
 bool operator!=(const size_t rhs) const noexcept { return handle != rhs; }\
 bool operator!=(const x##Handle& rhs) const noexcept { return handle != rhs.handle; }\
 bool IsValid() const noexcept { return handle != Invalid;} \
-static inline constexpr const size_t Invalid = std::numeric_limits<size_t>::max(); }
+static inline constexpr const size_t Invalid = std::numeric_limits<size_t>::max(); }; } \
+template<> \
+struct std::hash<name_space::x##Handle> { \
+	std::size_t operator()(name_space::x##Handle const& s) const noexcept { \
+		return s.handle; } };
 
 
-namespace Themp::Scripting
-{
-	Handle(Script);
-}
+Handle(Themp::Scripting, Script);
+
+Handle(Themp::D3D, Pass);
+Handle(Themp::D3D, SubPass);
+Handle(Themp::D3D, Material);
+Handle(Themp::D3D, Shader);
+Handle(Themp::D3D, RTV);
+Handle(Themp::D3D, DSV);
+Handle(Themp::D3D, SRV);
+Handle(Themp::D3D, Texture);
+Handle(Themp::D3D, Model);
+Handle(Themp::D3D, Mesh);
+Handle(Themp::D3D, ConstantBuffer);
+Handle(Themp::D3D, RenderPass);
+
 namespace Themp::D3D
 {
-	//struct PassHandle
-	//{
-	//	size_t handle = Invalid;
-	//	constexpr PassHandle() = default;
-	//	constexpr PassHandle(size_t val) { handle = val; }
-	//	constexpr PassHandle(PassHandle& val) { handle = val.handle; }
-	//	constexpr PassHandle(PassHandle&& val) noexcept { handle = val.handle; }
-	//	PassHandle operator=(const PassHandle& rhs) { return { rhs.handle }; }
-	//	PassHandle& operator=(PassHandle&& rhs)  noexcept { return rhs; }
-	//	PassHandle operator=(const size_t rhs) { return { rhs }; }
-	//	bool operator==(const size_t rhs) { return handle == rhs; }
-	//	bool operator==(const PassHandle& rhs) { return handle == rhs.handle; }
-	//	bool IsValid() const { return handle != Invalid; }
-	//	static inline constexpr const size_t Invalid = std::numeric_limits<size_t>::max();
-	//};
-
-	Handle(Pass);
-	Handle(SubPass);
-	Handle(Material);
-	Handle(Shader);
-	Handle(RTV);
-	Handle(DSV);
-	Handle(SRV);
-	Handle(Texture);
-	Handle(Model);
-	Handle(ConstantBuffer);
-	Handle(RenderPass);
-
 	using MeshID = uint32_t;
 
 	struct RenderTargetHandle

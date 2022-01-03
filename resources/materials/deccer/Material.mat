@@ -1,0 +1,10 @@
+## ThempX12 Material File ##
+
+[[SubPass]]
+PositionInfo = true
+UVInfo = true
+NormalInfo = true
+Pass = "default"
+Shader = "default"
+Textures = [
+]

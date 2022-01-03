@@ -33,8 +33,6 @@ namespace Themp::D3D
 		void UpdateCameraConstantBuffer(D3D::ConstantBufferHandle handle, const CameraConstantBuffer& camData);
 		void UpdateEngineConstantBuffer(D3D::ConstantBufferHandle handle, const EngineConstantBuffer& engineData);
 
-		Model Test_GetAndAddRandomModel();
-
 		int ReleaseTexture(Texture& tex);
 		void UploadMeshStagingBuffers();
 		MeshData AppendMeshToStagingBuffers(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices);
