@@ -1,3 +1,5 @@
+##ThempX12 Pass file##
+
 ##Determines the order of rendering
 Priority = -1
 Script = "shadowpass"

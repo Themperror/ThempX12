@@ -35,7 +35,7 @@ PSOut main(VSOutput input)
 	
 	float lightNormal = saturate(dot(input.normal.xyz, lightPos));
 	
-	psOut.color = HSVtoRGB(float3(col, 1.0, 1.0));
+	psOut.color = HSVtoRGB(float3(col, 1.0, 1.0)) + input.normal;
 	psOut.depth = input.pos.z;
 	return psOut;
 }

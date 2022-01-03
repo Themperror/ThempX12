@@ -1,50 +1,10 @@
-[[cube]]
+[[sponza]]
 name = "cube"
-position = [20.0, 20.0, 0.0]
-rotation = [0.0, 0.0, 45.0]
-scale = [1.0, 1.0, 1.0]
-meshMaterials = [
-"base",
-"base",
-"base"
-]
-script = "cube"
-
-[[cube]]
-name = "cube2"
-position = [15, 20.0, 0.0]
-rotation = [45.0, 0.0, 0.0]
-scale = [1.0, 1.0, 1.0]
-meshMaterials = [
-"base",
-"base",
-"base"
-]
-script = "cube"
-
-[[cube]]
-name = "cube3"
-position = [10.0, 20.0, 0.0]
-rotation = [0.0, 45.0, 0.0]
-scale = [1.0, 1.0, 1.0]
-meshMaterials = [
-"base",
-"base",
-"base"
-]
-script = "cube"
-
-[[cube]]
-name = "cube4"
-position = [5.0, 20.0, 0.0]
+position = [0.0, 0.0, 0.0]
 rotation = [0.0, 0.0, 0.0]
-scale = [0.33, 0.33, 0.33]
-meshMaterials = [
-"base",
-"base",
-"base"
-]
+scale = [0.1, 0.1, 0.1]
 script = "cube"
+
 
 [[sphere]]
 name = "sphere"
@@ -58,60 +18,6 @@ script = "sphere"
 [[dragon]]
 name = "dragon"
 position = [0.0, 10.0, 10.0]
-rotation = [0.0, 0.0, 0.0]
-scale = [0.2, 0.2, 0.2]
-meshMaterials = ["base"
-]
-script = "sphere"
-
-[[dragon]]
-name = "dragon1"
-position = [0.0, 10.0, 10.0]
-rotation = [0.0, 0.0, 0.0]
-scale = [0.2, 0.2, 0.2]
-meshMaterials = ["base"
-]
-script = "sphere"
-
-[[dragon]]
-name = "dragon2"
-position = [10.0, 10.0, 10.0]
-rotation = [0.0, 0.0, 0.0]
-scale = [0.2, 0.2, 0.2]
-meshMaterials = ["base"
-]
-script = "sphere"
-
-[[dragon]]
-name = "dragon3"
-position = [-10.0, 10.0, 10.0]
-rotation = [0.0, 0.0, 0.0]
-scale = [0.2, 0.2, 0.2]
-meshMaterials = ["base"
-]
-script = "sphere"
-
-[[dragon]]
-name = "dragon4"
-position = [0.0, 0.0, 10.0]
-rotation = [0.0, 0.0, 0.0]
-scale = [0.2, 0.2, 0.2]
-meshMaterials = ["base"
-]
-script = "sphere"
-
-[[dragon]]
-name = "dragon5"
-position = [10.0, 0.0, 10.0]
-rotation = [0.0, 0.0, 0.0]
-scale = [0.2, 0.2, 0.2]
-meshMaterials = ["base"
-]
-script = "sphere"
-
-[[dragon]]
-name = "dragon6"
-position = [-10.0, 0.0, 10.0]
 rotation = [0.0, 0.0, 0.0]
 scale = [0.2, 0.2, 0.2]
 meshMaterials = ["base"
