@@ -54,7 +54,7 @@ bool Control::Init()
 	m_Context->EnableVsync(Engine::s_SVars.GetSVarInt(SVar::iVSyncEnabled));
 
 
-	ImGui_ImplDX12_Init(GetDevice().Get(), Engine::s_SVars.GetSVarInt(SVar::iNumBackBuffers), DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM, m_ImguiSRVHeap.Get(), m_ImguiSRVHeap->GetCPUDescriptorHandleForHeapStart(), m_ImguiSRVHeap->GetGPUDescriptorHandleForHeapStart());
+	ImGui_ImplDX12_Init(GetDevice().GetDevice().Get(), Engine::s_SVars.GetSVarInt(SVar::iNumBackBuffers), DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM, m_ImguiSRVHeap.Get(), m_ImguiSRVHeap->GetCPUDescriptorHandleForHeapStart(), m_ImguiSRVHeap->GetGPUDescriptorHandleForHeapStart());
 
 	s_ShaderCompiler.Init();
 
@@ -101,20 +101,31 @@ void Control::PopulateRenderingGraph(Themp::Resources& resources)
 	for (const auto& obj : objs)
 	{
 		int meshID = 0;
-		for (const auto& mesh : obj.m_Model.m_Meshes)
+		Model& model = resources.Get(obj.m_ModelHandle);
+		for (int i = 0; i < obj.m_OverrideMaterials.size(); i++)
 		{
-			if (mesh.m_MaterialHandle.IsValid())
+			D3D::MaterialHandle materialOverride = obj.m_OverrideMaterials[i];
+			if (materialOverride.IsValid())
 			{
-				const auto& material = resources.Get(mesh.m_MaterialHandle);
+				const auto& material = resources.Get(materialOverride);
 				for (const auto& subPassHandle : material.m_SubPasses)
 				{
 					for (auto& pass : m_Renderpasses)
 					{
 						if (pass.pipeline.GetPassHandle() == resources.Get(subPassHandle).pass)
 						{
-							Renderable& renderable = pass.renderables[mesh.m_MeshData.ID];
-							renderable.SceneObject_IDs.push_back(obj.m_ID);
-							renderable.meshData = mesh.m_MeshData;
+							auto it = pass.renderables.find(model.m_Meshes[i].m_MeshData.ID);
+							if (it != pass.renderables.end())
+							{
+								Renderable& renderable = it->second;
+								renderable.SceneObject_IDs.push_back(obj.m_ID);
+							}
+							else
+							{
+								Renderable& renderable = pass.renderables[model.m_Meshes[i].m_MeshData.ID];
+								renderable.SceneObject_IDs.push_back(obj.m_ID);
+								renderable.meshData = model.m_Meshes[i].m_MeshData;
+							}
 						}
 					}
 				}
@@ -183,7 +194,7 @@ void Control::BeginDraw()
 	{
 #if _DEBUG
 		std::string_view passNameSV = Engine::instance->m_Resources->Get(renderPass.pipeline.GetPassHandle()).GetName();
-		frame.GetCmdList()->BeginEvent(1, passNameSV.data(), sizeof(void*));
+		frame.GetCmdList()->BeginEvent(1, passNameSV.data(), passNameSV.size() + 1);
 #endif
 		m_GPU_Resources->UpdateTransformsBufferView(*m_Device, renderPass, sceneObjects);
 		renderPass.pipeline.SetTo(frame, renderPass);
@@ -267,30 +278,11 @@ Frame& Control::GetCurrentBackbuffer()
 	return m_Backbuffers[m_CurrentBackBuffer];
 }
 
-ComPtr<ID3D12CommandQueue> Control::GetCommandQueue(D3D12_COMMAND_LIST_TYPE commandListType) const
+const Device& Control::GetDevice() const
 {
-	return m_Device->GetCmdQueue(commandListType);
+	return *m_Device;
 }
 
-ComPtr<ID3D12Device2> Control::GetDevice() const
-{
-	return m_Device->GetDevice();
-}
-
-ComPtr<ID3D12Device5> Control::GetDeviceRTX() const
-{
-	if (m_Device->SupportsRaytracing())
-	{
-		ComPtr<ID3D12Device5> dev5;
-		HRESULT result = m_Device->GetDevice().As<ID3D12Device5>(&dev5);
-		return dev5;
-	}
-	else
-	{
-		Themp::Print("Attempted to get device as RTX when we don't support this");
-		return nullptr;
-	}
-}
 
 const Context&  Control::GetContext() const
 {

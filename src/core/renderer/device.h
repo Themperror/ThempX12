@@ -14,7 +14,8 @@ namespace Themp
 		public:
 			bool Init();
 			ComPtr<ID3D12Device2> GetDevice() const;
-			ComPtr<ID3D12CommandQueue> GetCmdQueue(D3D12_COMMAND_LIST_TYPE CmdListType = D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT);
+			ComPtr<ID3D12Device5> GetDeviceRTX() const;
+			ComPtr<ID3D12CommandQueue> GetCmdQueue(D3D12_COMMAND_LIST_TYPE CmdListType = D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT) const;
 			ComPtr<ID3D12DescriptorHeap> CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE type, uint32_t numDescriptors) const;
 			D3D_FEATURE_LEVEL GetFeatureLevel() const;
 			bool SupportsRaytracing() const;

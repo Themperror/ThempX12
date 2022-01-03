@@ -39,7 +39,7 @@ namespace Themp::D3D
 		void UploadMeshStagingBuffers();
 		MeshData AppendMeshToStagingBuffers(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices);
 
-		ConstantBufferHandle CreateConstantBuffer(ComPtr<ID3D12Device2> device, size_t size, ConstantBufferHandle reuseHandle = ConstantBufferHandle::Invalid);
+		ConstantBufferHandle CreateConstantBuffer(const D3D::Device& device, size_t size, ConstantBufferHandle reuseHandle = ConstantBufferHandle::Invalid);
 		ConstantBufferHandle ReserveConstantBuffer();
 
 
@@ -61,15 +61,14 @@ namespace Themp::D3D
 		};
 
 		DescriptorHeapTracker CreateDescriptorHeap(const D3D::Device& device, DESCRIPTOR_HEAP_TYPE type, uint32_t amount);
-		void CreateVertexBuffer(const D3D::Device& device);
-		void CreateIndexBuffer(const D3D::Device& device);
+		void CreateVertexBuffer(const D3D::Device& device, uint32_t maxVertexCount, bool copyOldBufferData);
+		void CreateIndexBuffer(const D3D::Device& device, uint32_t maxIndexCount, bool copyOldBufferData);
 		void UpdateIndexBufferView(const MeshData& tracker);
 		uint32_t GetNextMeshID() { return m_LatestMeshID++; }
 
 		//Texture& MakeTextureFromResource(const Context& device, DescriptorHeapTracker& heapTracker, ComPtr<ID3D12Resource> resource, TEXTURE_TYPE type);
 		std::unordered_map<std::string, Texture*> m_FileTextures;
 		std::vector< std::unique_ptr<Texture>> m_Textures;
-		std::unordered_map<std::string, ModelData> m_Models;
 
 		struct VertexCollectionBuffer
 		{
@@ -83,7 +82,9 @@ namespace Themp::D3D
 			DirectX::XMFLOAT3* posData = nullptr;
 			NormalData* normalData = nullptr;
 			DirectX::XMFLOAT2* uvData = nullptr;
-
+			D3D12_RANGE writtenRangePos{};
+			D3D12_RANGE writtenRangeNormal{};
+			D3D12_RANGE writtenRangeUV{};
 		public:
 			ComPtr<ID3D12Resource> positionBuffer;
 			ComPtr<ID3D12Resource> normalBuffer;
@@ -101,20 +102,23 @@ namespace Themp::D3D
 				m_VertexBufferViews.resize(3);
 			}
 
-			void Map()
+			void Map(size_t writeRangeBeginElements)
 			{
 				D3D12_RANGE read{};
+				writtenRangePos.Begin = writeRangeBeginElements * sizeof(DirectX::XMFLOAT3);
+				writtenRangeNormal.Begin = writeRangeBeginElements * sizeof(NormalData);
+				writtenRangeUV.Begin = writeRangeBeginElements * sizeof(DirectX::XMFLOAT2);
 				positionBuffer->Map(0, &read, (void**)&posData);
 				normalBuffer->Map(0, &read, (void**)&normalData);
 				uvBuffer->Map(0, &read, (void**)&uvData);
 				
 			}
 
-			void Unmap(const D3D12_RANGE& written)
+			void Unmap()
 			{
-				positionBuffer->Unmap(0, &written);
-				normalBuffer->Unmap(0, &written);
-				uvBuffer->Unmap(0, &written);
+				positionBuffer->Unmap(0, &writtenRangePos);
+				normalBuffer->Unmap(0, &writtenRangeNormal);
+				uvBuffer->Unmap(0, &writtenRangeUV);
 
 				posData = nullptr;
 				normalData = nullptr;
@@ -139,19 +143,24 @@ namespace Themp::D3D
 			void SetVertex(int index, const Vertex& vertex)
 			{
 				posData[index] = vertex.position;
+				writtenRangePos.End += sizeof(vertex.position);
 				normalData[index].normal = vertex.normal;
 				normalData[index].tangent = vertex.tangent;
 				normalData[index].bitangent = vertex.bitangent;
+				writtenRangeNormal.End += sizeof(vertex.normal) + sizeof(vertex.tangent) + sizeof(vertex.bitangent);
 				uvData[index] = vertex.uv;
+				writtenRangeUV.End += sizeof(vertex.uv);
 			}
 		};
 
+		uint32_t m_MaxVertexBufferSize = 0;
 		VertexCollectionBuffer m_MainVertexBuffers;
 
 		std::vector<ConstantBufferData> m_ConstantBuffers;
 		ComPtr<ID3D12Resource> m_InstanceTransformsBuffer;
 		D3D12_VERTEX_BUFFER_VIEW m_InstanceTransformsView;
 		
+		uint32_t m_MaxIndexBufferSize = 0;
 		ComPtr<ID3D12Resource> m_MainIndexBuffer;
 		D3D12_INDEX_BUFFER_VIEW m_IndexBufferView;
 		MeshData m_MeshBufferStageTracker;

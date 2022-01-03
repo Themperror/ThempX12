@@ -144,7 +144,7 @@
     <ClInclude Include="src\core\renderer\pass.h">
       <Filter>Source Files\core\renderer</Filter>
     </ClInclude>
-    <ClInclude Include="src\core\util\stringUtils.h">
+    <ClInclude Include="src\core\util\stringutils.h">
       <Filter>Source Files\core\util</Filter>
     </ClInclude>
     <ClInclude Include="src\lib\toml.hpp">
@@ -227,6 +227,12 @@
     </ClInclude>
     <ClInclude Include="src\core\components\sceneobject.h">
       <Filter>Source Files\core\components</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\modelexport.h">
+      <Filter>Source Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\util\fileutils.h">
+      <Filter>Source Files\core\util</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -314,7 +320,7 @@
     <ClCompile Include="src\core\renderer\pass.cpp">
       <Filter>Source Files\core\renderer</Filter>
     </ClCompile>
-    <ClCompile Include="src\core\util\stringUtils.cpp">
+    <ClCompile Include="src\core\util\stringutils.cpp">
       <Filter>Source Files\core\util</Filter>
     </ClCompile>
     <ClCompile Include="src\core\renderer\shadercompiler.cpp">
@@ -394,6 +400,12 @@
     </ClCompile>
     <ClCompile Include="src\core\components\sceneobject.cpp">
       <Filter>Source Files\core\components</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\modelexport.cpp">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\util\fileutils.cpp">
+      <Filter>Source Files\core\util</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

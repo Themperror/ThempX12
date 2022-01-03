@@ -11,7 +11,7 @@ bool CheckTearingSupport();
 
 bool Context::Init(ComPtr<ID3D12Device2> device)
 {
-	ComPtr<ID3D12CommandQueue> cmdQueue = Engine::instance->m_Renderer->GetCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT);
+	ComPtr<ID3D12CommandQueue> cmdQueue = Engine::instance->m_Renderer->GetDevice().GetCmdQueue(D3D12_COMMAND_LIST_TYPE_DIRECT);
 	m_Device = device;
 	m_NumBackBuffers = Engine::s_SVars.GetSVarInt(SVar::iNumBackBuffers);
 	m_BackBuffers.resize(m_NumBackBuffers);

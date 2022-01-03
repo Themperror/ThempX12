@@ -61,7 +61,6 @@ namespace Themp
 		static SVars s_SVars;
 		void Start();
 		void ResizeWindow(int width, int height);
-		static std::string ReadFileToString(const std::string& filePath);
 
 		float GetDeltaTime() { return m_DeltaTime; }
 		float GetTimeSinceLaunch() { return m_TimeSinceLaunch; }

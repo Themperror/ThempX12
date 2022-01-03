@@ -12,6 +12,8 @@
 #include "core/components/transform.h"
 #include "core/components/sceneobject.h"
 
+#include "core/resources.h"
+
 #include <assert.h>
 namespace Themp::D3D
 {
@@ -28,14 +30,10 @@ namespace Themp::D3D
 		m_DSV_Heap = CreateDescriptorHeap(device, Themp::D3D::DESCRIPTOR_HEAP_TYPE::DSV, maxNumDSV);
 		m_RTV_Heap = CreateDescriptorHeap(device, Themp::D3D::DESCRIPTOR_HEAP_TYPE::RTV, maxNumRTV);
 		m_SAMPLER_Heap = CreateDescriptorHeap(device, Themp::D3D::DESCRIPTOR_HEAP_TYPE::SAMPLER, maxNumSamplers);
-
-		CreateVertexBuffer(device);
-		CreateIndexBuffer(device);
 	}
 
-	void GPU_Resources::CreateVertexBuffer(const D3D::Device& device)
+	void GPU_Resources::CreateVertexBuffer(const D3D::Device& device, uint32_t maxVertexCount, bool copyOldBufferData)
 	{
-		int maxVertices = Engine::s_SVars.GetSVarInt(SVar::iMaxVerticesInBuffer);
 		D3D12_HEAP_PROPERTIES props{};
 		props.Type = D3D12_HEAP_TYPE_UPLOAD;
 		props.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
@@ -56,7 +54,7 @@ namespace Themp::D3D
 		ComPtr<ID3D12Resource> uvBuffer;
 
 		{
-			desc.Width = maxVertices * sizeof(DirectX::XMFLOAT3);
+			desc.Width = maxVertexCount * sizeof(DirectX::XMFLOAT3);
 			if (device.GetDevice()->CreateCommittedResource(&props, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_GENERIC_READ, NULL, IID_PPV_ARGS(&positionBuffer)) < 0)
 			{
 				Themp::Print("Failed to create Position Vertex Buffer!");
@@ -66,7 +64,7 @@ namespace Themp::D3D
 		}
 
 		{
-			desc.Width = maxVertices * sizeof(VertexCollectionBuffer::NormalData);
+			desc.Width = maxVertexCount * sizeof(VertexCollectionBuffer::NormalData);
 			if (device.GetDevice()->CreateCommittedResource(&props, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_GENERIC_READ, NULL, IID_PPV_ARGS(&normalBuffer)) < 0)
 			{
 				Themp::Print("Failed to create Normal Vertex Buffer!");
@@ -76,7 +74,7 @@ namespace Themp::D3D
 		}
 
 		{
-			desc.Width = maxVertices * sizeof(DirectX::XMFLOAT2);
+			desc.Width = maxVertexCount * sizeof(DirectX::XMFLOAT2);
 			if (device.GetDevice()->CreateCommittedResource(&props, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_GENERIC_READ, NULL, IID_PPV_ARGS(&uvBuffer)) < 0)
 			{
 				Themp::Print("Failed to create UV Vertex Buffer!");
@@ -85,11 +83,43 @@ namespace Themp::D3D
 			uvBuffer->SetName(L"UVVertexBuffer");
 		}
 
+		if (copyOldBufferData)
+		{
+			auto CopyBuffer = [&](auto oldBuffer, auto newBuffer, size_t elementSize)
+			{
+				const D3D12_RANGE newDataReadRange{};
+				D3D12_RANGE oldDataReadRange{};
+				oldDataReadRange.Begin = 0;
+				oldDataReadRange.End = m_MaxVertexBufferSize * elementSize;
+				D3D12_RANGE writeRange{};
+				writeRange.Begin = 0;
+				writeRange.End = writeRange.Begin;
+
+				char* newData;
+				char* oldData;
+				newBuffer->Map(0, &newDataReadRange, (void**)&newData);
+				oldBuffer->Map(0, &oldDataReadRange, (void**)&oldData);
+
+				memcpy(newData, oldData, oldDataReadRange.End);
+				writeRange.End = oldDataReadRange.End;
+
+				oldBuffer->Unmap(0, &writeRange);
+				newBuffer->Unmap(0, &writeRange);
+			};
+
+			CopyBuffer(m_MainVertexBuffers.positionBuffer, positionBuffer, sizeof(DirectX::XMFLOAT3));
+			CopyBuffer(m_MainVertexBuffers.normalBuffer, normalBuffer, sizeof(VertexCollectionBuffer::NormalData));
+			CopyBuffer(m_MainVertexBuffers.uvBuffer, uvBuffer, sizeof(DirectX::XMFLOAT2));
+			
+			m_MainVertexBuffers.positionBuffer.Reset();
+			m_MainVertexBuffers.normalBuffer.Reset();
+			m_MainVertexBuffers.uvBuffer.Reset();
+		}
+
 		m_MainVertexBuffers = VertexCollectionBuffer(positionBuffer, normalBuffer, uvBuffer);
 	}
-	void GPU_Resources::CreateIndexBuffer(const D3D::Device& device)
+	void GPU_Resources::CreateIndexBuffer(const D3D::Device& device, uint32_t maxIndexCount, bool copyOldBufferData)
 	{
-		int maxIndices = Engine::s_SVars.GetSVarInt(SVar::iMaxIndicesInBuffer);
 		D3D12_HEAP_PROPERTIES props{};
 		props.Type = D3D12_HEAP_TYPE_UPLOAD;
 		props.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
@@ -97,7 +127,7 @@ namespace Themp::D3D
 
 		D3D12_RESOURCE_DESC desc{};
 		desc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-		desc.Width = maxIndices * sizeof(uint32_t);
+		desc.Width = (uint64_t)maxIndexCount * sizeof(uint32_t);
 		if (desc.Width >= std::numeric_limits<uint32_t>::max())
 		{
 			Themp::Print("Index buffer size exceeds 32-bit size limit, cannot be used as index buffer due to D3D12_INDEX_BUFFER_VIEW taking UINTS!");
@@ -110,12 +140,39 @@ namespace Themp::D3D
 		desc.SampleDesc.Count = 1;
 		desc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 		desc.Flags = D3D12_RESOURCE_FLAG_NONE;
-		if (device.GetDevice()->CreateCommittedResource(&props, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_GENERIC_READ, NULL, IID_PPV_ARGS(&m_MainIndexBuffer)) < 0)
+
+		ComPtr<ID3D12Resource> newIndexBuffer;
+
+		if (device.GetDevice()->CreateCommittedResource(&props, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_GENERIC_READ, NULL, IID_PPV_ARGS(&newIndexBuffer)) < 0)
 		{
 			Themp::Print("Failed to create Index Buffer!");
 			Themp::Break();
 		}
-		m_MainIndexBuffer->SetName(L"MainIndexBuffer");
+		newIndexBuffer->SetName(L"MainIndexBuffer");
+
+		if (copyOldBufferData)
+		{
+			const D3D12_RANGE newDataReadRange{};
+			D3D12_RANGE oldDataReadRange{};
+			oldDataReadRange.Begin = 0;
+			oldDataReadRange.End = m_MaxIndexBufferSize * sizeof(uint32_t);
+			D3D12_RANGE writeRange{};
+			writeRange.Begin = 0;
+			writeRange.End = writeRange.Begin;
+
+			char* newData;
+			char* oldData;
+			newIndexBuffer->Map(0, &newDataReadRange, (void**)&newData);
+			m_MainIndexBuffer->Map(0, &oldDataReadRange, (void**)&oldData);
+
+			memcpy(newData, oldData, oldDataReadRange.End);
+			writeRange.End = oldDataReadRange.End;
+
+			m_MainIndexBuffer->Unmap(0, &writeRange);
+			newIndexBuffer->Unmap(0, &writeRange);
+			m_MainIndexBuffer.Reset();
+		}
+		m_MainIndexBuffer = newIndexBuffer;
 	}
 
 	Model GPU_Resources::Test_GetAndAddRandomModel()
@@ -194,7 +251,7 @@ namespace Themp::D3D
 	}
 
 
-	ConstantBufferHandle GPU_Resources::CreateConstantBuffer(ComPtr<ID3D12Device2> device, size_t size, ConstantBufferHandle reuseHandle)
+	ConstantBufferHandle GPU_Resources::CreateConstantBuffer(const D3D::Device& device, size_t size, ConstantBufferHandle reuseHandle)
 	{
 		auto& newBuffer = reuseHandle.IsValid() ? Get(reuseHandle) : m_ConstantBuffers.emplace_back();
 		if (reuseHandle.IsValid())
@@ -223,7 +280,7 @@ namespace Themp::D3D
 		desc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 		desc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
-		if (device->CreateCommittedResource(&props, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_GENERIC_READ, NULL, IID_PPV_ARGS(&newBuffer.buffer)) < 0)
+		if (device.GetDevice()->CreateCommittedResource(&props, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_GENERIC_READ, NULL, IID_PPV_ARGS(&newBuffer.buffer)) < 0)
 		{
 			Themp::Print("Failed to create Constant Buffer!");
 			Themp::Break();
@@ -312,6 +369,25 @@ namespace Themp::D3D
 	{
 		if (m_MeshDataStage.indexData.size() > 0)
 		{
+			uint32_t totalIndices = 0;
+			for (auto& indexData : m_MeshDataStage.indexData)
+			{
+				totalIndices += indexData.size();
+			}
+			if (totalIndices + m_MeshBufferTracker.indexCount >= m_MaxIndexBufferSize)
+			{
+				uint32_t newMax = (float)(totalIndices + m_MeshBufferTracker.indexCount) * 1.5f;
+				if (m_MaxIndexBufferSize == 0)
+				{
+					CreateIndexBuffer(Themp::Engine::instance->m_Renderer->GetDevice(), newMax, false);
+				}
+				else
+				{
+					CreateIndexBuffer(Themp::Engine::instance->m_Renderer->GetDevice(), newMax, true);
+				}
+				m_MaxIndexBufferSize = newMax;
+			}
+
 			const D3D12_RANGE readRange{};
 			D3D12_RANGE writeRange{};
 			writeRange.Begin = m_MeshBufferTracker.indexIndex * sizeof(uint32_t);
@@ -342,12 +418,26 @@ namespace Themp::D3D
 
 		if (m_MeshDataStage.vertexData.size() > 0)
 		{
-			const D3D12_RANGE readRange{};
-			D3D12_RANGE writeRange{};
-			writeRange.Begin = m_MeshBufferTracker.vertexIndex * sizeof(uint32_t);
-			writeRange.End = writeRange.Begin;
-;
-			m_MainVertexBuffers.Map();
+			uint32_t totalVertices = 0;
+			for (auto& vertexData : m_MeshDataStage.vertexData)
+			{
+				totalVertices += vertexData.size();
+			}
+			if (totalVertices + m_MeshBufferTracker.vertexCount >= m_MaxVertexBufferSize)
+			{
+				uint32_t newMax = (float)(totalVertices + m_MeshBufferTracker.vertexCount) * 1.5f;
+				if (m_MaxVertexBufferSize == 0)
+				{
+					CreateVertexBuffer(Themp::Engine::instance->m_Renderer->GetDevice(), newMax, false);
+				}
+				else
+				{
+					CreateVertexBuffer(Themp::Engine::instance->m_Renderer->GetDevice(), newMax, true);
+				}
+				m_MaxVertexBufferSize = newMax;
+			}
+
+			m_MainVertexBuffers.Map(m_MeshBufferTracker.vertexIndex * sizeof(uint32_t));
 			for (auto& vertices : m_MeshDataStage.vertexData)
 			{
 				for (int i = 0; i < vertices.size(); i++)
@@ -355,12 +445,11 @@ namespace Themp::D3D
 					m_MainVertexBuffers.SetVertex(m_MeshBufferTracker.vertexCount + i, vertices[i]);
 				}
 				size_t dataSize = sizeof(Vertex) * vertices.size();
-				writeRange.End += dataSize;
 
 				m_MeshBufferTracker.vertexIndex = m_MeshBufferTracker.vertexCount;
 				m_MeshBufferTracker.vertexCount += static_cast<uint32_t>(vertices.size());
 			}
-			m_MainVertexBuffers.Unmap(writeRange);
+			m_MainVertexBuffers.Unmap();
 
 			m_MainVertexBuffers.UpdateVertexBufferViews(m_MeshBufferTracker);
 
@@ -398,8 +487,9 @@ namespace Themp::D3D
 
 	void GPU_Resources::UpdateTransformsBufferView(const D3D::Device& device, RenderPass& pass , std::vector<SceneObject>& objects)
 	{
-
+		auto& resources = *Themp::Engine::instance->m_Resources;
 		size_t sizePerElement = sizeof(DirectX::XMFLOAT4X4);
+		
 		for (auto& renderable : pass.renderables)
 		{
 			if (renderable.second.SceneObject_IDs.size() > renderable.second.m_PerInstanceTransforms.maxTransformsInResource)
@@ -453,7 +543,6 @@ namespace Themp::D3D
 
 				char* transformData = nullptr;
 				transformsResource->Map(0, &readRange, (void**)&transformData);
-
 
 				for (auto& objID : renderable.second.SceneObject_IDs)
 				{

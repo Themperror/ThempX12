@@ -10,10 +10,11 @@ namespace Themp
 	public:
 		//std::vector<Mesh> m_Meshes;
 		Transform m_Transform = Transform(DirectX::XMFLOAT3(0,0,0), DirectX::XMFLOAT3(0,0,0), DirectX::XMFLOAT3(1,1,1));
-		D3D::Model m_Model;
+		D3D::ModelHandle m_ModelHandle;
 		bool m_Visible = true;
 		size_t m_ID;
 		std::string m_Name;
+		std::vector<D3D::MaterialHandle> m_OverrideMaterials;
 		Scripting::ScriptHandle m_ScriptHandle;
 	};
 }

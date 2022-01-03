@@ -36,7 +36,10 @@ bool Device::Init()
 	SetDebugFlags();
 #endif
 
-	GetCmdQueue(D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT);
+	m_CmdQueues[D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT] = CreateCommandQueue(D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT);
+	m_CmdQueues[D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_COMPUTE] = CreateCommandQueue(D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_COMPUTE);
+	m_CmdQueues[D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_COPY] = CreateCommandQueue(D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_COPY);
+
 
 
 	return true;
@@ -70,12 +73,24 @@ ComPtr<ID3D12Device2> Device::GetDevice() const
 	return m_Device;
 }
 
-ComPtr<ID3D12CommandQueue> Device::GetCmdQueue(D3D12_COMMAND_LIST_TYPE CmdListType)
+
+ComPtr<ID3D12Device5> Device::GetDeviceRTX() const
 {
-	if (m_CmdQueues[CmdListType] == nullptr)
+	if (SupportsRaytracing())
 	{
-		m_CmdQueues[CmdListType] = CreateCommandQueue(CmdListType);
+		ComPtr<ID3D12Device5> dev5;
+		HRESULT result = m_Device.As<ID3D12Device5>(&dev5);
+		return dev5;
 	}
+	else
+	{
+		Themp::Print("Attempted to get device as RTX when we don't support this");
+		return nullptr;
+	}
+}
+
+ComPtr<ID3D12CommandQueue> Device::GetCmdQueue(D3D12_COMMAND_LIST_TYPE CmdListType) const
+{
 	return m_CmdQueues[CmdListType];
 }
 

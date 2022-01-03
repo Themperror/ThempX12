@@ -9,6 +9,10 @@ namespace Themp::Util
 	std::string ToLowerCase(const std::string& string);
 	std::wstring ToWideString(const std::string& string);
 
+	std::string SanitizeSlashes(std::string input);
+	bool Contains(const std::string& source, const std::string& search, bool caseSensitive = true);
+	bool Contains(const std::string_view& sourceString, const std::string_view& searchString, bool caseSensitive);
+
 	template<typename T, typename S, 
 		std::enable_if_t<
 		std::is_base_of_v<std::basic_string_view<char>, S> ||

@@ -7,7 +7,10 @@
 #include "renderer/material.h"
 #include "util/print.h"
 #include "util/break.h"
-#include "util/stringUtils.h"
+#include "util/stringutils.h"
+#include "util/fileutils.h"
+
+#include "core/modelexport.h"
 
 #include <iostream>
 #include <fstream>
@@ -15,6 +18,7 @@
 #include <charconv>
 #include <optional>
 #include <sstream>
+#include <functional>
 
 #include "util/svars.h"
 
@@ -25,17 +29,30 @@ namespace Themp
 {
 	std::unique_ptr<Resources> Resources::instance;
 
-#define RESOURCES_FOLDER "../resources/"
-#define MATERIALS_FOLDER RESOURCES_FOLDER"materials/"
-#define MODELS_FOLDER RESOURCES_FOLDER"models/"
-#define SCENES_FOLDER RESOURCES_FOLDER"scenes/"
-#define SCRIPTS_FOLDER RESOURCES_FOLDER"scripts/"
-#define PASSES_FOLDER RESOURCES_FOLDER"passes/"
-#define SHADERS_FOLDER RESOURCES_FOLDER"shaders/"
-#define RENDER_TARGET_FOLDER RESOURCES_FOLDER"rendertargets/"
+#define RAW_ASSETS_FOLDER "..\\rawassets\\"
+#define RAW_ASSETS_MODEL_FOLDER "..\\rawassets\\models\\"
+#define RESOURCES_FOLDER "..\\resources\\"
+#define MATERIALS_FOLDER RESOURCES_FOLDER"materials\\"
+#define MODELS_FOLDER RESOURCES_FOLDER"models\\"
+#define SCENES_FOLDER RESOURCES_FOLDER"scenes\\"
+#define SCRIPTS_FOLDER RESOURCES_FOLDER"scripts\\"
+#define PASSES_FOLDER RESOURCES_FOLDER"passes\\"
+#define SHADERS_FOLDER RESOURCES_FOLDER"shaders\\"
+#define RENDER_TARGET_FOLDER RESOURCES_FOLDER"rendertargets\\"
 
 #define MODEL_VERSION_HIGH 1
 #define MODEL_VERSION_LOW 7
+
+
+	constexpr std::array<std::string_view,6> s_SupportedModelExtensions =
+	{
+		".obj",
+		".fbx",
+		".dae",
+		".blend",
+		".glTF",
+		".ply",
+	};
 
 	std::string_view Resources::GetResourcesFolder()
 	{
@@ -98,6 +115,10 @@ namespace Themp
 	{
 		return m_Materials[handle.handle];
 	}
+	D3D::Model& Resources::Get(D3D::ModelHandle handle) 
+	{
+		return m_Models[handle.handle];
+	}
 
 	std::string GetFilePath(std::string_view base, std::string_view filename, std::string_view extension)
 	{
@@ -134,49 +155,16 @@ namespace Themp
 		return filename;
 	}
 
-	std::vector<std::string> LoadFilesFromDirectory(std::string dir)
-	{
-		std::vector<std::string> files;
-
-		DWORD attributes = GetFileAttributesA(dir.c_str());
-		if (attributes == INVALID_FILE_ATTRIBUTES)
-		{
-			Themp::Print(L"Unable to find folder at %s", dir.c_str());
-			Themp::Break();
-			return {};
-		}
-
-		WIN32_FIND_DATA ffd{};
-		HANDLE hFind = FindFirstFileA((dir + "*").c_str(), &ffd);
-		if (hFind == INVALID_HANDLE_VALUE)
-		{
-			Themp::Print("Something went wrong %s", dir.c_str());
-		}
-		while (FindNextFileA(hFind, &ffd) != 0)
-		{
-			// ignore directories
-			if (!(ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
-			{
-				// create a full path for each file we find, e.g. "c:\indir\foo.txt"
-				std::string file_path;
-				file_path.reserve(2048);
-				file_path = dir + ffd.cFileName;
-				std::transform(file_path.begin(), file_path.end(), file_path.begin(), ::tolower);
-				files.push_back(file_path);
-			}
-		}
-		FindClose(hFind);
-		return files;
-	}
+	
 
 	std::vector<std::pair<std::string, std::string>> Resources::GetScriptFiles() const
 	{
-		auto files = LoadFilesFromDirectory(SCRIPTS_FOLDER);
+		auto files = Util::LoadFilesFromDirectory(SCRIPTS_FOLDER);
 		std::vector<std::pair<std::string, std::string>> fileDatas;
 		fileDatas.reserve(files.size());
 		for (auto& file : files)
 		{
-			fileDatas.push_back({ file, Engine::ReadFileToString(file)});
+			fileDatas.push_back({ file, Util::ReadFileToString(file)});
 		}
 		return fileDatas;
 	}
@@ -186,7 +174,7 @@ namespace Themp
 	{
 		std::vector<std::pair<int,int>> releasedIndices;
 		auto& gpuResources = Engine::instance->m_Renderer->GetResourceManager();
-		auto device = Engine::instance->m_Renderer->GetDevice();
+		auto device = Engine::instance->m_Renderer->GetDevice().GetDevice();
 		for (int i = 1; i < m_ColorTargets.size(); i++)
 		{
 			auto desc = m_ColorTargets[i].second.GetResource(D3D::TEXTURE_TYPE::RTV)->GetDesc();
@@ -235,56 +223,16 @@ namespace Themp
 			m_DepthTargets[i].second = tex;
 		}
 	}
-	void Resources::LoadMaterials()
+
+
+
+	void Resources::CompileAllShaders()
 	{
-		std::vector<std::string> materials = LoadFilesFromDirectory(MATERIALS_FOLDER);
-		std::vector<std::string> shaderFiles = LoadFilesFromDirectory(SHADERS_FOLDER);
-		std::string materialData(10240, '\0');
-		std::vector<D3D::SubPass> passes;
-		for (const std::string& path : materials)
-		{
-			std::string fileName = GetFileName(path);
-			D3D::Material material;
-			for (int i = 0; i < m_Materials.size(); i++)
-			{
-				if (m_Materials[i].m_Name == fileName)
-				{
-					goto CONTINUE;
-				}
-			}
-			Themp::Print("Loading material file: [%s]", path.c_str());
-			passes.clear();
-			passes = LoadMaterial(Engine::ReadFileToString(path), shaderFiles);
-
-			MergePasses(passes);
-			for (int i = 0; i < m_Subpasses.size(); i++)
-			{
-				for (int j = 0; j < passes.size(); j++)
-				{
-					if (passes[j].pass == m_Subpasses[i].pass)
-					{
-						material.m_SubPasses.push_back(i);
-					}
-				}
-			}
-			material.m_Name = GetFileName(path);
-			m_Materials.push_back(material);
-
-		CONTINUE:
-			continue;
-		}
-
 		const D3D::ShaderCompiler& compiler = Themp::Engine::instance->m_Renderer->GetShaderCompiler();
 		for (int i = 0; i < m_Shaders.size(); i++)
 		{
 			compiler.Compile(m_Shaders[i]);
 		}
-	}
-
-
-	void Resources::AddOrSetShaderToPass(std::string_view name, int index, Themp::D3D::Pass& pass)
-	{
-
 	}
 
 	template<typename T>
@@ -351,7 +299,7 @@ namespace Themp
 		path.append(filename.begin(), filename.end())
 			.append(extension);
 
-		std::string data = Themp::Util::ToLowerCase(Engine::ReadFileToString(path));
+		std::string data = Themp::Util::ToLowerCase(Util::ReadFileToString(path));
 
 		const toml::parse_result result = toml::parse(data);
 		if (!result)
@@ -921,7 +869,7 @@ namespace Themp
 			return { rtvHandle, dsvHandle, srvHandle };
 		}
 
-		std::string data = Engine::ReadFileToString(GetFilePath(RENDER_TARGET_FOLDER, filename, ".target"));
+		std::string data = Util::ReadFileToString(GetFilePath(RENDER_TARGET_FOLDER, filename, ".target"));
 		const toml::parse_result result = toml::parse(Themp::Util::ToLowerCase(data));
 		if (!result)
 		{
@@ -1101,7 +1049,7 @@ namespace Themp
 		}
 
 		auto& resourceManager = Engine::instance->m_Renderer->GetResourceManager();
-		auto device = Engine::instance->m_Renderer->GetDevice();
+		auto device = Engine::instance->m_Renderer->GetDevice().GetDevice();
 
 		D3D::Texture::ResourceState outState;
 		auto resource = resourceManager.GetTextureResource(device, std::string(filename.begin(),filename.end()), flags, format, 1, multisample, width, height, depth, &clearValue, textureType, outState);
@@ -1141,7 +1089,7 @@ namespace Themp
 		return {rtvHandle, dsvHandle, srvHandle};
 	}
 	
-	void Resources::MergePasses(std::vector<D3D::SubPass> passes)
+	void Resources::MergePasses(const std::vector<D3D::SubPass>& passes)
 	{
 		for (int j = 0; j < passes.size(); j++)
 		{
@@ -1158,6 +1106,39 @@ namespace Themp
 				m_Subpasses.push_back(passes[j]);
 			}
 		}
+	}
+
+
+	D3D::MaterialHandle Resources::LoadMaterial(const std::string& path)
+	{
+		std::string fileName = path;
+		D3D::Material material;
+		for (int i = 0; i < m_Materials.size(); i++)
+		{
+			if (m_Materials[i].m_Name == fileName)
+			{
+				return i;
+			}
+		}
+		Themp::Print("Loading material file: [%s]", path.c_str());
+
+		std::vector<std::string> shaderFiles = Util::LoadFilesFromDirectory(SHADERS_FOLDER);
+		const auto& passes = LoadMaterial(Util::ReadFileToString(path), shaderFiles);
+
+		MergePasses(passes);
+		for (int i = 0; i < m_Subpasses.size(); i++)
+		{
+			for (int j = 0; j < passes.size(); j++)
+			{
+				if (passes[j].pass == m_Subpasses[i].pass)
+				{
+					material.m_SubPasses.push_back(i);
+				}
+			}
+		}
+		material.m_Name = path;
+		m_Materials.push_back(material);
+		return m_Materials.size() - 1;
 	}
 
 	std::vector<D3D::SubPass> Resources::LoadMaterial(const std::string& data, std::vector<std::string>& shaderFiles)
@@ -1255,7 +1236,7 @@ namespace Themp
 		std::string scenePath = SCENES_FOLDER;
 		scenePath.append(sceneFile);
 
-		std::string sceneData = Engine::ReadFileToString(scenePath);
+		std::string sceneData = Util::ReadFileToString(scenePath);
 		const toml::parse_result result = toml::parse(Themp::Util::ToLowerCase(sceneData));
 		if (!result)
 		{
@@ -1277,7 +1258,7 @@ namespace Themp
 		for (const auto& rootArrays : result)
 		{
 			const auto& arr = *rootArrays.second.as_array();
-			D3D::Model model = LoadModel(rootArrays.first);
+			D3D::ModelHandle model = LoadModel(rootArrays.first);
 			for(const auto& element : arr)
 			{
 				const auto& table = *element.as_table();
@@ -1309,7 +1290,7 @@ namespace Themp
 
 				sceneObj.m_Transform = Transform(position, rotation, scale);
 				
-				sceneObj.m_Model = model;
+				sceneObj.m_ModelHandle = model;
 				sceneObj.m_ID = m_SceneObjects.size() - 1;
 
 				const auto& scriptName = table["script"].as_string();
@@ -1319,98 +1300,77 @@ namespace Themp
 					Engine::instance->m_Scripting->LinkToSceneObject(sceneObj.m_ScriptHandle, sceneObj.m_Name);
 				}
 
+				D3D::Model& model = Get(sceneObj.m_ModelHandle);
+
+				sceneObj.m_OverrideMaterials.resize(model.m_Meshes.size());
+				for (int i = 0; i < model.m_Meshes.size(); i++)
+				{
+					sceneObj.m_OverrideMaterials[i] = model.m_Meshes[i].m_MaterialHandle;
+				}
+
 				const auto& materialIt = table["meshmaterials"].as_array();
 				if (materialIt)
 				{
 					const auto& materials = *materialIt;
-					for (int i = 0; i < std::min(materials.size(), sceneObj.m_Model.m_Meshes.size()); i++)
+					std::string_view materialFolder = GetMaterialsFolder();
+					for (int i = 0; i < std::min(materials.size(), sceneObj.m_OverrideMaterials.size()); i++)
 					{
-						const std::string& name = materials[i].as_string()->get();
-						for (int j = 0; j < m_Materials.size(); j++)
-						{
-							if (m_Materials[j].m_Name == name)
-							{
-								sceneObj.m_Model.m_Meshes[i].m_MaterialHandle = j;
-								goto CONTINUE;
-							}
-						}
-						Themp::Print("material with name: %s was not found!", name);
-					CONTINUE:
-						continue;
+						std::string name(materialFolder.data(), materialFolder.size());
+						name.append(materials[i].as_string()->get());
+						name = Util::ReplaceExtensionWith(name, ".mat");
+						sceneObj.m_OverrideMaterials[i] = LoadMaterial(name);
 					}
 				}
-
-				
 			}
 		}
 		
 	}
 
+	void HandleChilds(D3D::Model& model, DirectX::XMFLOAT4X4 parentTransform, FILE* modelFile)
+	{
+		uint32_t numMeshes = 0;
+		uint32_t numChilds = 0;
+		fread(&numMeshes, sizeof(unsigned int), 1, modelFile);
+		fread(&numChilds, sizeof(unsigned int), 1, modelFile);
 
-	Themp::D3D::Model Resources::LoadModel(D3D::Control& control, std::string modelName)
+		uint32_t nameLength = 0;
+		fread(&nameLength, sizeof(uint32_t), 1, modelFile);
+		std::string name;
+		if (nameLength != 0)
+		{
+			name.resize(nameLength);
+			fread(name.data(), nameLength, 1, modelFile);
+		}
+
+		DirectX::XMFLOAT4X4 transform;
+		fread(&transform, sizeof(DirectX::XMFLOAT4X4), 1, modelFile);
+
+		DirectX::XMMATRIX matrix = DirectX::XMMatrixMultiply(DirectX::XMLoadFloat4x4(&transform), DirectX::XMLoadFloat4x4(&parentTransform));
+		DirectX::XMStoreFloat4x4(&transform, matrix);
+		for (unsigned int i = 0; i < numMeshes; i++)
+		{
+			uint32_t meshIndex = 0;
+			fread(&meshIndex, sizeof(uint32_t), 1, modelFile);
+
+			model.m_Meshes[meshIndex].m_Transform.push_back(transform);
+		}
+		for (unsigned int i = 0; i < numChilds; i++)
+		{
+			HandleChilds(model, transform, modelFile);
+		}
+	};
+
+	Themp::D3D::ModelHandle Resources::LoadModel(std::string name)
 	{
 		using namespace Themp::D3D;
-		for (const auto& model : m_Models)
+		for (size_t i = 0; i < m_Models.size(); i++)
 		{
-			if (model.m_Name == modelName)
+			if (m_Models[i].m_Name == name)
 			{
-				return model;
+				return i;
 			}
 		}
 
-		auto& obj = m_Models.emplace_back();
-		const auto& testMesh = Engine::instance->m_Renderer->GetResourceManager().Test_GetAndAddRandomModel();
-		obj.m_Meshes = testMesh.m_Meshes;
-		obj.m_Name = modelName;
-		return obj;
-		//for (size_t i = 0; i < modelFiles.size(); i++)
-		//{
-		//	std::string modelData = ReadFileToString(modelFiles[i]);
-		//
-		//	const toml::parse_result result = toml::parse(Themp::Util::ToLowerCase(modelData));
-		//
-		//	std::string name = result["name"].as_string()->get();
-		//	std::string material = result["material"].as_string()->get();
-		//	auto& obj = m_Models.emplace_back();
-		//	const auto& testMesh = Engine::instance->m_Renderer->GetResourceManager().Test_GetAndAddRandomModel();
-		//	obj.m_Meshes = testMesh.m_Meshes;
-		//	obj.m_Name = GetFileName(modelFiles[i]);
-		//
-		//	const auto& iterator = std::find_if(m_Materials.begin(), m_Materials.end(), [&](D3D::Material& it) { return it.m_Name == material; } );
-		//	if (iterator != m_Materials.end())
-		//	{
-		//		control.AddMeshToDraw(obj, *this, iterator->m_SubPasses);
-		//	}
-		//	return obj;
-		//}
-	}
-
-	Themp::D3D::Model Resources::LoadModel(std::string name)
-	{
-		using namespace Themp::D3D;
-		for (const auto& model : m_Models)
-		{
-			if (model.m_Name == name)
-			{
-				return model;
-			}
-		}
-
-		struct MeshHeader
-		{
-			uint32_t numVertices;
-			uint32_t numIndices;
-			uint32_t materialID;
-		};
-		struct ModelHeader
-		{
-			char modelVersionHigh;
-			char modelVersionLow;
-			uint32_t numMeshes;
-			uint32_t numMaterials;
-			uint32_t numTextures;
-			uint32_t numChars;
-		};
 		std::string_view modelFolder = GetModelsFolder();
 		std::string modelPath = std::string(modelFolder.begin(), modelFolder.end());
 		modelPath.append(name).append("\\").append(name).append(".model");
@@ -1419,29 +1379,60 @@ namespace Themp
 
 		if (modelFile == nullptr)
 		{
-			Themp::Print("Could not find model: %s", modelPath.c_str());
-			Themp::Break();
-			return {};
-		}
-		D3D::Model model;
-		model.m_Name = name;
+			Themp::Print("Could not find model: %s, importing it from rawAssets if it can be found!", modelPath.c_str());
+			auto allModels = Util::LoadFilesFromDirectory(std::string(RAW_ASSETS_MODEL_FOLDER).append(name).append("\\"));
+			for (int i = allModels.size() - 1; i >= 0; i--)
+			{
+				if (!Util::Contains(allModels[i], name, false))
+				{
+					allModels.erase(allModels.begin() + i);
+				}
+			}
+			for (int i = 0; i < allModels.size(); i++)
+			{
+				for (int j = 0; j < s_SupportedModelExtensions.size(); j++)
+				{
+					if (allModels[i].find(s_SupportedModelExtensions[j], allModels[i].size() - s_SupportedModelExtensions[j].size()) != std::string::npos)
+					{
+						if (ModelExport::ImportFile(allModels[i]))
+						{
+							fopen_s(&modelFile, modelPath.c_str(), "rb");
+							if (modelFile)
+							{
+								goto CONTINUE;
+							}
+						}
+					}
+				}
+			}
 
+
+			Themp::Print("Could not find model: %s for reimport!", modelPath.c_str());
+			Themp::Break();
+			return ModelHandle::Invalid;
+		}
+		CONTINUE:
 		std::vector<int> materialOrder;
 
-		ModelHeader header;
-		fread(&header, sizeof(ModelHeader), 1, modelFile);
-		if (header.modelVersionHigh != MODEL_VERSION_HIGH || header.modelVersionLow != MODEL_VERSION_LOW)
+		ModelExport::ModelHeader header;
+		fread(&header, sizeof(ModelExport::ModelHeader), 1, modelFile);
+
+		if (std::string_view(header.magic,12) != std::string_view(HEADERMAGIC,12) || header.version != MODEL_VERSION)
 		{
-			Themp::Print("Model version mismatch, cannot load this model!: %s", name.c_str());
+			Themp::Print("Model version mismatch, cannot load this model!: %s", modelPath.c_str());
 			Themp::Break();
-			return {};
+			return ModelHandle::Invalid;
 		}
+
+		D3D::Model& model = m_Models.emplace_back();
+		model.m_Name = name;
+
 		for (size_t i = 0; i < header.numMeshes; i++)
 		{
 			D3D::Mesh& mesh = model.m_Meshes.emplace_back();
-			MeshHeader meshHeader;
+			ModelExport::MeshHeader meshHeader;
 			//read in mesh header info, contains number of vertices,indices and the belonging material ID
-			fread_s(&meshHeader, sizeof(meshHeader), sizeof(MeshHeader), 1, modelFile);
+			fread_s(&meshHeader, sizeof(meshHeader), sizeof(ModelExport::MeshHeader), 1, modelFile);
 			//allocate room for the vertices and indices, read them in afterwards, these pointers are also used for the object themselves so we don't need to delete them.
 			std::vector<Themp::D3D::Vertex> vertices;
 			vertices.resize(meshHeader.numVertices);
@@ -1458,66 +1449,74 @@ namespace Themp
 			materialOrder.push_back(meshHeader.materialID);
 		}
 
-		//std::vector<Themp::Material*> loadedMaterials;
-		//for (size_t i = 0; i < header.numMaterials; i++)
-		//{
-		//	std::vector<std::string> textureNames;
-		//	std::vector<uint8_t> textureTypes;
-		//	uint32_t numTextures = 0;
-		//
-		//	//read in number of textures this material contains.
-		//	fread_s(&numTextures, sizeof(numTextures), sizeof(uint32_t), 1, modelFile);
-		//
-		//	//read in the number of characters the material name has.
-		//	uint32_t materialNameSize = 0;
-		//	fread_s(&materialNameSize, sizeof(materialNameSize), sizeof(uint32_t), 1, modelFile);
-		//
-		//	//allocate room for the string and read in all characters of the material name
-		//	std::string materialName(materialNameSize, 0);
-		//	fread_s(&materialName[0], materialName.capacity(), sizeof(char) * materialNameSize, 1, modelFile);
-		//
-		//	std::string fileNameWithoutExtension = name.substr(0, name.size() - 4);
-		//
-		//	for (size_t j = 0; j < numTextures; j++)
-		//	{
-		//		uint8_t textureType = 0;
-		//		uint32_t textureNameSize = 0;
-		//
-		//		//read in the texture type and size of the texture name (path)
-		//		fread_s(&textureType, sizeof(textureType), sizeof(uint8_t), 1, modelFile);
-		//		fread_s(&textureNameSize, sizeof(textureNameSize), sizeof(uint32_t), 1, modelFile);
-		//
-		//		//read in the texture name (path)
-		//		std::string textureName(textureNameSize, 0);
-		//		fread_s(&textureName[0], textureName.capacity(), sizeof(char) * textureNameSize, 1, modelFile);
-		//
-		//		textureTypes.push_back(textureType);
-		//		textureNames.push_back(SanitizeSlashes(fileNameWithoutExtension + "/" + textureName));
-		//	}
-		//	if (numTextures != 0)
-		//	{
-		//		Themp::Material* newMaterial = GetMaterial(SanitizeSlashes(fileNameWithoutExtension + "/" + materialName), textureNames, textureTypes, "default", false);
-		//		textureTypes.clear();
-		//		loadedMaterials.push_back(newMaterial);
-		//	}
-		//	else
-		//	{
-		//		Themp::Material* newMaterial = D3D::DefaultMaterial;
-		//		loadedMaterials.push_back(newMaterial);
-		//	}
-		//}
-		//for (size_t j = 0; j < newObject->m_Meshes.size(); j++)
-		//{
-		//	if (loadedMaterials.size() == 0)
-		//	{
-		//		newObject->m_Meshes[j]->m_Material = D3D::DefaultMaterial;
-		//		continue;
-		//	}
-		//	newObject->m_Meshes[j]->m_Material = loadedMaterials[materialOrder[j]];
-		//	//newObject->m_Meshes[j]->m_Material = loadedMaterials[0];
-		//}
-		//newObject->Construct();
-		return model;
+
+		std::string materialFolder = "..\\";
+		materialFolder.reserve(512);
+		materialFolder.append(EXPORT_BASE_PATH).
+			append(EXPORT_MATERIALS_PATH).
+			append(name).
+			append("\\");
+
+		std::vector<D3D::MaterialHandle> loadedMaterials;
+		for (size_t i = 0; i < header.numMaterials; i++)
+		{
+			std::vector<std::string> textureNames;
+			std::vector<uint8_t> textureTypes;
+			uint32_t numTextures = 0;
+		
+			//read in number of textures this material contains.
+			fread_s(&numTextures, sizeof(numTextures), sizeof(uint32_t), 1, modelFile);
+		
+			//read in the number of characters the material name has.
+			uint32_t materialNameSize = 0;
+			fread_s(&materialNameSize, sizeof(materialNameSize), sizeof(uint32_t), 1, modelFile);
+		
+			//allocate room for the string and read in all characters of the material name
+			std::string materialName(materialNameSize, materialNameSize);
+			fread_s(materialName.data(), materialName.size(), materialNameSize, 1, modelFile);
+		
+			for (size_t j = 0; j < numTextures; j++)
+			{
+				uint8_t textureType = 0;
+				uint32_t textureNameSize = 0;
+		
+				//read in the texture type and size of the texture name (path)
+				fread_s(&textureType, sizeof(textureType), sizeof(uint8_t), 1, modelFile);
+				fread_s(&textureNameSize, sizeof(textureNameSize), sizeof(uint32_t), 1, modelFile);
+		
+				//read in the texture name (path)
+				std::string textureName(textureNameSize, 0);
+				fread_s(textureName.data(), textureName.size(), textureName.size(), 1, modelFile);
+		
+				textureTypes.push_back(textureType);
+				textureNames.push_back(textureName);
+			}
+
+
+
+			std::string materialFile = materialFolder;
+			materialFile.append(materialName).append(".mat");
+
+			D3D::MaterialHandle materialHandle = LoadMaterial(materialFile);
+
+			loadedMaterials.push_back(materialHandle);
+		}
+
+		DirectX::XMFLOAT4X4 identity;
+		DirectX::XMStoreFloat4x4(&identity, DirectX::XMMatrixIdentity());
+		HandleChilds(model, identity, modelFile);
+
+		for (size_t j = 0; j < model.m_Meshes.size(); j++)
+		{
+			if (loadedMaterials.size() == 0)
+			{
+				model.m_Meshes[j].m_MaterialHandle = MaterialHandle::Invalid;
+				Themp::Print("No material was found for a mesh on: %s, mesh will not render", name.c_str());
+				continue;
+			}
+			model.m_Meshes[j].m_MaterialHandle = loadedMaterials[materialOrder[j]];
+		}
+		return m_Models.size()-1;
 	}
 
 

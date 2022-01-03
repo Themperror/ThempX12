@@ -10,6 +10,7 @@
 #include "core/util/print.h"
 #include "core/util/break.h"
 #include "core/util/svars.h"
+#include "core/util/fileutils.h"
 #include "game/game.h"
 
 
@@ -67,9 +68,10 @@ namespace Themp
 		m_Scripting->Init();
 
 		Print("Reading all resource data!");
-		m_Resources->LoadMaterials();
-		m_Renderer->CreatePipelines(*m_Resources);
 		m_Resources->LoadScene("testScene.scene");
+		m_Resources->CompileAllShaders();
+		m_Renderer->CreatePipelines(*m_Resources);
+		m_Renderer->GetResourceManager().UploadMeshStagingBuffers();
 
 		m_Renderer->PopulateRenderingGraph(*m_Resources);
 
@@ -258,53 +260,6 @@ namespace Themp
 	}
 }
 
-std::string GetPathName(std::string s)
-{
-	std::string name = "";
-	int64_t size = s.size() - 1;
-	for (int64_t i = size; i >= 0; i--)
-	{
-		if (s.at(i) == '\\' || s[i] == '/')
-		{
-			i++;
-			name = s.substr(0, i);
-			break;
-		}
-	}
-	return name;
-}
-
-
-std::string Engine::ReadFileToString(const std::string& filePath)
-{
-	HANDLE file = CreateFileA(filePath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-
-	if (file == INVALID_HANDLE_VALUE)
-	{
-		Themp::Print("Was unable to open the file: [%s]", filePath.c_str());
-		Themp::Break();
-		return "";
-	}
-
-	DWORD fileSize = GetFileSize(file, NULL);
-	std::string data(fileSize, '\0');
-	DWORD readBytes = 0;
-	if (!ReadFile(file, data.data(), fileSize, &readBytes, NULL))
-	{
-		Themp::Print("Was unable to read the file: [%s]", filePath.c_str());
-		Themp::Break();
-	}
-	if (readBytes != fileSize)
-	{
-		Themp::Print("Was unable to read the entire file: [%s]", filePath.c_str());
-		Themp::Break();
-	}
-	CloseHandle(file);
-
-	return data;
-}
-
-
 int newWindowSizeX = 0;
 int newWindowSizeY = 0;
 
@@ -321,7 +276,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 
 	char szFileName[MAX_PATH + 1];
 	GetModuleFileNameA(NULL, szFileName, MAX_PATH + 1);
-	system->m_BaseDir = GetPathName(std::string(szFileName));
+	system->m_BaseDir = Util::GetPathName(std::string(szFileName));
 
 	Themp::Util::SetLogFile("log.txt");
 		

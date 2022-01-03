@@ -40,6 +40,9 @@ void Game::Game::Stop()
 
 }
 
+float totalMouseX = 0;
+float totalMouseY = 0;
+
 void Game::Game::Update(double delta)
 {
 	using namespace Themp::Input;
@@ -47,14 +50,31 @@ void Game::Game::Update(double delta)
 	const auto& keyboardState = keyboard.GetState();
 	//const Themp::Input::Mouse& mouse = Themp::Engine::instance->m_Input->GetDevice<Themp::Input::Mouse>(0);
 	//left mouse button
-	//if (mouse.m_Keys[257])
-	//{
-	//	totalMouseX += m_CursorDeltaX * mouseSensitivity;
-	//	totalMouseY += m_CursorDeltaY * mouseSensitivity;
-	//
-	//	totalMouseY = totalMouseY > 90.0f ? 90.0f : totalMouseY < -90.0f ? -90.0f : totalMouseY;
-		m_Camera->Rotate(0, 0);
-	//}
+	if (keyboardState.keys[VK_LEFT] == Keyboard::ButtonState::Down ||
+		keyboardState.keys[VK_RIGHT] == Keyboard::ButtonState::Down ||
+		keyboardState.keys[VK_UP] == Keyboard::ButtonState::Down ||
+		keyboardState.keys[VK_DOWN] == Keyboard::ButtonState::Down)
+	{
+		if (keyboardState.keys[VK_LEFT] == Keyboard::ButtonState::Down)
+		{
+			totalMouseX += 30.0 * delta;
+		}
+		if (keyboardState.keys[VK_RIGHT] == Keyboard::ButtonState::Down)
+		{
+			totalMouseX -= 30.0 * delta;
+		}
+		if (keyboardState.keys[VK_UP] == Keyboard::ButtonState::Down)
+		{
+			totalMouseY += 30.0 * delta;
+		}
+		if (keyboardState.keys[VK_DOWN] == Keyboard::ButtonState::Down)
+		{
+			totalMouseY -= 30.0 * delta;
+		}
+
+		totalMouseY = totalMouseY > 90.0f ? 90.0f : totalMouseY < -90.0f ? -90.0f : totalMouseY;
+		m_Camera->Rotate(totalMouseX, totalMouseY);
+	}
 	float speedMod = 0.05f;
 	if (keyboardState.keys[VK_SHIFT] == Keyboard::ButtonState::Down)
 	{

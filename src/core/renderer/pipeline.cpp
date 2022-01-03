@@ -245,6 +245,8 @@ namespace Themp
 					}
 				}
 			}
+
+			auto device = Themp::Engine::instance->m_Renderer->GetDevice().GetDevice();
 			if (shaders.size() > 0)
 			{
 				ComPtr<ID3D12RootSignatureDeserializer> rootSignatureDeserializer;
@@ -256,12 +258,12 @@ namespace Themp
 					ComPtr<ID3DBlob> error;
 					D3D12SerializeRootSignature(rootDesc, D3D_ROOT_SIGNATURE_VERSION_1_0, &signature, &error);
 					
-					Themp::Engine::instance->m_Renderer->GetDevice()->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_RootSignature));
+					device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_RootSignature));
 					desc.pRootSignature = m_RootSignature.Get();
 				}
 			}
 
-			if (Themp::Engine::instance->m_Renderer->GetDevice()->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&m_Pipeline)) != S_OK)
+			if (device->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&m_Pipeline)) != S_OK)
 			{
 				Themp::Print("Failed to create pipeline state!");
 				Themp::Break();

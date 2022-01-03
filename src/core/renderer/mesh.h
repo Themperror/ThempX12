@@ -9,5 +9,6 @@ namespace Themp::D3D
 	public:
 		MaterialHandle m_MaterialHandle;
 		MeshData m_MeshData;
+		std::vector<DirectX::XMFLOAT4X4> m_Transform;
 	};
 }

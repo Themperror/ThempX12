@@ -49,10 +49,8 @@ namespace Themp
 			void ResizeSwapchain(int width, int height);
 
 			ComPtr<ID3D12GraphicsCommandList> GetImguiCmdList();
-			ComPtr<ID3D12Device2> GetDevice() const;
-			ComPtr<ID3D12Device5> GetDeviceRTX() const;
+			const Device& GetDevice() const;
 			const Context& GetContext() const;
-			ComPtr<ID3D12CommandQueue> GetCommandQueue(D3D12_COMMAND_LIST_TYPE commandListType) const;
 			GPU_Resources& GetResourceManager() const;
 			void CreatePipelines(Themp::Resources& resources);
 

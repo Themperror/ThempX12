@@ -3,8 +3,9 @@
 #include "core/engine.h"
 #include "core/resources.h"
 #include "core/renderer/control.h"
-#include "core/util/Print.h"
-#include "core/util/Break.h"
+#include "core/util/print.h"
+#include "core/util/break.h"
+#include "core/util/fileutils.h"
 #include "core/scripting/registrar.h"
 
 #include <lib/angelscript/angelscript.h>
@@ -234,7 +235,7 @@ namespace Themp::Scripting
 	{
 		Script script{};
 		script.scriptName = filename;
-		LoadScript(script, Engine::ReadFileToString(std::string(Resources::GetScriptsFolder()).append(filename).append(".as")));
+		LoadScript(script, Util::ReadFileToString(std::string(Resources::GetScriptsFolder()).append(filename).append(".as")));
 		script.handle = GetNextScriptHandle();
 		m_Scripts.push_back(script);
 

@@ -18,6 +18,7 @@
     <ClInclude Include="src\core\functions.h" />
     <ClInclude Include="src\core\input\keyboard.h" />
     <ClInclude Include="src\core\input\manager.h" />
+    <ClInclude Include="src\core\modelexport.h" />
     <ClInclude Include="src\core\renderer\context.h" />
     <ClInclude Include="src\core\renderer\control.h" />
     <ClInclude Include="src\core\renderer\device.h" />
@@ -37,8 +38,9 @@
     <ClInclude Include="src\core\scripting\ASEngine.h" />
     <ClInclude Include="src\core\scripting\Registrar.h" />
     <ClInclude Include="src\core\util\break.h" />
+    <ClInclude Include="src\core\util\fileutils.h" />
     <ClInclude Include="src\core\util\print.h" />
-    <ClInclude Include="src\core\util\stringUtils.h" />
+    <ClInclude Include="src\core\util\stringutils.h" />
     <ClInclude Include="src\core\util\svars.h" />
     <ClInclude Include="src\core\util\timer.h" />
     <ClInclude Include="src\game\game.h" />
@@ -78,6 +80,7 @@
     <ClCompile Include="src\core\functions.cpp" />
     <ClCompile Include="src\core\input\keyboard.cpp" />
     <ClCompile Include="src\core\input\manager.cpp" />
+    <ClCompile Include="src\core\modelexport.cpp" />
     <ClCompile Include="src\core\renderer\context.cpp" />
     <ClCompile Include="src\core\renderer\control.cpp" />
     <ClCompile Include="src\core\renderer\device.cpp" />
@@ -96,8 +99,9 @@
     <ClCompile Include="src\core\scripting\ASEngine.cpp" />
     <ClCompile Include="src\core\scripting\Registrar.cpp" />
     <ClCompile Include="src\core\util\break.cpp" />
+    <ClCompile Include="src\core\util\fileutils.cpp" />
     <ClCompile Include="src\core\util\print.cpp" />
-    <ClCompile Include="src\core\util\stringUtils.cpp" />
+    <ClCompile Include="src\core\util\stringutils.cpp" />
     <ClCompile Include="src\core\util\svars.cpp" />
     <ClCompile Include="src\core\util\timer.cpp" />
     <ClCompile Include="src\game\game.cpp" />
@@ -186,14 +190,14 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
       <DisableLanguageExtensions>false</DisableLanguageExtensions>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)include\SDL\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)src/lib/;</AdditionalIncludeDirectories>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <RemoveUnreferencedCodeData>false</RemoveUnreferencedCodeData>
       <ForcedIncludeFiles>src/core/EngineDefs.h</ForcedIncludeFiles>
       <PreprocessorDefinitions>_MBCS;AS_USE_NAMESPACE;AS_USE_STLNAMES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);D3D12.lib;DXGI.lib;dxcompiler.lib;angelscript64d.lib</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);D3D12.lib;DXGI.lib;dxcompiler.lib;angelscript64d.lib;assimp-vc143-mtd.lib;zlibstaticd.lib</AdditionalDependencies>
       <SubSystem>Windows</SubSystem>
       <EntryPointSymbol>
       </EntryPointSymbol>
@@ -221,13 +225,13 @@
       <EnforceTypeConversionRules>true</EnforceTypeConversionRules>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <DisableLanguageExtensions>false</DisableLanguageExtensions>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)include\SDL\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)src/lib/;</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_MBCS;AS_USE_NAMESPACE;AS_USE_STLNAMES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);D3D12.lib;DXGI.lib;dxcompiler.lib;angelscript64.lib</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);D3D12.lib;DXGI.lib;dxcompiler.lib;angelscript64.lib;assimp-vc143-mt.lib;zlibstatic.lib</AdditionalDependencies>
       <SubSystem>Windows</SubSystem>
       <EntryPointSymbol>
       </EntryPointSymbol>

@@ -59,7 +59,7 @@ void Frame::Present()
 		ID3D12CommandList* const commandLists[] = {
 			m_CommandList.Get()
 		};
-		Engine::instance->m_Renderer->GetCommandQueue(D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT)->ExecuteCommandLists(_countof(commandLists), commandLists);
+		Engine::instance->m_Renderer->GetDevice().GetCmdQueue(D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT)->ExecuteCommandLists(_countof(commandLists), commandLists);
 	}
 	else
 	{

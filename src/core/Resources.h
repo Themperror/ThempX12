@@ -42,6 +42,7 @@ namespace Themp
 		D3D::Pass& Get(D3D::PassHandle handle);
 		D3D::Shader& Get(D3D::ShaderHandle handle);
 		D3D::Material& Get(D3D::MaterialHandle handle);
+		D3D::Model& Get(D3D::ModelHandle handle);
 
 		std::vector<std::pair<ResourceTextureInfo, D3D::Texture>>& GetAllDSVs() { return m_DepthTargets; }
 		size_t GetAmountOfSubpasses() const { return m_Subpasses.size(); };
@@ -49,8 +50,9 @@ namespace Themp
 
 		void LoadScene(std::string sceneFile);
 		void AddSceneObject(SceneObject obj);
-		Themp::D3D::Model LoadModel(std::string name);
+		Themp::D3D::ModelHandle LoadModel(std::string name);
 
+		void CompileAllShaders();
 		const std::vector<Themp::SceneObject>& GetSceneObjects() const;
 		std::vector<Themp::SceneObject>& GetSceneObjects();
 
@@ -68,10 +70,10 @@ namespace Themp
 		D3D::RenderTargetHandle LoadRenderTarget(std::string_view filename);
 		D3D::PassHandle LoadPass(std::string_view filename);
 		std::vector<D3D::SubPass> LoadMaterial(const std::string& data, std::vector<std::string>& shaderFiles);
+		D3D::MaterialHandle LoadMaterial(const std::string& path);
 		
-		void AddOrSetShaderToPass(std::string_view name, int index, Themp::D3D::Pass& pass);
 
-		void MergePasses(std::vector<D3D::SubPass> passes);
+		void MergePasses(const std::vector<D3D::SubPass>& passes);
 
 		std::vector<Themp::D3D::Pass> m_Passes;
 		std::vector<std::pair<ResourceTextureInfo,D3D::Texture>> m_DepthTargets;
