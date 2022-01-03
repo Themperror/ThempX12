@@ -163,9 +163,9 @@ namespace Themp
 				byteOffSet += 16;
 			}
 
-			byteOffSet = 0;
 			if (subpass.NeedsPositionInfo)
 			{
+				byteOffSet = 0;
 				D3D12_INPUT_ELEMENT_DESC& iaDesc = iaLayouts.emplace_back();
 				iaDesc.AlignedByteOffset = byteOffSet;
 				iaDesc.Format = DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT;
@@ -176,6 +176,7 @@ namespace Themp
 			}
 			if (subpass.NeedsNormalInfo)
 			{
+				byteOffSet = 0;
 				D3D12_INPUT_ELEMENT_DESC& normalDesc = iaLayouts.emplace_back();
 				normalDesc.AlignedByteOffset = byteOffSet;
 				normalDesc.Format = DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT;
@@ -187,7 +188,7 @@ namespace Themp
 				D3D12_INPUT_ELEMENT_DESC& tangentDesc = iaLayouts.emplace_back();
 				tangentDesc.AlignedByteOffset = byteOffSet;
 				tangentDesc.Format = DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT;
-				tangentDesc.InputSlot = 3;
+				tangentDesc.InputSlot = 2;
 				tangentDesc.InputSlotClass = D3D12_INPUT_CLASSIFICATION::D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
 				tangentDesc.SemanticName = "TANGENT";
 				byteOffSet += sizeof(DirectX::XMFLOAT3);
@@ -195,17 +196,18 @@ namespace Themp
 				D3D12_INPUT_ELEMENT_DESC& bitangentDesc = iaLayouts.emplace_back();
 				bitangentDesc.AlignedByteOffset = byteOffSet;
 				bitangentDesc.Format = DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT;
-				bitangentDesc.InputSlot = 4;
+				bitangentDesc.InputSlot = 2;
 				bitangentDesc.InputSlotClass = D3D12_INPUT_CLASSIFICATION::D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
 				bitangentDesc.SemanticName = "BITANGENT";
 				byteOffSet += sizeof(DirectX::XMFLOAT3);
 			}
 			if (subpass.NeedsUVInfo)
 			{
+				byteOffSet = 0;
 				D3D12_INPUT_ELEMENT_DESC& iaDesc = iaLayouts.emplace_back();
 				iaDesc.AlignedByteOffset = byteOffSet;
 				iaDesc.Format = DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT;
-				iaDesc.InputSlot = 5;
+				iaDesc.InputSlot = 3;
 				iaDesc.InputSlotClass = D3D12_INPUT_CLASSIFICATION::D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
 				iaDesc.SemanticName = "UV";
 				byteOffSet += sizeof(DirectX::XMFLOAT2);
