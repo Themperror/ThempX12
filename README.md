@@ -16,8 +16,10 @@ AngelScript ( https://www.angelcode.com/angelscript/ ) -> Scripting,
 
 Assimp (https://github.com/assimp/assimp ) -> Model conversion (from import type to custom output type),
 
-DirectXTK12 ( https://github.com/microsoft/DirectXTK12 )-> Texture reading,
+DirectX Tex (https://github.com/microsoft/DirectXTex )-> DDS Texture generation,
 
-DirectX Shader Compiler ( https://github.com/microsoft/DirectXShaderCompiler ) -> Runtime shader compilation
+DirectX Shader Compiler ( https://github.com/microsoft/DirectXShaderCompiler ) -> Runtime shader compilation,
+
+FreeImage ( https://freeimage.sourceforge.io/ ) -> General purpose image reader.
 
 And of course DirectX which is included in the Windows SDK
