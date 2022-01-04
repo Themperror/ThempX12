@@ -4,6 +4,7 @@
 #include "core/util/break.h"
 #include "core/util/svars.h"
 #include "core/util/stringUtils.h"
+#include "core/util/fileUtils.h"
 
 #include <unordered_map>
 #include <string>
@@ -59,18 +60,22 @@ namespace Themp::D3D
 
 		compileArgs.emplace_back(L"-I");
 		compileArgs.emplace_back(SHADER_RESOURCES_FOLDER);
+		Util::EnsureFileTreeExists(compileArgs.back());
 
 		compileArgs.emplace_back(L"-T");
 		compileArgs.emplace_back(target).append(L"_6_0");
 
 		compileArgs.emplace_back(L"-Fo");
-		compileArgs.emplace_back(SHADER_DATA_FOLDER).append(wideName).append(L".").append(target);
+		compileArgs.emplace_back(SHADER_RESOURCES_FOLDER).append(wideName).append(L".").append(target);
+		Util::EnsureFileTreeExists(compileArgs.back());
+
 
 		if (debug)
 		{
-			compileArgs.emplace_back(L"-Zs");
+			compileArgs.emplace_back(L"-Zi");
+			compileArgs.emplace_back(L"-Qembed_debug");
 			compileArgs.emplace_back(L"-Fd");
-			compileArgs.emplace_back(SHADER_DATA_FOLDER).append(wideName).append(L".").append(target).append(L".pdb");
+			compileArgs.emplace_back(SHADER_RESOURCES_FOLDER).append(wideName).append(L".").append(target).append(L".pdb");
 		}
 
 
@@ -89,6 +94,7 @@ namespace Themp::D3D
 		fileName.append(wideName);
 		fileName.append(L"_").append(target);
 		fileName.append(L".hlsl");
+
 		pUtils->LoadFile(fileName.c_str(), nullptr, &pSource);
 		DxcBuffer Source;
 		Source.Ptr = pSource->GetBufferPointer();
@@ -140,8 +146,6 @@ namespace Themp::D3D
 		if (pShader != nullptr && debug)
 		{
 			FILE* fp = NULL;
-			CreateDirectoryW(L"../data", NULL);
-			CreateDirectoryW(L"../data/shaders/", NULL);
 			_wfopen_s(&fp, pShaderName->GetStringPointer(), L"wb");
 			fwrite(pShader->GetBufferPointer(), pShader->GetBufferSize(), 1, fp);
 			fclose(fp);

@@ -4,9 +4,10 @@
 *.log
 *.tlog
 *.pdb
-.vs
 x64
 *.cso
 *.ps
 *.vs
 bin/*
+rawassets/*
+resources/*

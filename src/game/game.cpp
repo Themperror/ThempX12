@@ -29,7 +29,7 @@ void Game::Game::Start()
 	m_Camera->SetFoV(75);
 	m_Camera->SetProjection(Themp::Camera::CameraType::Perspective);
 	m_Camera->SetNear(0.1f);
-	m_Camera->SetFar(1000.0f);
+	m_Camera->SetFar(3000.0f);
 	m_Camera->Rotate(0, 0);
 }
 
@@ -55,19 +55,19 @@ void Game::Game::Update(double delta)
 	{
 		if (keyboardState.keys[VK_LEFT] == Keyboard::ButtonState::Down)
 		{
-			totalMouseX += 30.0 * delta;
+			totalMouseX += 50.0 * delta;
 		}
 		if (keyboardState.keys[VK_RIGHT] == Keyboard::ButtonState::Down)
 		{
-			totalMouseX -= 30.0 * delta;
+			totalMouseX -= 50.0 * delta;
 		}
 		if (keyboardState.keys[VK_UP] == Keyboard::ButtonState::Down)
 		{
-			totalMouseY += 30.0 * delta;
+			totalMouseY += 50.0 * delta;
 		}
 		if (keyboardState.keys[VK_DOWN] == Keyboard::ButtonState::Down)
 		{
-			totalMouseY -= 30.0 * delta;
+			totalMouseY -= 50.0 * delta;
 		}
 
 		totalMouseY = totalMouseY > 90.0f ? 90.0f : totalMouseY < -90.0f ? -90.0f : totalMouseY;
@@ -76,7 +76,7 @@ void Game::Game::Update(double delta)
 	float speedMod = 0.05f;
 	if (keyboardState.keys[VK_SHIFT] == Keyboard::ButtonState::Down)
 	{
-		speedMod = 0.2f;
+		speedMod = 0.3f;
 	}
 	m_Camera->SetSpeed(speedMod);
 	if (keyboardState.keys['W'] == Keyboard::ButtonState::Down)

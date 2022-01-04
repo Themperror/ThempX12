@@ -311,6 +311,9 @@ namespace Themp::D3D
 	void GPU_Resources::UpdateConstantBufferData(D3D::ConstantBufferHandle handle)
 	{
 		ConstantBufferData& CB = Get(handle);
+
+		if (!CB.dirty) return;
+
 		CB.dirty = false;
 
 		if (CB.nextOffset > 0 && CB.buffer == nullptr)

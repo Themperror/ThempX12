@@ -26,6 +26,7 @@ namespace Themp
 			/// DSV_Write: Depth buffer used in rasterisation with Depth write enabled)
 			/// RTV: Rendertarget used as OM target)
 			/// Present: Rendertarget used as swapchain present)
+			/// CopyDest: The resource is used as the destination in a copy operation. (copy operation, or a blt operation)
 			/// </summary>
 			enum ResourceState 
 			{
@@ -36,6 +37,7 @@ namespace Themp
 				SRVPlusDSVRead = SRV_PS | DSV_Read,
 				SRV_ALLPlusDSVRead = SRV_ALL | DSV_Read,
 				RTV = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET,
+				CopyDest = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST,
 				Present = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_PRESENT
 			};
 

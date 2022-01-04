@@ -230,7 +230,6 @@ namespace Themp
 			std::vector<uint8_t> textureTypes;
 			textureTypes.resize(numTextures);
 
-			fwrite(&numTextures, sizeof(uint32_t), 1, output);
 			uint32_t stringSize = static_cast<uint32_t>(matNameString.size());
 			
 			fwrite(&stringSize, sizeof(uint32_t), 1, output);
@@ -255,14 +254,11 @@ namespace Themp
 					textureTypes[currentTextureIndex] = j;
 					aiString texturePath;
 					aiGetMaterialTexture(scene->mMaterials[i], (aiTextureType)j, k, &texturePath);
-					std::string str = Util::SanitizeSlashes(texturePath.C_Str());
-					str = Util::ReplaceExtensionWith(str,"");
+					std::string str = Util::ReplaceChar(texturePath.C_Str(),'\\', '/');
+					//str = Util::ReplaceExtensionWith(str,".dds");
 					uint32_t strSize = static_cast<uint32_t>(str.size());
 
 					textures.push_back({ t, str });
-					fwrite(&textureTypes[currentTextureIndex], sizeof(uint8_t), 1, output);
-					fwrite(&strSize, sizeof(uint32_t), 1, output);
-					fwrite(str.data(), str.size(), 1, output);
 					currentTextureIndex++;
 				}
 			}

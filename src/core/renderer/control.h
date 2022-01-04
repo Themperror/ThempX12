@@ -28,6 +28,7 @@ namespace Themp
 		};
 		struct RenderPass
 		{
+			SubPassHandle relatedSubpassHandle;
 			RenderPassHandle handle;
 			Pipeline pipeline;
 			std::vector<CD3DX12_RESOURCE_BARRIER> texturesToTransition;

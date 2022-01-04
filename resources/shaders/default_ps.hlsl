@@ -20,6 +20,7 @@ float4 HSVtoRGB(in float3 HSV)
 	return float4(((Hue(HSV.x) - 1) * HSV.y + 1) * HSV.z,1);
 }
 
+
 [RootSignature(ROOT)]
 PSOut main(VSOutput input)
 {
@@ -35,7 +36,7 @@ PSOut main(VSOutput input)
 	
 	float lightNormal = saturate(dot(input.normal.xyz, lightPos));
 	
-	psOut.color = HSVtoRGB(float3(col, 1.0, 1.0)) + input.normal;
+	psOut.color = diffuse.Sample(samplerState, input.uv);
 	psOut.depth = input.pos.z;
 	return psOut;
 }

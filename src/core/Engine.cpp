@@ -65,9 +65,12 @@ namespace Themp
 		}
 		m_Input->AddInputDevice<Input::Keyboard>(0);
 
+		CoInitializeEx(nullptr, COINIT_MULTITHREADED | COINIT_SPEED_OVER_MEMORY);
+
 		m_Scripting->Init();
 
 		Print("Reading all resource data!");
+		m_Resources->Init();
 		m_Resources->LoadScene("testScene.scene");
 		m_Resources->CompileAllShaders();
 		m_Renderer->CreatePipelines(*m_Resources);

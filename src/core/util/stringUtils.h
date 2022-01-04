@@ -9,7 +9,7 @@ namespace Themp::Util
 	std::string ToLowerCase(const std::string& string);
 	std::wstring ToWideString(const std::string& string);
 
-	std::string SanitizeSlashes(std::string input);
+	std::string ReplaceChar(std::string input, char target, char newChar);
 	bool Contains(const std::string& source, const std::string& search, bool caseSensitive = true);
 	bool Contains(const std::string_view& sourceString, const std::string_view& searchString, bool caseSensitive);
 

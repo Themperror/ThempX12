@@ -38,5 +38,5 @@ struct NormalVSInput
 
 struct UVVSInput
 {
-	float2 uv : POSITION;
+	float2 uv : UV;
 };

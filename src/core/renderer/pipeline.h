@@ -15,6 +15,12 @@ namespace Themp
 		struct SubPass;
 		struct RenderPass;
 		class Frame;
+
+		struct DescriptorTableInfo
+		{
+			int slot;
+			int numTexturesExpected;
+		};
 		class Pipeline
 		{
 		public:
@@ -30,8 +36,10 @@ namespace Themp
 			void ClearTargets(Frame& frame);
 
 			PassHandle GetPassHandle() const { return m_PassHandle; }
+			const std::vector<DescriptorTableInfo>& GetDescriptorTables() const { return m_DescriptorTables; }
 		private:
 			PassHandle m_PassHandle = PassHandle::Invalid;
+			std::vector<DescriptorTableInfo> m_DescriptorTables;
 		};
 	}
 }

@@ -103,30 +103,41 @@ void Control::PopulateRenderingGraph(Themp::Resources& resources)
 	{
 		int meshID = 0;
 		Model& model = resources.Get(obj.m_ModelHandle);
-		for (int i = 0; i < obj.m_OverrideMaterials.size(); i++)
+		for (int meshIndex = 0; meshIndex < obj.m_OverrideMaterials.size(); meshIndex++)
 		{
-			D3D::MaterialHandle materialOverride = obj.m_OverrideMaterials[i];
+			D3D::MaterialHandle materialOverride = obj.m_OverrideMaterials[meshIndex];
 			if (materialOverride.IsValid())
 			{
 				const auto& material = resources.Get(materialOverride);
-				for (const auto& subPassHandle : material.m_SubPasses)
+				for(int subpassIndex = 0; subpassIndex < material.m_SubPasses.size(); subpassIndex++)
 				{
+					const auto& subPassHandle = material.m_SubPasses[subpassIndex];
 					for (auto& pass : m_Renderpasses)
 					{
-						if (pass.pipeline.GetPassHandle() == resources.Get(subPassHandle).pass)
+						auto& subpass = resources.Get(subPassHandle.handle);
+						if (pass.pipeline.GetPassHandle() == subpass.pass)
 						{
-							auto it = pass.renderables.find(model.m_Meshes[i]);
+							pass.relatedSubpassHandle = subPassHandle.handle;
+							auto it = pass.renderables.find(model.m_Meshes[meshIndex]);
 							if (it != pass.renderables.end())
 							{
 								Renderable& renderable = it->second;
 								renderable.SceneObject_IDs.push_back(obj.m_ID);
+
 							}
 							else
 							{
-								Renderable& renderable = pass.renderables[model.m_Meshes[i]];
+								Renderable& renderable = pass.renderables[model.m_Meshes[meshIndex]];
 								renderable.SceneObject_IDs.push_back(obj.m_ID);
-								const D3D::Mesh& mesh = resources.Get(model.m_Meshes[i]);
+								const D3D::Mesh& mesh = resources.Get(model.m_Meshes[meshIndex]);
 								renderable.meshData = mesh.m_MeshData;
+
+								auto& materialSubpass = material.m_SubPasses[subpassIndex];
+								for (int textureIndex = 0; textureIndex < materialSubpass.textures.size(); textureIndex++)
+								{
+									TextureHandle texHandle = materialSubpass.textures[textureIndex].handle;
+									resources.Get(texHandle).second.SetResourceState(pass, D3D::TEXTURE_TYPE::SRV, D3D::Texture::ResourceState::SRV_PS);
+								}
 							}
 						}
 					}
@@ -138,6 +149,12 @@ void Control::PopulateRenderingGraph(Themp::Resources& resources)
 			}
 			meshID++;
 		}
+	}
+	
+	//transition any fixed dummy textures:
+	if (m_Renderpasses.size() > 0)
+	{
+		resources.Get(TextureHandle(0)).second.SetResourceState(m_Renderpasses[0], D3D::TEXTURE_TYPE::SRV, D3D::Texture::ResourceState::SRV_PS);
 	}
 }
 
@@ -160,6 +177,7 @@ void Control::ResizeSwapchain(int width, int height)
 std::vector<CD3DX12_RESOURCE_BARRIER> SRVsForImGuiBarriers;
 void Control::BeginDraw()
 {
+	Themp::Resources& resources = *Engine::instance->m_Resources;
 	Frame& frame = GetCurrentBackbuffer();
 	frame.Reset();
 	
@@ -176,7 +194,7 @@ void Control::BeginDraw()
 		m_Context->EnableVsync(vsyncEnabled);
 
 		ImGui::Checkbox("VSync", &vsyncEnabled);
-		for (auto& target : Engine::instance->m_Resources->GetAllDSVs())
+		for (auto& target : resources.GetAllDSVs())
 		{
 			if (target.second.HasType(D3D::TEXTURE_TYPE::SRV))
 			{
@@ -189,41 +207,66 @@ void Control::BeginDraw()
 	const auto& vertexBufferViews = m_GPU_Resources->GetVertexBufferViews();
 	frame.GetCmdList()->IASetVertexBuffers(1u, static_cast<UINT>(vertexBufferViews.size()), vertexBufferViews.data());
 	frame.GetCmdList()->IASetIndexBuffer(&m_GPU_Resources->GetIndexBufferView());
+	frame.GetCmdList()->SetDescriptorHeaps(1, m_GPU_Resources->GetDescriptorHeap(D3D::DESCRIPTOR_HEAP_TYPE::CB_SRV_UAV).GetAddressOf());
 
-	auto& sceneObjects = Engine::instance->m_Resources->GetSceneObjects();
+	auto& sceneObjects = resources.GetSceneObjects();
 
 	for(auto& renderPass : m_Renderpasses)
 	{
+		D3D::SubPass& subpass = resources.Get(renderPass.relatedSubpassHandle);
+		//Mark passname for Renderdoc
 #if _DEBUG
-		std::string_view passNameSV = Engine::instance->m_Resources->Get(renderPass.pipeline.GetPassHandle()).GetName();
+		std::string_view passNameSV = resources.Get(renderPass.pipeline.GetPassHandle()).GetName();
 		frame.GetCmdList()->BeginEvent(1, passNameSV.data(), passNameSV.size() + 1);
 #endif
+		//Update all instance transforms
 		m_GPU_Resources->UpdateTransformsBufferView(*m_Device, renderPass, sceneObjects);
+
+		//set the pipelinestate (shaders/rasterstate/depthstate etc)
 		renderPass.pipeline.SetTo(frame, renderPass);
 
+		//transition any textures we need to
 		if (renderPass.texturesToTransition.size() > 0)
 		{
 			frame.GetCmdList()->ResourceBarrier(renderPass.texturesToTransition.size(), renderPass.texturesToTransition.data());
 		}
 		renderPass.texturesToTransition.clear();
 
+		//update and set any constant buffers we're expecting to use
 		for (auto& CB : renderPass.constantBuffers)
 		{
 			if (CB.second.IsValid())
 			{
 				ConstantBufferData& CBData = m_GPU_Resources->Get(CB.second);
-				if (CBData.dirty)
-				{
-					m_GPU_Resources->UpdateConstantBufferData(CB.second);
-				}
+				m_GPU_Resources->UpdateConstantBufferData(CB.second);
 				frame.GetCmdList()->SetGraphicsRootConstantBufferView(CB.first, CBData.buffer->GetGPUVirtualAddress());
 			}
 		}
 
 		renderPass.pipeline.ClearTargets(frame);
+		const auto& descTables = renderPass.pipeline.GetDescriptorTables();
+		for (const auto& descTable : descTables)
+		{
+			frame.GetCmdList()->SetGraphicsRootDescriptorTable(descTable.slot, resources.Get(TextureHandle(0)).second.m_SRVGPUHandle);
+		}
 		for(const auto& renderable : renderPass.renderables)
 		{
+			//draw our mesh(es)
 			const auto& meshData = renderable.second.meshData;
+			
+			const auto& mesh = resources.Get(renderable.first);
+			const auto& subpasses =	resources.Get(mesh.m_MaterialHandle).m_SubPasses;
+			for (const auto& subpass : subpasses)
+			{
+				if (subpass.handle == renderPass.relatedSubpassHandle)
+				{
+					for (int i = 0; i < std::min(descTables.size(), subpass.textures.size()); i++)
+					{
+						frame.GetCmdList()->SetGraphicsRootDescriptorTable(descTables[i].slot, resources.Get(subpass.textures[i].handle).second.m_SRVGPUHandle);
+					}
+				}
+			}
+
 			frame.GetCmdList()->IASetVertexBuffers(0, 1, &renderable.second.m_PerInstanceTransforms.view);
 			frame.GetCmdList()->DrawIndexedInstanced(meshData.indexCount, renderable.second.numVisibleMeshes, meshData.indexIndex, meshData.vertexIndex, 0u);
 		}

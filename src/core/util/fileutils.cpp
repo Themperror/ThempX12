@@ -55,6 +55,18 @@ namespace Themp::Util
 		return files;
 	}
 
+	bool FileExists(const std::string& filePath)
+	{
+		HANDLE file = CreateFileA(filePath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+
+		if (file == INVALID_HANDLE_VALUE)
+		{
+			return false;
+		}
+		CloseHandle(file);
+		return true;
+	}
+
 	std::string ReadFileToString(const std::string& filePath)
 	{
 		HANDLE file = CreateFileA(filePath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -83,7 +95,113 @@ namespace Themp::Util
 
 		return data;
 	}
+	std::vector<uint8_t> ReadFileToVector(const std::string& filePath)
+	{
+		HANDLE file = CreateFileA(filePath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 
+		if (file == INVALID_HANDLE_VALUE)
+		{
+			Themp::Print("Was unable to open the file: [%s]", filePath.c_str());
+			Themp::Break();
+			return {};
+		}
+
+		DWORD fileSize = GetFileSize(file, NULL);
+		std::vector<uint8_t> data(fileSize, 0);
+		DWORD readBytes = 0;
+		if (!ReadFile(file, data.data(), fileSize, &readBytes, NULL))
+		{
+			Themp::Print("Was unable to read the file: [%s]", filePath.c_str());
+			Themp::Break();
+		}
+		if (readBytes != fileSize)
+		{
+			Themp::Print("Was unable to read the entire file: [%s]", filePath.c_str());
+			Themp::Break();
+		}
+		CloseHandle(file);
+
+		return data;
+	}
+
+
+	bool WriteFile(const void* data, size_t size, const std::string& filePath)
+	{
+		EnsureFileTreeExists(filePath);
+
+		HANDLE file = CreateFileA(filePath.c_str(), GENERIC_WRITE, FILE_SHARE_WRITE, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+
+		if (file == INVALID_HANDLE_VALUE)
+		{
+			Themp::Print("Was unable to open the file: [%s]", filePath.c_str());
+			Themp::Break();
+			return false;
+		}
+		DWORD bytesWritten = 0;
+		if (!::WriteFile(file, data, size, &bytesWritten, NULL))
+		{
+			Themp::Print("Was unable to write the file: [%s]", filePath.c_str());
+			Themp::Break();
+			CloseHandle(file);
+			return false;
+		}
+		if (bytesWritten != size)
+		{
+			Themp::Print("Was unable to write the entire file: [%s]", filePath.c_str());
+			Themp::Break();
+			CloseHandle(file);
+			return false;
+		}
+		CloseHandle(file);
+
+		return true;
+	}
+
+	bool WriteFile(const std::vector<uint8_t>& data, const std::string& filePath)
+	{
+		return WriteFile(data.data(), data.size(), filePath);
+	}
+
+	void EnsureFileTreeExists(const std::string& filePath)
+	{
+		size_t slashPos = filePath.find('\\', 0);
+		while (slashPos != std::string::npos)
+		{
+			if (slashPos + 1 < filePath.size())
+			{
+				size_t nextPos = filePath.find('\\', slashPos+1);
+
+				std::string pathSub = std::string(filePath.begin(), filePath.begin() + slashPos);
+				CreateDirectoryA(pathSub.c_str(), nullptr);
+
+				slashPos = nextPos;
+			}
+			else
+			{
+				slashPos = std::string::npos;
+			}
+		}
+	}
+	void EnsureFileTreeExists(const std::wstring& filePath)
+	{
+		size_t slashPos = filePath.find(L'\\', 0);
+		while (slashPos != std::wstring::npos)
+		{
+			if (slashPos + 1 < filePath.size())
+			{
+				size_t nextPos = filePath.find(L'\\', slashPos+1);
+
+				std::wstring pathSub = std::wstring(filePath.begin(), filePath.begin() + slashPos);
+				CreateDirectoryW(pathSub.c_str(), nullptr);
+
+				slashPos = nextPos;
+			}
+			else
+			{
+				slashPos = std::wstring::npos;
+			}
+		}
+	}
 
 
 	std::string GetFileName(std::string_view path)
@@ -132,7 +250,7 @@ namespace Themp::Util
 		return str;
 	}
 
-	std::string RemoveFileFromPath(std::string str)
+	std::string RemoveFileFromPathName(std::string str)
 	{
 		for (size_t i = 0; i < str.size(); i++)
 		{

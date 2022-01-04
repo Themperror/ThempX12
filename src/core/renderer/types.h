@@ -98,6 +98,13 @@ namespace Themp::D3D
 		static RenderTargetHandle Invalid() { return {}; };
 	};
 
+
+	struct TextureTypePair
+	{
+		D3D::TextureHandle handle;
+		size_t textureType;
+	};
+
 	struct SubPass
 	{
 		bool NeedsPositionInfo;
@@ -105,6 +112,7 @@ namespace Themp::D3D
 		bool NeedsUVInfo;
 		PassHandle pass = PassHandle::Invalid;
 		ShaderHandle shader = ShaderHandle::Invalid;
+		std::vector<TextureTypePair> perMaterialTextures;
 	};
 
 

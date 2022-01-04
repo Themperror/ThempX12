@@ -37,13 +37,13 @@ bool Themp::Util::Contains(const std::string_view& sourceString, const std::stri
 }
 
 
-std::string Themp::Util::SanitizeSlashes(std::string input)
+std::string Themp::Util::ReplaceChar(std::string input, char target, char newChar)
 {
 	for (int i = 0; i < input.size(); i++)
 	{
-		if (input[i] == '\\')
+		if (input[i] == target)
 		{
-			input[i] = '/';
+			input[i] = newChar;
 		}
 	}
 

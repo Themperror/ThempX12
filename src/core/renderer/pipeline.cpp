@@ -253,9 +253,26 @@ namespace Themp
 			{
 				ComPtr<ID3D12RootSignatureDeserializer> rootSignatureDeserializer;
 				D3D12CreateRootSignatureDeserializer(shaders[0].data->GetBufferPointer(), shaders[0].data->GetBufferSize(), IID_PPV_ARGS(&rootSignatureDeserializer));
+				
 				if (rootSignatureDeserializer)
 				{
 					auto rootDesc = rootSignatureDeserializer->GetRootSignatureDesc();
+					for (int i = 0; i < rootDesc->NumParameters; i++)
+					{
+						if (rootDesc->pParameters[i].ParameterType == D3D12_ROOT_PARAMETER_TYPE::D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE)
+						{
+							auto& descTableInfo = m_DescriptorTables.emplace_back();
+							descTableInfo.slot = i;
+							auto& descTable = rootDesc->pParameters[i].DescriptorTable;
+							for (int j = 0; j < descTable.NumDescriptorRanges; j++)
+							{
+								if (descTable.pDescriptorRanges[j].RangeType == D3D12_DESCRIPTOR_RANGE_TYPE_SRV)
+								{
+									descTableInfo.numTexturesExpected++;
+								}
+							}
+						}
+					}
 					ComPtr<ID3DBlob> signature;
 					ComPtr<ID3DBlob> error;
 					D3D12SerializeRootSignature(rootDesc, D3D_ROOT_SIGNATURE_VERSION_1_0, &signature, &error);

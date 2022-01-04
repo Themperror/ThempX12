@@ -23,8 +23,162 @@
 
 #include "util/svars.h"
 
+#include <lib/DirectXTex.h>
+#include <lib/DDSTextureLoader12.h>
+#include <lib/FreeImage.h>
+
 #define TOML_EXCEPTIONS 0
 #include <lib/toml.hpp>
+
+
+template<typename T>
+T GetValueFromNode(const toml::node_view<const toml::node>& node)
+{
+	if constexpr (std::is_same_v<T, int8_t> || std::is_same_v<T, int32_t> || std::is_same_v<T, int64_t> || std::is_same_v<T, uint8_t> || std::is_same_v<T, uint32_t> || std::is_same_v<T, uint64_t>)
+	{
+		const auto& t = node.as<int64_t>();
+		if (t)
+		{
+			return (T)t->get();
+		}
+		else
+		{
+			const auto& tf = node.as<double>();
+			if (tf)
+			{
+				return (T)tf->get();
+			}
+			return {};
+		}
+	}
+	else if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>)
+	{
+		const auto& t = node.as<double>();
+		if (t)
+		{
+			return (T)t->get();
+		}
+		else
+		{
+			const auto& ti = node.as<int64_t>();
+			if (ti)
+			{
+				return (T)ti->get();
+			}
+			return {};
+		}
+	}
+	else if constexpr (std::is_same_v<T, bool>)
+	{
+		const auto& t = node.as<bool>();
+		if (t)
+		{
+			return (T)t->get();
+		}
+		else
+		{
+			const auto& ti = node.as<int64_t>();
+			if (ti)
+			{
+				return (T)ti->get() != 0;
+			}
+			return {};
+		}
+	}
+	else if constexpr (std::is_same_v<T, std::string_view> || std::is_same_v<T, std::string>)
+	{
+		const auto& t = node.as<std::string>();
+		if (t)
+		{
+			return (T)t->get();
+		}
+		return {};
+	}
+	else
+	{
+		const auto& t = node.as<T>();
+		if (t)
+		{
+			return (T)t->get();
+		}
+		return {};
+	}
+}
+
+
+template<typename T>
+T GetValueFromNode(const toml::node& node)
+{
+	if constexpr (std::is_same_v<T, int8_t> || std::is_same_v<T, int32_t> || std::is_same_v<T, int64_t> || std::is_same_v<T, uint8_t> || std::is_same_v<T, uint32_t> || std::is_same_v<T, uint64_t>)
+	{
+		const auto& t = node.as<int64_t>();
+		if (t)
+		{
+			return (T)t->get();
+		}
+		else
+		{
+			const auto& tf = node.as<double>();
+			if (tf)
+			{
+				return (T)tf->get();
+			}
+			return {};
+		}
+	}
+	else if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>)
+	{
+		const auto& t = node.as<double>();
+		if (t)
+		{
+			return (T)t->get();
+		}
+		else
+		{
+			const auto& ti = node.as<int64_t>();
+			if (ti)
+			{
+				return (T)ti->get();
+			}
+			return {};
+		}
+	}
+	else if constexpr (std::is_same_v<T, bool>)
+	{
+		const auto& t = node.as<bool>();
+		if (t)
+		{
+			return (T)t->get();
+		}
+		else
+		{
+			const auto& ti = node.as<int64_t>();
+			if (ti)
+			{
+				return (T)ti->get() != 0;
+			}
+			return {};
+		}
+	}
+	else if constexpr (std::is_same_v<T, std::string_view> || std::is_same_v<T, std::string>)
+	{
+		const auto& t = node.as<std::string>();
+		if (t)
+		{
+			return (T)t->get();
+		}
+		return {};
+	}
+	else
+	{
+		const auto& t = node.as<T>();
+		if (t)
+		{
+			return (T)t->get();
+		}
+		return {};
+	}
+}
 
 namespace Themp
 {
@@ -35,6 +189,7 @@ namespace Themp
 #define RESOURCES_FOLDER "..\\resources\\"
 #define MATERIALS_FOLDER RESOURCES_FOLDER"materials\\"
 #define MODELS_FOLDER RESOURCES_FOLDER"models\\"
+#define TEXTURES_FOLDER RESOURCES_FOLDER"textures\\"
 #define SCENES_FOLDER RESOURCES_FOLDER"scenes\\"
 #define SCRIPTS_FOLDER RESOURCES_FOLDER"scripts\\"
 #define PASSES_FOLDER RESOURCES_FOLDER"passes\\"
@@ -54,6 +209,14 @@ namespace Themp
 		".glTF",
 		".ply",
 	};
+
+
+	void Resources::Init()
+	{
+		D3D::TextureHandle handle = LoadTexture("", "default.png");
+		assert(handle.handle == 0);
+	}
+
 
 	std::string_view Resources::GetResourcesFolder()
 	{
@@ -86,6 +249,10 @@ namespace Themp
 	std::string_view Resources::GetRenderTargetsFolder()
 	{
 		return RENDER_TARGET_FOLDER;
+	}
+	std::string_view Resources::GetTexturesFolder()
+	{
+		return TEXTURES_FOLDER;
 	}
 
 	D3D::Texture& Resources::Get(D3D::RTVHandle handle)
@@ -124,6 +291,10 @@ namespace Themp
 	{
 		return m_Meshes[handle.handle];
 	}
+	std::pair<std::string, D3D::Texture>& Resources::Get(D3D::TextureHandle handle) 
+	{
+		return m_Textures[handle.handle];
+	}
 
 	std::string GetFilePath(std::string_view base, std::string_view filename, std::string_view extension)
 	{
@@ -135,32 +306,6 @@ namespace Themp
 		return path;
 	}
 
-	std::string GetFileName(std::string_view path)
-	{
-		std::string filename = std::string(path.begin(), path.end());
-		for (size_t i = 0; i < filename.size(); i++)
-		{
-			if (filename[i] == '/')
-			{
-				filename[i] = '\\';
-			}
-		}
-		size_t lastBackSlash = filename.find_last_of('\\');
-		if (lastBackSlash != std::string::npos && lastBackSlash +1 < filename.size())
-		{
-			filename = filename.substr(lastBackSlash + 1, filename.size() - lastBackSlash - 1);
-		}
-
-		size_t lastPeriod = filename.find_last_of('.');
-		if (lastPeriod != std::string::npos)
-		{
-			filename = filename.substr(0, lastPeriod);
-		}
-
-		return filename;
-	}
-
-	
 
 	std::vector<std::pair<std::string, std::string>> Resources::GetScriptFiles() const
 	{
@@ -1114,11 +1259,10 @@ namespace Themp
 	}
 
 
-	D3D::MaterialHandle Resources::LoadMaterial(const std::string& path)
+	D3D::MaterialHandle Resources::LoadMaterial(const std::string& modelName, const std::string& path)
 	{
 		std::string fileName = path;
-		D3D::Material material;
-		for (int i = 0; i < m_Materials.size(); i++)
+		for (size_t i = 0; i < m_Materials.size(); i++)
 		{
 			if (m_Materials[i].m_Name == fileName)
 			{
@@ -1127,26 +1271,28 @@ namespace Themp
 		}
 		Themp::Print("Loading material file: [%s]", path.c_str());
 
+		D3D::Material& material = m_Materials.emplace_back();
 		std::vector<std::string> shaderFiles = Util::LoadFilesFromDirectory(SHADERS_FOLDER);
-		const auto& passes = LoadMaterial(Util::ReadFileToString(path), shaderFiles);
+		std::vector<PassTextures> outPerPassTextures;
+		const auto& passes = LoadMaterial(modelName, Util::ReadFileToString(path), shaderFiles, outPerPassTextures);
+
+		material.m_Name = path;
 
 		MergePasses(passes);
-		for (int i = 0; i < m_Subpasses.size(); i++)
+		for (size_t i = 0; i < m_Subpasses.size(); i++)
 		{
 			for (int j = 0; j < passes.size(); j++)
 			{
 				if (passes[j].pass == m_Subpasses[i].pass)
 				{
-					material.m_SubPasses.push_back(i);
+					material.m_SubPasses.push_back({i, passes[j].perMaterialTextures });
 				}
 			}
 		}
-		material.m_Name = path;
-		m_Materials.push_back(material);
 		return m_Materials.size() - 1;
 	}
 
-	std::vector<D3D::SubPass> Resources::LoadMaterial(const std::string& data, std::vector<std::string>& shaderFiles)
+	std::vector<D3D::SubPass> Resources::LoadMaterial(const std::string& modelname, const std::string& data, std::vector<std::string>& shaderFiles, std::vector<PassTextures>& outPerPassTextures)
 	{
 		using namespace Themp::D3D;
 		enum MaterialMembers
@@ -1156,6 +1302,7 @@ namespace Themp
 			NORMALINFO,
 			PASS,
 			SHADER,
+			TEXTURES,
 			COUNT
 		};
 
@@ -1166,6 +1313,7 @@ namespace Themp
 			"normalinfo",
 			"pass",
 			"shader",
+			"textures",
 		};
 
 		const toml::parse_result result = toml::parse(Themp::Util::ToLowerCase(data));
@@ -1189,26 +1337,60 @@ namespace Themp
 				const auto& pos = table[validEntries[POSITIONINFO]];
 				const auto& uv = table[validEntries[UVINFO]];
 				const auto& normal = table[validEntries[NORMALINFO]];
+				const auto& textures = table[validEntries[TEXTURES]];
 				if (pass && pass.is_string() && shader && shader.is_string())
 				{
-					PassHandle passHandle = LoadPass(pass.as_string()->get());
+					std::string passName = pass.as_string()->get();
+					PassHandle passHandle = LoadPass(passName);
 					ShaderHandle shaderHandle = LoadShader(shader.as_string()->get(), shaderFiles);
 					bool hasPos = false;
 					bool hasUv = false;
 					bool hasNormal = false;
-					if (pos && pos.is_boolean())
+					if (pos)
 					{
-						hasPos = pos.as_boolean()->get();
+						hasPos = GetValueFromNode<bool>(pos);
 					}
-					if (uv && uv.is_boolean())
+					if (uv)
 					{
-						hasUv = uv.as_boolean()->get();
+						hasUv = GetValueFromNode<bool>(uv);
 					}
-					if (normal && normal.is_boolean())
+					if (normal)
 					{
-						hasNormal = normal.as_boolean()->get();
+						hasNormal = GetValueFromNode<bool>(normal);
 					}
-					passData.push_back({ hasPos, hasNormal, hasUv, passHandle , shaderHandle });
+
+					auto& passTextures = outPerPassTextures.emplace_back();
+					passTextures.handle = passHandle;
+					if (textures && textures.is_array())
+					{
+						const auto& texArray = *textures.as_array();
+						for (int i = 0; i < texArray.size(); i++)
+						{
+							if (texArray[i].is_array())
+							{
+								const auto& texPair = *texArray[i].as_array();
+								if (texPair.size() > 1)
+								{
+									size_t texType = GetValueFromNode<size_t>(texPair[0]);
+									//input strings have '/' because toml sees '\' as an escape string, and having those user edited isn't super friendly so we just convert them back
+									std::string name = Util::ReplaceChar(GetValueFromNode<std::string>(texPair[1]),'/','\\');
+									auto& texturePair = passTextures.textures.emplace_back();
+									texturePair.textureType = texType;
+
+									texturePair.handle = LoadTexture(modelname, name);
+								}
+							}
+						}
+
+					}
+
+					SubPass& subPass = passData.emplace_back();
+					subPass.NeedsPositionInfo = hasPos;
+					subPass.NeedsNormalInfo  = hasNormal;
+					subPass.NeedsUVInfo  = hasUv;
+					subPass.pass = passHandle; 
+					subPass.shader = shaderHandle;
+					subPass.perMaterialTextures = passTextures.textures;
 				}
 				else
 				{
@@ -1324,12 +1506,130 @@ namespace Themp
 						std::string name(materialFolder.data(), materialFolder.size());
 						name.append(materials[i].as_string()->get());
 						name = Util::ReplaceExtensionWith(name, ".mat");
-						sceneObj.m_OverrideMaterials[i] = LoadMaterial(name);
+						sceneObj.m_OverrideMaterials[i] = LoadMaterial(name, name);
 					}
 				}
 			}
 		}
 		
+	}
+
+
+	D3D::TextureHandle Resources::LoadTexture(const std::string& modelName, std::string_view filename)
+	{
+		std::string texturePath = TEXTURES_FOLDER;
+		texturePath.reserve(texturePath.size() + 128);
+		texturePath.append(modelName).append("\\");
+		texturePath.append(filename);
+
+		std::string texturePathAsDDS = Util::ReplaceExtensionWith(texturePath, ".dds");
+
+		for (size_t i = 0; i < m_Textures.size(); i++)
+		{
+			if(m_Textures[i].first == filename)
+			{
+				return i;
+			}
+		}
+
+		const D3D::Device& device = Themp::Engine::instance->m_Renderer->GetDevice();
+		ComPtr<ID3D12Resource> textureResource;
+		std::vector<uint8_t> fileData;
+		std::vector<D3D12_SUBRESOURCE_DATA> outData;
+		if (Util::FileExists(texturePathAsDDS))
+		{
+			fileData = Util::ReadFileToVector(texturePathAsDDS);
+
+			std::wstring widePath = Util::ToWideString(texturePathAsDDS);
+			std::unique_ptr<uint8_t[]> outData;
+			std::vector<D3D12_SUBRESOURCE_DATA> subresources;
+			HRESULT result = DirectX::LoadDDSTextureFromFile(device.GetDevice().Get(), widePath.c_str(), textureResource.GetAddressOf(), outData, subresources);
+			if (result != S_OK)
+			{
+				Themp::Print("Something went wrong loading texture: %s", texturePathAsDDS.c_str());
+				Themp::Break();
+			}
+		}
+		else
+		{
+			std::string rawTexturePath = RAW_ASSETS_MODEL_FOLDER;
+			rawTexturePath.append(modelName).append("\\");
+			rawTexturePath.append(filename);
+			fileData = Util::ReadFileToVector(rawTexturePath);
+
+			//Load input from 'most' filetypes
+			FIMEMORY* inputMem = FreeImage_OpenMemory(fileData.data(),fileData.size());
+			FREE_IMAGE_FORMAT fileType = FreeImage_GetFileTypeFromMemory(inputMem, fileData.size());
+			FIBITMAP* loadedImage = FreeImage_LoadFromMemory(fileType, inputMem);
+
+			//save as TARGA in memory
+			FIMEMORY* mem = FreeImage_OpenMemory();
+			bool success = FreeImage_SaveToMemory(FREE_IMAGE_FORMAT::FIF_TARGA, loadedImage, mem);
+			BYTE* data;
+			DWORD dataSize = 0;
+			FreeImage_AcquireMemory(mem, &data, &dataSize);
+			
+
+			//load TARGA to directxtex
+			auto image = std::make_unique<DirectX::ScratchImage>();
+			HRESULT result = DirectX::LoadFromTGAMemory(data, dataSize, nullptr, *image);
+			if (result != S_OK)
+			{
+				Themp::Print("Something went wrong converting texture: %s", rawTexturePath.c_str());
+				Themp::Break();
+				return D3D::TextureHandle::Invalid;
+			}
+
+			//create mipmaps
+			auto mips = std::make_unique<DirectX::ScratchImage>();
+			result = DirectX::GenerateMipMaps(image->GetImages(), image->GetImageCount(), image->GetMetadata(), DirectX::TEX_FILTER_FLAGS::TEX_FILTER_DEFAULT, 0, *mips);
+			if (result != S_OK)
+			{
+				Themp::Print("Failed to create mips for texture: %s", rawTexturePath.c_str());
+				Themp::Break();
+				return D3D::TextureHandle::Invalid;
+			}
+
+			//compress and dump to disk
+			auto finalOutput = std::make_unique<DirectX::ScratchImage>();
+			result = DirectX::Compress(mips->GetImages(), mips->GetImageCount(), mips->GetMetadata(), DXGI_FORMAT::DXGI_FORMAT_BC7_UNORM, DirectX::TEX_COMPRESS_FLAGS::TEX_COMPRESS_BC7_QUICK | DirectX::TEX_COMPRESS_FLAGS::TEX_COMPRESS_PARALLEL, 1.0f, *finalOutput);
+			
+			// todo, check if GetPixelsSize is data size or just.. amount of pixels?
+
+			DirectX::Blob outputMem;
+			result = DirectX::SaveToDDSMemory(finalOutput->GetImages(), finalOutput->GetImageCount(), finalOutput->GetMetadata(), DirectX::DDS_FLAGS::DDS_FLAGS_ALLOW_LARGE_FILES, outputMem);
+			if (result == S_OK)
+			{
+				
+				Util::WriteFile(outputMem.GetBufferPointer(), outputMem.GetBufferSize(), texturePathAsDDS);
+				result = DirectX::LoadDDSTextureFromMemory(device.GetDevice().Get(), reinterpret_cast<uint8_t*>(outputMem.GetBufferPointer()), outputMem.GetBufferSize(), textureResource.GetAddressOf(), outData);
+				if (result != S_OK)
+				{
+
+					Themp::Print("Couldn't load converted %s as dds to resource", texturePathAsDDS.c_str());
+					Themp::Break();
+					return D3D::TextureHandle::Invalid;
+				}
+			}
+			else
+			{
+				Themp::Print("Couldn't save converted %s to memory", rawTexturePath.c_str());
+				Themp::Break();
+				return D3D::TextureHandle::Invalid;
+			}
+		}
+
+		if (fileData.size() == 0)
+		{
+			return D3D::TextureHandle::Invalid;
+		}
+
+		auto& gpuResources = Themp::Engine::instance->m_Renderer->GetResourceManager();
+		D3D::Texture& texture = gpuResources.GetTextureFromResource(device.GetDevice(), textureResource, D3D::TEXTURE_TYPE::SRV, D3D::Texture::ResourceState::CopyDest);
+		textureResource->SetName(Util::ToWideString(texturePathAsDDS).c_str());
+		m_Textures.push_back({ texturePath, texture });
+		return m_Textures.size() - 1;
+
 	}
 
 	void Resources::HandleChilds(D3D::Model& model, DirectX::XMFLOAT4X4 parentTransform, FILE* modelFile)
@@ -1468,14 +1768,7 @@ namespace Themp
 
 		std::vector<D3D::MaterialHandle> loadedMaterials;
 		for (size_t i = 0; i < header.numMaterials; i++)
-		{
-			std::vector<std::string> textureNames;
-			std::vector<uint8_t> textureTypes;
-			uint32_t numTextures = 0;
-		
-			//read in number of textures this material contains.
-			fread_s(&numTextures, sizeof(numTextures), sizeof(uint32_t), 1, modelFile);
-		
+		{			
 			//read in the number of characters the material name has.
 			uint32_t materialNameSize = 0;
 			fread_s(&materialNameSize, sizeof(materialNameSize), sizeof(uint32_t), 1, modelFile);
@@ -1484,29 +1777,10 @@ namespace Themp
 			std::string materialName(materialNameSize, materialNameSize);
 			fread_s(materialName.data(), materialName.size(), materialNameSize, 1, modelFile);
 		
-			for (size_t j = 0; j < numTextures; j++)
-			{
-				uint8_t textureType = 0;
-				uint32_t textureNameSize = 0;
-		
-				//read in the texture type and size of the texture name (path)
-				fread_s(&textureType, sizeof(textureType), sizeof(uint8_t), 1, modelFile);
-				fread_s(&textureNameSize, sizeof(textureNameSize), sizeof(uint32_t), 1, modelFile);
-		
-				//read in the texture name (path)
-				std::string textureName(textureNameSize, 0);
-				fread_s(textureName.data(), textureName.size(), textureName.size(), 1, modelFile);
-		
-				textureTypes.push_back(textureType);
-				textureNames.push_back(textureName);
-			}
-
-
-
 			std::string materialFile = materialFolder;
 			materialFile.append(materialName).append(".mat");
 
-			D3D::MaterialHandle materialHandle = LoadMaterial(materialFile);
+			D3D::MaterialHandle materialHandle = LoadMaterial(name, materialFile);
 
 			loadedMaterials.push_back(materialHandle);
 		}

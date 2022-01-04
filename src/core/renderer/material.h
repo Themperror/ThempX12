@@ -7,8 +7,12 @@ namespace Themp::D3D
 	class Material
 	{
 	public:
+		struct SubPassData
+		{
+			SubPassHandle handle;
+			std::vector<TextureTypePair> textures;
+		};
 		std::string m_Name;
-		std::vector<SubPassHandle> m_SubPasses;
-		std::vector<TextureHandle> m_Textures;
+		std::vector<SubPassData> m_SubPasses;
 	};
 }
