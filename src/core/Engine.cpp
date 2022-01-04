@@ -78,6 +78,7 @@ namespace Themp
 
 		m_Renderer->PopulateRenderingGraph(*m_Resources);
 
+		m_Renderer->Prepare();
 		Print("Setting up Game!");
 		m_Game->Start();
 

@@ -63,7 +63,41 @@ bool Control::Init()
 	m_EngineBuffer = m_GPU_Resources->CreateConstantBuffer(GetDevice(), sizeof(D3D::EngineConstantBuffer));
 	m_CameraBuffer = m_GPU_Resources->CreateConstantBuffer(GetDevice(), sizeof(D3D::CameraConstantBuffer));
 
+	m_UploadBatch = std::make_unique<DirectX::ResourceUploadBatch>(GetDevice().GetDevice().Get());
+	m_UploadBatch->Begin();
 	return true;
+}
+
+
+void Control::Prepare()
+{
+	if (m_Renderpasses.size() > 0)
+	{
+		auto& materials = Themp::Engine::instance->m_Resources->GetAllMaterials();
+
+		for (auto& material : materials)
+		{
+			for (auto& subpass : material.m_SubPasses)
+			{
+				for (auto& texture : subpass.textures)
+				{
+					auto& texPair = Themp::Engine::instance->m_Resources->Get(texture.handle);
+					if (texPair.second.GetResourceState() != Texture::ResourceState::SRV_PS)
+					{
+						//m_UploadBatch->Upload(texPair.second.m_SRV.Get(), 0, texPair.second.m_SubResources.data(), texPair.second.m_SubResources.size());
+						//texPair.second.SetResourceState(m_Renderpasses[0], D3D::TEXTURE_TYPE::SRV, D3D::Texture::ResourceState::SRV_PS);
+					}
+				}
+			}
+		}
+
+		//upload and transition any fixed dummy textures:
+		//auto& dummyTexPair = Themp::Engine::instance->m_Resources->Get(TextureHandle(0));
+		//m_UploadBatch->Upload(dummyTexPair.second.m_SRV.Get(), 0, dummyTexPair.second.m_SubResources.data(), dummyTexPair.second.m_SubResources.size());
+		//dummyTexPair.second.SetResourceState(m_Renderpasses[0], D3D::TEXTURE_TYPE::SRV, D3D::Texture::ResourceState::SRV_PS);
+
+	}
+	m_UploadBatch->End(GetDevice().GetCmdQueue().Get()).wait();
 }
 
 void Control::Stop()
@@ -131,13 +165,6 @@ void Control::PopulateRenderingGraph(Themp::Resources& resources)
 								renderable.SceneObject_IDs.push_back(obj.m_ID);
 								const D3D::Mesh& mesh = resources.Get(model.m_Meshes[meshIndex]);
 								renderable.meshData = mesh.m_MeshData;
-
-								auto& materialSubpass = material.m_SubPasses[subpassIndex];
-								for (int textureIndex = 0; textureIndex < materialSubpass.textures.size(); textureIndex++)
-								{
-									TextureHandle texHandle = materialSubpass.textures[textureIndex].handle;
-									resources.Get(texHandle).second.SetResourceState(pass, D3D::TEXTURE_TYPE::SRV, D3D::Texture::ResourceState::SRV_PS);
-								}
 							}
 						}
 					}
@@ -149,12 +176,6 @@ void Control::PopulateRenderingGraph(Themp::Resources& resources)
 			}
 			meshID++;
 		}
-	}
-	
-	//transition any fixed dummy textures:
-	if (m_Renderpasses.size() > 0)
-	{
-		resources.Get(TextureHandle(0)).second.SetResourceState(m_Renderpasses[0], D3D::TEXTURE_TYPE::SRV, D3D::Texture::ResourceState::SRV_PS);
 	}
 }
 

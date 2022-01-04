@@ -124,7 +124,6 @@
     <ClCompile Include="src\lib\angelscript\add_on\scriptstdstring\scriptstdstring_utils.cpp" />
     <ClCompile Include="src\lib\angelscript\add_on\serializer\serializer.cpp" />
     <ClCompile Include="src\lib\angelscript\add_on\weakref\weakref.cpp" />
-    <ClCompile Include="src\lib\DDSTextureLoader12.cpp" />
     <ClCompile Include="src\lib\imgui\imgui.cpp" />
     <ClCompile Include="src\lib\imgui\imgui_demo.cpp" />
     <ClCompile Include="src\lib\imgui\imgui_draw.cpp" />
@@ -198,7 +197,7 @@
       <PreprocessorDefinitions>_MBCS;AS_USE_NAMESPACE;AS_USE_STLNAMES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);D3D12.lib;DXGI.lib;dxcompiler.lib;angelscript64d.lib;assimp-vc143-mtd.lib;zlibstaticd.lib;DirectXTex.lib;FreeImage.lib</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);D3D12.lib;DXGI.lib;dxcompiler.lib;angelscript64d.lib;assimp-vc143-mtd.lib;zlibstaticd.lib;DirectXTex.lib;DirectXTK12.lib;FreeImage.lib</AdditionalDependencies>
       <SubSystem>Windows</SubSystem>
       <EntryPointSymbol>
       </EntryPointSymbol>
@@ -232,7 +231,7 @@
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);D3D12.lib;DXGI.lib;dxcompiler.lib;angelscript64.lib;assimp-vc143-mt.lib;zlibstatic.lib;DirectXTex.lib;FreeImage.lib</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);D3D12.lib;DXGI.lib;dxcompiler.lib;angelscript64.lib;assimp-vc143-mt.lib;zlibstatic.lib;DirectXTex.lib;DirectXTK12.lib;FreeImage.lib</AdditionalDependencies>
       <SubSystem>Windows</SubSystem>
       <EntryPointSymbol>
       </EntryPointSymbol>

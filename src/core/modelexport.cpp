@@ -57,8 +57,8 @@ namespace Themp
 		// And have it read the given file with some example postprocessing
 		// Usually - if speed is not the most important aspect for you - you'll
 		// probably to request more postprocessing than we do in this example.
-		const aiScene* scene = importer.ReadFile(pFile,
-			aiProcess_CalcTangentSpace |
+
+		unsigned int processingSteps = aiProcess_CalcTangentSpace |
 			aiProcess_Triangulate |
 			aiProcess_JoinIdenticalVertices |
 			aiProcess_ConvertToLeftHanded |
@@ -66,7 +66,17 @@ namespace Themp
 			aiProcess_GenNormals |
 			aiProcess_ImproveCacheLocality |
 			aiProcess_Triangulate |
-			aiProcess_SortByPType);
+			aiProcess_SortByPType;
+
+		std::string extension = Util::GetFileExtension(pFile);
+		if (extension == ".obj") //Obj can't handle instances so we optimize it differently
+		{
+			processingSteps |= aiProcess_OptimizeMeshes;
+			processingSteps |= aiProcess_OptimizeGraph;
+		}
+
+		const aiScene* scene = importer.ReadFile(pFile,
+			processingSteps);
 
 		// If the import failed, report it
 		if (scene == nullptr)

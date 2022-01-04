@@ -47,6 +47,7 @@ namespace Themp
 		std::pair<std::string, D3D::Texture>& Get(D3D::TextureHandle handle);
 
 		std::vector<std::pair<ResourceTextureInfo, D3D::Texture>>& GetAllDSVs() { return m_DepthTargets; }
+		std::vector<D3D::Material>& GetAllMaterials() { return m_Materials; }
 		size_t GetAmountOfSubpasses() const { return m_Subpasses.size(); };
 		std::vector<std::pair<std::string, std::string>> GetScriptFiles() const;
 

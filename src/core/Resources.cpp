@@ -24,7 +24,7 @@
 #include "util/svars.h"
 
 #include <lib/DirectXTex.h>
-#include <lib/DDSTextureLoader12.h>
+#include <lib/directxtk/DDSTextureLoader.h>
 #include <lib/FreeImage.h>
 
 #define TOML_EXCEPTIONS 0
@@ -1526,7 +1526,7 @@ namespace Themp
 
 		for (size_t i = 0; i < m_Textures.size(); i++)
 		{
-			if(m_Textures[i].first == filename)
+			if(m_Textures[i].first == texturePathAsDDS)
 			{
 				return i;
 			}
@@ -1536,14 +1536,14 @@ namespace Themp
 		ComPtr<ID3D12Resource> textureResource;
 		std::vector<uint8_t> fileData;
 		std::vector<D3D12_SUBRESOURCE_DATA> outData;
+		std::unique_ptr<uint8_t[]> outTexData;
 		if (Util::FileExists(texturePathAsDDS))
 		{
 			fileData = Util::ReadFileToVector(texturePathAsDDS);
 
 			std::wstring widePath = Util::ToWideString(texturePathAsDDS);
-			std::unique_ptr<uint8_t[]> outData;
-			std::vector<D3D12_SUBRESOURCE_DATA> subresources;
-			HRESULT result = DirectX::LoadDDSTextureFromFile(device.GetDevice().Get(), widePath.c_str(), textureResource.GetAddressOf(), outData, subresources);
+			
+			HRESULT result = DirectX::CreateDDSTextureFromFile(device.GetDevice().Get(), Themp::Engine::instance->m_Renderer->GetResourceUploadBatch(), widePath.c_str(), textureResource.GetAddressOf(), false);
 			if (result != S_OK)
 			{
 				Themp::Print("Something went wrong loading texture: %s", texturePathAsDDS.c_str());
@@ -1594,18 +1594,15 @@ namespace Themp
 			auto finalOutput = std::make_unique<DirectX::ScratchImage>();
 			result = DirectX::Compress(mips->GetImages(), mips->GetImageCount(), mips->GetMetadata(), DXGI_FORMAT::DXGI_FORMAT_BC7_UNORM, DirectX::TEX_COMPRESS_FLAGS::TEX_COMPRESS_BC7_QUICK | DirectX::TEX_COMPRESS_FLAGS::TEX_COMPRESS_PARALLEL, 1.0f, *finalOutput);
 			
-			// todo, check if GetPixelsSize is data size or just.. amount of pixels?
-
 			DirectX::Blob outputMem;
 			result = DirectX::SaveToDDSMemory(finalOutput->GetImages(), finalOutput->GetImageCount(), finalOutput->GetMetadata(), DirectX::DDS_FLAGS::DDS_FLAGS_ALLOW_LARGE_FILES, outputMem);
 			if (result == S_OK)
 			{
 				
 				Util::WriteFile(outputMem.GetBufferPointer(), outputMem.GetBufferSize(), texturePathAsDDS);
-				result = DirectX::LoadDDSTextureFromMemory(device.GetDevice().Get(), reinterpret_cast<uint8_t*>(outputMem.GetBufferPointer()), outputMem.GetBufferSize(), textureResource.GetAddressOf(), outData);
+				result = DirectX::CreateDDSTextureFromMemory(device.GetDevice().Get(), Themp::Engine::instance->m_Renderer->GetResourceUploadBatch(), reinterpret_cast<uint8_t*>(outputMem.GetBufferPointer()), outputMem.GetBufferSize(), textureResource.GetAddressOf(),false);
 				if (result != S_OK)
 				{
-
 					Themp::Print("Couldn't load converted %s as dds to resource", texturePathAsDDS.c_str());
 					Themp::Break();
 					return D3D::TextureHandle::Invalid;
@@ -1626,8 +1623,11 @@ namespace Themp
 
 		auto& gpuResources = Themp::Engine::instance->m_Renderer->GetResourceManager();
 		D3D::Texture& texture = gpuResources.GetTextureFromResource(device.GetDevice(), textureResource, D3D::TEXTURE_TYPE::SRV, D3D::Texture::ResourceState::CopyDest);
+		texture.m_SubResources = outData;
 		textureResource->SetName(Util::ToWideString(texturePathAsDDS).c_str());
-		m_Textures.push_back({ texturePath, texture });
+
+
+		m_Textures.push_back({ texturePathAsDDS, texture });
 		return m_Textures.size() - 1;
 
 	}

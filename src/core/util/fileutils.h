@@ -6,6 +6,7 @@
 namespace Themp::Util
 {
 	std::string GetPathName(std::string s);
+	std::string GetFileExtension(const std::string& s);
 	std::string ReadFileToString(const std::string& filePath);
 	std::vector<uint8_t> ReadFileToVector(const std::string& filePath);
 	bool WriteFile(const std::vector<uint8_t>& data, const std::string& filePath);

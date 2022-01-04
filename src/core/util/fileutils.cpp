@@ -20,6 +20,13 @@ namespace Themp::Util
 		}
 		return name;
 	}
+
+	std::string GetFileExtension(const std::string& s)
+	{
+		size_t lastPeriod = s.find_last_of('.');
+		return s.substr(lastPeriod, s.size() - lastPeriod);
+	}
+
 	std::vector<std::string> LoadFilesFromDirectory(std::string dir)
 	{
 		std::vector<std::string> files;

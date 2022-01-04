@@ -74,6 +74,10 @@ namespace Themp
 			}
 		}
 
+		Texture::ResourceState Texture::GetResourceState() const
+		{
+			return m_CurrentResourceState;
+		}
 
 		std::wstring Texture::CreateDebugName()
 		{

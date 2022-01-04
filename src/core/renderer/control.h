@@ -7,6 +7,7 @@
 #include "types.h"
 #include "core/renderer/pipeline.h"
 
+#include <lib/directxtk/ResourceUploadBatch.h>
 #include <d3d12.h>
 #include <memory>
 #include <vector>
@@ -41,8 +42,12 @@ namespace Themp
 		public:
 
 		public:
+			//Called right after construction
 			bool Init();
+			//Called before the rendering loop starts
+			void Prepare();
 			void Stop();
+
 
 			void PopulateRenderingGraph(Themp::Resources& resources);
 			void BeginDraw();
@@ -62,6 +67,7 @@ namespace Themp
 			D3D::ConstantBufferHandle GetCameraConstantBuffer() const;
 
 			void AddForImGuiImageSRV(Texture* tex);
+			DirectX::ResourceUploadBatch& GetResourceUploadBatch() { return *m_UploadBatch; }
 
 			const ShaderCompiler& GetShaderCompiler();
 		private:
@@ -78,6 +84,7 @@ namespace Themp
 			HANDLE m_FenceEvent;
 			int m_CurrentBackBuffer = 0;
 
+			std::unique_ptr<DirectX::ResourceUploadBatch> m_UploadBatch;
 			ConstantBufferHandle m_CameraBuffer;
 			ConstantBufferHandle m_EngineBuffer;
 

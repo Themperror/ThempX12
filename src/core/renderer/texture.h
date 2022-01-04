@@ -10,6 +10,7 @@ using namespace Microsoft::WRL;
 
 namespace Themp
 {
+	class Resources;
 	namespace D3D
 	{
 		class GPU_Resources;
@@ -50,6 +51,8 @@ namespace Themp
 			const D3D12_CLEAR_VALUE& GetClearValue() const { return m_ClearValue; }
 			void SetClearValue(const D3D12_CLEAR_VALUE& val) { m_ClearValue = val; }
 			void SetResourceState(RenderPass& usedPass, D3D::TEXTURE_TYPE type, ResourceState targetState);
+			Texture::ResourceState GetResourceState() const;
+			
 		private:
 
 			void InitSRVTexture(ComPtr<ID3D12Resource> textureSource, ComPtr<ID3D12Device2> device, const D3D::DescriptorHeapTracker& heapTracker);
@@ -83,6 +86,8 @@ namespace Themp
 			CD3DX12_GPU_DESCRIPTOR_HANDLE m_UAVGPUHandle;
 			uint32_t m_HeapIndex = 0;
 
+			std::vector<D3D12_SUBRESOURCE_DATA> m_SubResources;
+
 			bool m_DoScaleWithRes = false;
 			float m_ScaleValue = 1.0;
 			uint32_t m_SRVWidth = 0;
@@ -91,7 +96,7 @@ namespace Themp
 			D3D12_CLEAR_VALUE m_ClearValue;
 
 			friend class GPU_Resources;
-			friend class Resources;
+			friend class Themp::Resources;
 			friend class Control;
 		};
 	}
