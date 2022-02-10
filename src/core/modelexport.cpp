@@ -62,7 +62,6 @@ namespace Themp
 			aiProcess_Triangulate |
 			aiProcess_JoinIdenticalVertices |
 			aiProcess_ConvertToLeftHanded |
-			aiProcess_FindInstances |
 			aiProcess_GenNormals |
 			aiProcess_ImproveCacheLocality |
 			aiProcess_Triangulate |
@@ -82,7 +81,6 @@ namespace Themp
 		if (scene == nullptr)
 		{
 			std::cout << importer.GetErrorString() << std::endl;
-			system("pause");
 			return false;
 		}
 

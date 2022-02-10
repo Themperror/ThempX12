@@ -55,19 +55,19 @@ void Game::Game::Update(double delta)
 	{
 		if (keyboardState.keys[VK_LEFT] == Keyboard::ButtonState::Down)
 		{
-			totalMouseX += 50.0 * delta;
+			totalMouseX += static_cast<float>(50.0 * delta);
 		}
 		if (keyboardState.keys[VK_RIGHT] == Keyboard::ButtonState::Down)
 		{
-			totalMouseX -= 50.0 * delta;
+			totalMouseX -= static_cast<float>(50.0 * delta);
 		}
 		if (keyboardState.keys[VK_UP] == Keyboard::ButtonState::Down)
 		{
-			totalMouseY += 50.0 * delta;
+			totalMouseY += static_cast<float>(50.0 * delta);
 		}
 		if (keyboardState.keys[VK_DOWN] == Keyboard::ButtonState::Down)
 		{
-			totalMouseY -= 50.0 * delta;
+			totalMouseY -= static_cast<float>(50.0 * delta);
 		}
 
 		totalMouseY = totalMouseY > 90.0f ? 90.0f : totalMouseY < -90.0f ? -90.0f : totalMouseY;

@@ -46,7 +46,7 @@ MultisampleCount = 1
 MultisampleQuality = 0
 
 ##targets
-DepthTarget = "shadow"
+DepthTarget = {target = "shadow", doClear = true}
 
 ##per target blend state
 [[BlendTargets]]

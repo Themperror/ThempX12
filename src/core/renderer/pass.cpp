@@ -273,15 +273,29 @@ void Pass::SetDepthTarget(RenderTargetHandle handle)
 {
 	m_DepthTarget = handle;
 }
+void Pass::SetDoClearDepth(bool doClear)
+{
+	m_DoClearDepth = doClear;
+}
 void Pass::SetColorTarget(int index, RenderTargetHandle handle)
 {
 	if (index < 0 || index >= 8)
 	{
-		Themp::Print("Slot %i is out of range for rendertarget [0,7]!", index);
+		Themp::Print("Slot %i is out of range for SetColorTarget [0,7]!", index);
 		Themp::Break();
 		return;
 	}
 	m_RenderTargets[index] = handle;
+}
+void Pass::SetDoClearColor(int index, bool doClear)
+{
+	if (index < 0 || index >= 8)
+	{
+		Themp::Print("Slot %i is out of range for SetDoClearColor [0,7]!", index);
+		Themp::Break();
+		return;
+	}
+	m_DoClearRenderTarget[index] = doClear;
 }
 void Pass::SetBlendTarget(int index, const BlendState& state)
 {

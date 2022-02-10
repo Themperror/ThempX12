@@ -238,7 +238,7 @@ void Control::BeginDraw()
 		//Mark passname for Renderdoc
 #if _DEBUG
 		std::string_view passNameSV = resources.Get(renderPass.pipeline.GetPassHandle()).GetName();
-		frame.GetCmdList()->BeginEvent(1, passNameSV.data(), passNameSV.size() + 1);
+		frame.GetCmdList()->BeginEvent(1u, passNameSV.data(), static_cast<UINT>(passNameSV.size() + 1u));
 #endif
 		//Update all instance transforms
 		m_GPU_Resources->UpdateTransformsBufferView(*m_Device, renderPass, sceneObjects);
@@ -249,7 +249,7 @@ void Control::BeginDraw()
 		//transition any textures we need to
 		if (renderPass.texturesToTransition.size() > 0)
 		{
-			frame.GetCmdList()->ResourceBarrier(renderPass.texturesToTransition.size(), renderPass.texturesToTransition.data());
+			frame.GetCmdList()->ResourceBarrier(static_cast<UINT>(renderPass.texturesToTransition.size()), renderPass.texturesToTransition.data());
 		}
 		renderPass.texturesToTransition.clear();
 
@@ -289,7 +289,7 @@ void Control::BeginDraw()
 			}
 
 			frame.GetCmdList()->IASetVertexBuffers(0, 1, &renderable.second.m_PerInstanceTransforms.view);
-			frame.GetCmdList()->DrawIndexedInstanced(meshData.indexCount, renderable.second.numVisibleMeshes, meshData.indexIndex, meshData.vertexIndex, 0u);
+			frame.GetCmdList()->DrawIndexedInstanced(meshData.indexCount, static_cast<UINT>(renderable.second.numVisibleMeshes), meshData.indexIndex, meshData.vertexIndex, 0u);
 		}
 #if _DEBUG
 		frame.GetCmdList()->EndEvent();
@@ -297,7 +297,7 @@ void Control::BeginDraw()
 	}
 
 #if _DEBUG
-	frame.GetCmdList()->BeginEvent(1u, "ImGui", sizeof("ImGui"));
+	frame.GetCmdList()->BeginEvent(1u, "ImGui", static_cast<UINT>(sizeof("ImGui")));
 #endif
 	auto CPUHandle = frame.GetFrameBuffer().GetCPUHandle(D3D::TEXTURE_TYPE::RTV);
 	frame.GetCmdList()->OMSetRenderTargets(1, &CPUHandle, true, nullptr);

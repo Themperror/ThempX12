@@ -1,25 +1,22 @@
-[[sponza]]
-name = "cube"
+[[cube]]
+name = "sponza"
 position = [0.0, 0.0, 0.0]
 rotation = [0.0, 0.0, 0.0]
-scale = [0.1, 0.1, 0.1]
-script = "cube"
-
-
-[[sphere]]
-name = "sphere"
-position = [0.0, 20.0, 0.0]
-rotation = [0.0, 0.0, 0.0]
-scale = [0.2, 0.2, 0.2]
-meshMaterials = ["base"
-]
+scale = [4.2, 4.2, 4.2]
 script = "sphere"
 
 [[dragon]]
 name = "dragon"
-position = [0.0, 10.0, 10.0]
+position = [0.0, 6.0, 0.0]
 rotation = [0.0, 0.0, 0.0]
-scale = [0.2, 0.2, 0.2]
-meshMaterials = ["base"
-]
+#scale = [1.0,1.0,1.0]
+scale = [0.2,0.2,0.2]
+script = "sphere"
+
+[[dragon]]
+name = "dragon"
+position = [0.0, -6.0, 0.0]
+rotation = [0.0, 0.0, 0.0]
+scale = [0.6,0.6,0.6]
+materials = ["rainbow"]
 script = "sphere"

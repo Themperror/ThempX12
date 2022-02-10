@@ -39,7 +39,7 @@ void Frame::Reset()
 		D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
 	m_CommandList->ResourceBarrier(1, &barrier);
-	FLOAT clearColor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+	FLOAT clearColor[] = { 0.4f, 0.5f, 0.8f, 1.0f };
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle = m_FrameBuffer->GetCPUHandle(D3D::TEXTURE_TYPE::RTV);
 

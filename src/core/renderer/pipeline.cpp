@@ -257,14 +257,14 @@ namespace Themp
 				if (rootSignatureDeserializer)
 				{
 					auto rootDesc = rootSignatureDeserializer->GetRootSignatureDesc();
-					for (int i = 0; i < rootDesc->NumParameters; i++)
+					for (size_t i = 0; i < rootDesc->NumParameters; i++)
 					{
 						if (rootDesc->pParameters[i].ParameterType == D3D12_ROOT_PARAMETER_TYPE::D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE)
 						{
 							auto& descTableInfo = m_DescriptorTables.emplace_back();
-							descTableInfo.slot = i;
+							descTableInfo.slot = static_cast<int>(i);
 							auto& descTable = rootDesc->pParameters[i].DescriptorTable;
-							for (int j = 0; j < descTable.NumDescriptorRanges; j++)
+							for (size_t j = 0; j < descTable.NumDescriptorRanges; j++)
 							{
 								if (descTable.pDescriptorRanges[j].RangeType == D3D12_DESCRIPTOR_RANGE_TYPE_SRV)
 								{
@@ -384,14 +384,14 @@ namespace Themp
 			for (int i = 0; i < m_RenderTargets.size(); i++)
 			{
 				//0 is the special "current swapchain" rendertarget
-				if (pass.m_RenderTargets[i].rtv == 0)
+				if (pass.m_RenderTargets[i].rtv == 0 || !pass.m_DoClearRenderTarget[i])
 				{
 					continue;
 				}
 				cmdList->ClearRenderTargetView(m_RenderTargets[i].first, m_RenderTargets[i].second.Color, 0, nullptr);
 			}
 
-			if (pass.m_DepthTarget.dsv.IsValid())
+			if (pass.m_DepthTarget.dsv.IsValid() && pass.m_DoClearDepth)
 			{
 				const auto& tex = resources->Get(pass.m_DepthTarget.dsv);
 

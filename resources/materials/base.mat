@@ -8,5 +8,5 @@ Shader = "shadow"
 PositionInfo = true
 UVInfo = false
 NormalInfo = true
-Pass = "main"
+Pass = "default"
 Shader = "default"

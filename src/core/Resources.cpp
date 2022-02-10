@@ -200,13 +200,14 @@ namespace Themp
 #define MODEL_VERSION_LOW 7
 
 
-	constexpr std::array<std::string_view,6> s_SupportedModelExtensions =
+	constexpr std::array<std::string_view,7> s_SupportedModelExtensions =
 	{
 		".obj",
 		".fbx",
 		".dae",
 		".blend",
-		".glTF",
+		".gltf",
+		".glb",
 		".ply",
 	};
 
@@ -601,35 +602,78 @@ namespace Themp
 			Themp::Print("MultisampleQuality was not of int type or not found");
 		}
 
-
-
-		const auto& colorTargets = result[Pass::GetPassMemberAsString(PassMember::ColorTarget)];
-		if (colorTargets.is_array()) //array of targets with specific index
+		auto SetColorTargetFromNode = [&](const toml::v2::node& node)
 		{
-			const auto& arr = colorTargets.as_array();
-			for (const auto& it : *arr)
+			const auto& targetArray = *node.as_table();
+
+			int targetIndex = -1;
+			std::string_view renderTargetName = "";
+			bool doClearValue = false;
+			for (const auto& it : targetArray)
 			{
-				const auto& targetTable = it.as_table();
-				for (const auto& it : *targetTable)
+				if (it.first == "doclear")
 				{
-					if (it.second.is_integer())
+					if (it.second.is_boolean())
 					{
-						pass.SetColorTarget(static_cast<int>(it.second.as_integer()->get()), LoadRenderTarget(it.first));
+						doClearValue = it.second.as_boolean()->get();
 					}
 					else
 					{
-						Themp::Print("paired value with %s was not of integer type or not found!", it.first.c_str());
+						Themp::Print("Paired value with %s was not of integer type or not found!", it.first.c_str());
+					}
+				}
+				else
+				{
+					if (it.second.is_integer())
+					{
+						targetIndex = static_cast<int>(it.second.as_integer()->get());
+						renderTargetName = it.first;
+					}
+					else
+					{
+						Themp::Print("Paired value with %s was not of integer type or not found!", it.first.c_str());
 					}
 				}
 			}
-		}
-		else if (colorTargets.is_string()) //allow single target to force slot 0
+			pass.SetDoClearColor(targetIndex, doClearValue);
+			pass.SetColorTarget(targetIndex, LoadRenderTarget(renderTargetName));
+		};
+
+		const auto& colorTargets = result[Pass::GetPassMemberAsString(PassMember::ColorTarget)];
+		if (colorTargets.is_array_of_tables()) //array of targets with specific index
 		{
-			pass.SetColorTarget(0, LoadRenderTarget(colorTargets.as_string()->get()));
+			const auto& arr = *colorTargets.as_array();
+			for (const auto& it : arr)
+			{
+				if (it.is_table())
+				{
+					SetColorTargetFromNode(it);
+				}
+			}
+		}
+		else if (colorTargets.is_table()) //allow single target to force slot 0
+		{
+			
+			SetColorTargetFromNode(*colorTargets.as_table());
 		}
 
 		const auto& depthTarget = result[Pass::GetPassMemberAsString(PassMember::DepthTarget)];
-		if (depthTarget.is_string()) //allow single target to force slot 0
+		if (depthTarget.is_table()) //allow single target to force slot 0
+		{
+			const auto& depthAsTable = *depthTarget.as_table();
+
+			const auto& doClear = depthAsTable["doclear"];
+			if (doClear && doClear.is_boolean())
+			{
+				pass.SetDoClearDepth(doClear.as_boolean()->get());
+			}
+			const auto& targetName = depthAsTable["target"];
+			if (targetName && targetName.is_string())
+			{
+				pass.SetDepthTarget(LoadRenderTarget(targetName.as_string()->get()));
+			}
+		}
+		else if(depthTarget.is_string())
 		{
 			pass.SetDepthTarget(LoadRenderTarget(depthTarget.as_string()->get()));
 		}
@@ -1377,7 +1421,18 @@ namespace Themp
 									auto& texturePair = passTextures.textures.emplace_back();
 									texturePair.textureType = texType;
 
-									texturePair.handle = LoadTexture(modelname, name);
+									if (name.size() == 0)
+									{
+										texturePair.handle = 0;
+									}
+									else
+									{
+										texturePair.handle = LoadTexture(modelname, name);
+										if (texturePair.handle.IsValid() == false)
+										{
+											texturePair.handle = 0;
+										}
+									}
 								}
 							}
 						}
@@ -1446,6 +1501,10 @@ namespace Themp
 		{
 			const auto& arr = *rootArrays.second.as_array();
 			D3D::ModelHandle model = LoadModel(rootArrays.first);
+			if (model.IsValid() == false)
+			{
+				continue;
+			}
 			for(const auto& element : arr)
 			{
 				const auto& table = *element.as_table();
@@ -1496,7 +1555,7 @@ namespace Themp
 					sceneObj.m_OverrideMaterials[i] = mesh.m_MaterialHandle;
 				}
 
-				const auto& materialIt = table["meshmaterials"].as_array();
+				const auto& materialIt = table["materials"].as_array();
 				if (materialIt)
 				{
 					const auto& materials = *materialIt;
@@ -1548,6 +1607,7 @@ namespace Themp
 			{
 				Themp::Print("Something went wrong loading texture: %s", texturePathAsDDS.c_str());
 				Themp::Break();
+				return D3D::TextureHandle::Invalid;
 			}
 		}
 		else
@@ -1556,10 +1616,13 @@ namespace Themp
 			rawTexturePath.append(modelName).append("\\");
 			rawTexturePath.append(filename);
 			fileData = Util::ReadFileToVector(rawTexturePath);
-
+			if (fileData.size() == 0)
+			{
+				return D3D::TextureHandle::Invalid;
+			}
 			//Load input from 'most' filetypes
-			FIMEMORY* inputMem = FreeImage_OpenMemory(fileData.data(),fileData.size());
-			FREE_IMAGE_FORMAT fileType = FreeImage_GetFileTypeFromMemory(inputMem, fileData.size());
+			FIMEMORY* inputMem = FreeImage_OpenMemory(fileData.data(), static_cast<DWORD>(fileData.size()));
+			FREE_IMAGE_FORMAT fileType = FreeImage_GetFileTypeFromMemory(inputMem, static_cast<int>(fileData.size()));
 			FIBITMAP* loadedImage = FreeImage_LoadFromMemory(fileType, inputMem);
 
 			//save as TARGA in memory
@@ -1688,16 +1751,16 @@ namespace Themp
 		{
 			Themp::Print("Could not find model: %s, importing it from rawAssets if it can be found!", modelPath.c_str());
 			auto allModels = Util::LoadFilesFromDirectory(std::string(RAW_ASSETS_MODEL_FOLDER).append(name).append("\\"));
-			for (int i = allModels.size() - 1; i >= 0; i--)
+			for (int i = static_cast<int>(allModels.size()) - 1; i >= 0; i--)
 			{
 				if (!Util::Contains(allModels[i], name, false))
 				{
 					allModels.erase(allModels.begin() + i);
 				}
 			}
-			for (int i = 0; i < allModels.size(); i++)
+			for (size_t i = 0; i < allModels.size(); i++)
 			{
-				for (int j = 0; j < s_SupportedModelExtensions.size(); j++)
+				for (size_t j = 0; j < s_SupportedModelExtensions.size(); j++)
 				{
 					if (allModels[i].find(s_SupportedModelExtensions[j], allModels[i].size() - s_SupportedModelExtensions[j].size()) != std::string::npos)
 					{

@@ -23,7 +23,7 @@ BackFaceFunc = "ALWAYS"
 ##raster state see https://docs.microsoft.com/en-us/windows/win32/api/d3d12/ns-d3d12-d3d12_rasterizer_desc
 FrontCounterClockwise = false
 FillMode = "SOLID"
-CullMode = "BACK"
+CullMode = "NONE"
 DepthBias = 0
 DepthBiasClamp = 0.0
 SlopeScaledDepthBias = 0.0
@@ -46,7 +46,7 @@ Topology = "TRIANGLE"
 
 ##targets
 DepthTarget = "maindepth"
-ColorTarget = [{"*swapchain" = 0}]
+ColorTarget = {"*swapchain" = 0, doClear = false}
 
 ##per target blend state
 ############# Blend 0

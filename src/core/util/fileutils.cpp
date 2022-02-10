@@ -145,7 +145,12 @@ namespace Themp::Util
 			return false;
 		}
 		DWORD bytesWritten = 0;
-		if (!::WriteFile(file, data, size, &bytesWritten, NULL))
+		if (size > std::numeric_limits<DWORD>::max())
+		{
+			Themp::Print("trying to write more than %llu amount of bytes [%llu], this isn't supported");
+			Themp::Break();
+		}
+		if (::WriteFile(file, data, static_cast<DWORD>(size), &bytesWritten, NULL) == false)
 		{
 			Themp::Print("Was unable to write the file: [%s]", filePath.c_str());
 			Themp::Break();

@@ -269,7 +269,9 @@ namespace Themp::D3D
 		void SetMultisampleCount(int count);
 		void SetMultisampleQuality(int quality);
 		void SetDepthTarget(RenderTargetHandle handle);
+		void SetDoClearDepth(bool doClear);
 		void SetColorTarget(int index, RenderTargetHandle handle);
+		void SetDoClearColor(int index, bool doClear);
 		void SetBlendTarget(int index, const BlendState& state);
 		void SetViewport(int index, const Viewport& viewport);
 		void SetScissor(int index, const Scissor& scissor);
@@ -283,15 +285,17 @@ namespace Themp::D3D
 		DepthState m_DepthState;
 		RasterState m_RasterState;
 		RenderTargetHandle m_DepthTarget;
-		unsigned int m_SampleMask;
+		unsigned int m_SampleMask = 0xF;
 		PrimitiveTopology m_Topology;
-		int m_MultisampleCount;
-		int m_MultisampleQuality;
+		int m_MultisampleCount = 1;
+		int m_MultisampleQuality = 0;
+		bool m_DoClearDepth = true;
 		Scripting::ScriptHandle m_ScriptHandle = Scripting::ScriptHandle::Invalid;
 		std::array<BlendState, 8> m_BlendStates;
 		std::array<RenderTargetHandle, 8> m_RenderTargets;
 		std::array<Viewport, 8> m_Viewports;
 		std::array<Scissor, 8> m_Scissors;
+		std::array<bool, 8> m_DoClearRenderTarget;
 	protected:
 
 		friend class Control;

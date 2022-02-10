@@ -348,11 +348,11 @@ namespace Themp::D3D
 			uint32_t totalIndices = 0;
 			for (auto& indexData : m_MeshDataStage.indexData)
 			{
-				totalIndices += indexData.size();
+				totalIndices += static_cast<uint32_t>(indexData.size());
 			}
 			if (totalIndices + m_MeshBufferTracker.indexCount >= m_MaxIndexBufferSize)
 			{
-				uint32_t newMax = (float)(totalIndices + m_MeshBufferTracker.indexCount) * 1.5f;
+				uint32_t newMax = static_cast<uint32_t>((float)(totalIndices + m_MeshBufferTracker.indexCount) * 1.5f);
 				if (m_MaxIndexBufferSize == 0)
 				{
 					CreateIndexBuffer(Themp::Engine::instance->m_Renderer->GetDevice(), newMax, false);
@@ -394,11 +394,11 @@ namespace Themp::D3D
 			uint32_t totalVertices = 0;
 			for (auto& vertexData : m_MeshDataStage.vertexData)
 			{
-				totalVertices += vertexData.size();
+				totalVertices += static_cast<uint32_t>(vertexData.size());
 			}
 			if (totalVertices + m_MeshBufferTracker.vertexCount >= m_MaxVertexBufferSize)
 			{
-				uint32_t newMax = (float)(totalVertices + m_MeshBufferTracker.vertexCount) * 1.5f;
+				uint32_t newMax = static_cast<uint32_t>((float)(totalVertices + m_MeshBufferTracker.vertexCount) * 1.5f);
 				if (m_MaxVertexBufferSize == 0)
 				{
 					CreateVertexBuffer(Themp::Engine::instance->m_Renderer->GetDevice(), newMax, false);
@@ -494,7 +494,7 @@ namespace Themp::D3D
 				desc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
 				
-				perInstanceTransforms.maxTransformsInResource = (float)totalMeshes * 1.5f;
+				perInstanceTransforms.maxTransformsInResource = static_cast<uint32_t>((float)totalMeshes * 1.5f);
 
 				//release our current resource if any
 				perInstanceTransforms.transformsResource.Reset();
